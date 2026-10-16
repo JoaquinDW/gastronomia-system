@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { appUrl } from "@/lib/hosts";
 
 export default function ErrorPage({ reset }: { reset: () => void }) {
   return (
@@ -14,7 +15,7 @@ export default function ErrorPage({ reset }: { reset: () => void }) {
       <button className="primary-button compact-button" onClick={reset}>
         Volver a intentar <span aria-hidden="true">↻</span>
       </button>
-      <Link href="/panel" className="text-link">
+      <Link href={appUrl("/panel")} className="text-link">
         Ir a mis negocios
       </Link>
     </main>

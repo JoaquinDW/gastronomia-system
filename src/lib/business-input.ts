@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { reservedSlugs } from "@/lib/hosts";
 
 export const businessKinds = [
   { value: "hamburgueseria", label: "Hamburguesería" },
@@ -33,6 +34,10 @@ export const businessInput = z
       .regex(
         /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
         "Usá letras minúsculas, números y guiones entre palabras.",
+      )
+      .refine(
+        (slug) => !reservedSlugs.has(slug),
+        "Esa dirección está reservada. Probá con otra.",
       ),
     kind: z.enum(["hamburgueseria", "rotiseria", "pastas", "otro"], {
       error: "Elegí el rubro del negocio.",

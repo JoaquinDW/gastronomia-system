@@ -11,6 +11,7 @@ import { ManagementWorkspace } from "@/components/management-workspace";
 import { HttpError } from "@/server/errors";
 import { z } from "zod";
 import "../management.css";
+import { panelBase } from "@/lib/hosts";
 
 export const metadata = { title: "Gestión de tu negocio — Pedipue" };
 const sections = {
@@ -47,7 +48,7 @@ export default async function ManagementPage({
     (!owner && ["resultados", "gastos"].includes(section))
   )
     notFound();
-  const root = `/panel/negocios/${id}/gestion`;
+  const root = `${panelBase(id)}/gestion`;
   const [data, products] = await Promise.all([
     getManagementData(id, { owner }),
     getProducts(id),
@@ -64,7 +65,7 @@ export default async function ManagementPage({
   }
   return (
     <>
-      <Link className="back-link" href={`/panel/negocios/${id}`}>
+      <Link className="back-link" href={`${panelBase(id)}`}>
         ← {business.name}
       </Link>
       <BusinessNav id={id} active="management" />

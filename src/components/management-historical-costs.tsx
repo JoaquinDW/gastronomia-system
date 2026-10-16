@@ -7,6 +7,7 @@ import type { HistoricalOrder, Recipe, StockItem } from "@/lib/management";
 import { historicalRecipeCost } from "@/lib/management-recipe-cost";
 import { money } from "@/lib/management-math";
 import { Field } from "./management-fields";
+import { panelBase } from "@/lib/hosts";
 
 export function HistoricalOrderCosts({
   order,
@@ -43,7 +44,7 @@ export function HistoricalOrderCosts({
   const total = complete
     ? quotes.reduce((sum, q) => sum + BigInt(q!.costCents), 0n).toString()
     : null;
-  const root = `/panel/negocios/${businessId}/gestion`;
+  const root = `${panelBase(businessId)}/gestion`;
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!complete || busy) return;

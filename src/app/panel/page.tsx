@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/server/auth";
 import { listBusinesses } from "@/server/businesses";
 import { businessKinds } from "@/lib/business-input";
+import { businessPanelUrl } from "@/lib/hosts";
 
 export const metadata = { title: "Mis negocios — Pedipue" };
 
@@ -25,7 +26,7 @@ export default async function PanelPage() {
           {businesses.map((business) => (
             <Link
               key={business.id}
-              href={`/panel/negocios/${business.id}`}
+              href={businessPanelUrl(business.id, business.slug)}
               className="business-list-item"
             >
               <span className="business-initial" aria-hidden="true">

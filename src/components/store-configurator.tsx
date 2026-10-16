@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { storePreviewUrl, storeUrl } from "@/lib/hosts";
 import {
   dayNames,
   moneyToCents,
@@ -475,7 +476,7 @@ export function StoreConfigurator({
         </ul>
         <Link
           className="secondary-button"
-          href={`/t/${slug}?preview=1`}
+          href={storePreviewUrl(slug)}
           target="_blank"
         >
           Vista previa de la tienda ↗
@@ -489,8 +490,8 @@ export function StoreConfigurator({
         </button>
         {s.isPublished ? (
           <div className="share-store">
-            <Link href={`/t/${slug}`} target="_blank">
-              /t/{slug} ↗
+            <Link href={storeUrl(slug)} target="_blank">
+              {storeUrl(slug).replace(/^https?:\/\//, "")} ↗
             </Link>
             <button
               className="quiet-button"
@@ -498,7 +499,7 @@ export function StoreConfigurator({
               onClick={async () => {
                 try {
                   await navigator.clipboard.writeText(
-                    `${window.location.origin}/t/${slug}`,
+                    new URL(storeUrl(slug), window.location.origin).href,
                   );
                   setCopied(true);
                 } catch {

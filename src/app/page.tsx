@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { appUrl } from "@/lib/hosts";
 
 const modules = [
   {
@@ -73,10 +74,13 @@ export default function Home() {
           </span>
         </a>
         <nav className="header-actions" aria-label="Acceso al sistema">
-          <Link className="quiet-link" href="/ingresar">
+          <Link className="quiet-link" href={appUrl("/ingresar")}>
             Ingresar
           </Link>
-          <Link className="primary-button compact-button" href="/registro">
+          <Link
+            className="primary-button compact-button"
+            href={appUrl("/registro")}
+          >
             Crear mi tienda <span aria-hidden="true">↗</span>
           </Link>
         </nav>
@@ -99,7 +103,10 @@ export default function Home() {
               panel. Sin pagarle comisión a las apps de delivery.
             </p>
             <div className="hero-actions">
-              <Link className="primary-button compact-button" href="/registro">
+              <Link
+                className="primary-button compact-button"
+                href={appUrl("/registro")}
+              >
                 Crear mi tienda <span aria-hidden="true">→</span>
               </Link>
               <a className="text-link" href="#como-funciona">
@@ -219,10 +226,10 @@ export default function Home() {
               Armá tu tienda hoy y empezá a recibir pedidos directo, con tu
               nombre y tu carta.
             </p>
-            <Link className="primary-button" href="/registro">
+            <Link className="primary-button" href={appUrl("/registro")}>
               Crear mi tienda <span aria-hidden="true">→</span>
             </Link>
-            <Link className="text-link" href="/ingresar">
+            <Link className="text-link" href={appUrl("/ingresar")}>
               Ya tengo cuenta, ingresar
             </Link>
           </aside>

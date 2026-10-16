@@ -9,6 +9,7 @@ import {
 } from "@/lib/menu";
 import { ProductEditor } from "./product-editor";
 import { MenuImporter } from "./menu-importer";
+import { panelBase } from "@/lib/hosts";
 export function MenuManager({
   businessId,
   initialProducts,
@@ -294,10 +295,7 @@ export function MenuManager({
             recibir pedidos.
           </p>
         </div>
-        <Link
-          className="text-link"
-          href={`/panel/negocios/${businessId}/tienda`}
-        >
+        <Link className="text-link" href={`${panelBase(businessId)}/tienda`}>
           Configurar tienda →
         </Link>
       </div>
