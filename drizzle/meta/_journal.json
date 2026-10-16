@@ -15,6 +15,13 @@
       "when": 1792157646589,
       "tag": "0001_menu_storefront",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792169320534,
+      "tag": "0002_wonderful_red_ghost",
+      "breakpoints": true
     }
   ]
 }

@@ -32,6 +32,9 @@ export const checkoutInput = z
   .strict();
 export type CheckoutInput = z.infer<typeof checkoutInput>;
 export type OrderItem = {
+  productId?: string;
+  variantId?: string;
+  addOnIds?: string[];
   name: string;
   variant: string;
   addOns: string[];
@@ -56,4 +59,6 @@ export type Order = {
   totalCents: number;
   version: number;
   createdAt: string;
+  acceptedAt?: string | null;
+  saleId?: string | null;
 };

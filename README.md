@@ -1,6 +1,6 @@
 # Gastronomía — planificación y base técnica
 
-Plataforma para hamburgueserías, rotiserías y casas de pastas independientes. Incluye cuentas y alta de negocios con Neon Auth, **carta manual o importada con OpenAI, horarios, retiro/delivery, activación de tienda, carrito y pedidos pendientes con checkout por WhatsApp**. Cocina, caja y stock siguen en el plan de V1.
+Plataforma para hamburgueserías, rotiserías y casas de pastas independientes. Incluye cuentas y alta de negocios con Neon Auth, **carta manual o importada con OpenAI, horarios, retiro/delivery, activación de tienda, carrito y pedidos pendientes con checkout por WhatsApp**. El módulo **Gestión** conecta ventas, stock, recetas, elaboración, compras, proveedores y gastos con resultados estimados. Cocina y caja completa siguen en el plan de V1.
 
 ## Documentos
 
@@ -11,6 +11,7 @@ Plataforma para hamburgueserías, rotiserías y casas de pastas independientes. 
 - [Alta de negocios](docs/ALTA-NEGOCIOS.md): funcionamiento y verificación de la entrega actual.
 - [Carta y tienda](docs/CARTA-TIENDA.md): configuración, importación con IA, checkout y pruebas.
 - [Design system Pedipue](docs/DESIGN-SYSTEM.md): marca, colores, tipografía, componentes, tono y plan para aplicarlo en todas las pantallas.
+- [Gestión y resultados](docs/GESTION.md): flujos, cálculos, permisos, migración y pruebas del módulo.
 
 Flujo acordado: **guardar pedido pendiente → abrir WhatsApp → el negocio confirma en el panel → cocina**. Abrir WhatsApp no acredita pago ni aceptación.
 
@@ -23,7 +24,7 @@ npm ci
 npm run dev
 ```
 
-App: http://localhost:3000. Desde “Crear mi tienda” se crea una cuenta y luego el negocio. En `/panel/negocios/:id` aparecen las secciones Carta, Tienda y Pedidos. La tienda pública usa `/t/:slug`.
+App: http://localhost:3000. Desde “Crear mi tienda” se crea una cuenta y luego el negocio. En `/panel/negocios/:id` aparecen Carta, Tienda, Pedidos y Gestión. La tienda pública usa `/t/:slug`.
 
 El alta guarda nombre, rubro, WhatsApp con código de país, ciudad y dirección opcional. Crea negocio, sucursal “Casa central” y membresía de propietario en una sola transacción. El identificador es único; los reintentos de la misma solicitud no duplican el negocio. El panel muestra solo los negocios asociados a la cuenta autenticada. Cada propietario configura su carta, horarios y entregas antes de activar la tienda explícitamente.
 
@@ -75,6 +76,7 @@ npm run build
 npm run typecheck
 npm run test:db
 npm run test:menu
+npm run test:management
 ```
 
 `test:db` usa la misma conexión pooled que la app para leer y la conexión directa para hacer INSERT, SELECT, UPDATE y DELETE en una tabla temporal dentro de una transacción. Después ejecuta rollback y comprueba que la tabla desapareció. No añade datos comerciales.
@@ -108,4 +110,4 @@ Con OpenAI configurado, `MENU_TEST_IMAGE=/ruta/carta.png npm run test:ai-menu` e
 
 ## Próxima entrega
 
-Cocina, caja, stock, invitaciones de equipo y edición de permisos. La aceptación de pedidos actual no descuenta existencias ni crea comandas de cocina. Las transferencias se verifican manualmente; elegir ese medio de pago no acredita el pedido.
+Cocina, caja completa, invitaciones de equipo y edición de permisos. Aceptar un pedido registra la venta y descuenta los consumos configurados; todavía no crea comandas. Las transferencias se verifican manualmente; elegir ese medio de pago no acredita el pedido.

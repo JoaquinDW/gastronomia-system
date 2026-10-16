@@ -1,0 +1,741 @@
+/* Gestión extends the shared Pedipue design system. */
+.mg-workspace .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.mg-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 38px 0 30px;
+}
+.mg-heading .panel-title {
+  font-size: clamp(32px, 4vw, 52px);
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  margin-bottom: 12px;
+  text-wrap: balance;
+}
+.mg-heading p {
+  color: var(--muted);
+  margin: 0;
+  max-width: 65ch;
+}
+.mg-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  border-bottom: 1.5px solid var(--line-strong);
+  padding-bottom: 14px;
+  margin-bottom: 28px;
+}
+.mg-nav a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 0;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  text-underline-offset: 8px;
+}
+.mg-nav a:hover {
+  text-decoration: underline;
+}
+.mg-nav a[aria-current] {
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+}
+.mg-period,
+.mg-date-form,
+.mg-report-intro,
+.mg-toolbar,
+.mg-actions,
+.mg-form-actions,
+.mg-export-form {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.mg-period {
+  align-items: center;
+  gap: 20px;
+}
+.mg-period-links {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  background: var(--soft);
+  border-radius: 999px;
+}
+.mg-period-links a {
+  padding: 10px 15px;
+  min-height: 44px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+.mg-period-links a[aria-current] {
+  background: var(--ink);
+  color: var(--paper);
+}
+.mg-period-links a:hover:not([aria-current]) {
+  background: var(--paper);
+}
+.mg-date-form {
+  justify-content: flex-start;
+}
+.mg-date-form > label,
+.mg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 0;
+}
+.mg-date-form input,
+.mg-date-form select,
+.mg-field input:not([type="checkbox"]),
+.mg-field select,
+.mg-field textarea,
+.mg-search input {
+  border: 1.5px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font: 400 14px var(--sans);
+  min-height: 46px;
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  max-width: 100%;
+  width: 100%;
+  caret-color: var(--accent-ink);
+}
+.mg-field textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+.mg-field small {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.mg-field input:focus,
+.mg-field select:focus,
+.mg-field textarea:focus,
+.mg-search input:focus,
+.mg-date-form input:focus,
+.mg-date-form select:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+.mg-field input::placeholder,
+.mg-search input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.mg-report-intro {
+  align-items: center;
+  margin: 16px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.mg-report-intro p {
+  margin: 0;
+}
+.mg-scoreboard {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.mg-main-result {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 30px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.mg-main-result h2 {
+  font: 700 23px var(--display);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.mg-main-result .mg-result-amount {
+  font: 700 clamp(26px, 3.1vw, 44px)/1.25 var(--mono);
+  letter-spacing: -0.035em;
+  margin: 22px 0 12px;
+  overflow-wrap: anywhere;
+}
+.mg-main-result > p:not(.mg-result-amount) {
+  margin: 0;
+  font-size: 14px;
+}
+.mg-main-result > span {
+  font-size: 12px;
+  margin-top: 12px;
+}
+.mg-equation {
+  margin: 0;
+  padding: 25px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+}
+.mg-equation > div,
+.mg-channel-list > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+.mg-equation dt {
+  font-size: 13px;
+}
+.mg-equation dd,
+.mg-channel-list dd {
+  font: 700 16px var(--mono);
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.mg-equation .mg-subtotal {
+  padding: 15px 0;
+  border-top: 1.5px solid var(--line);
+  border-bottom: 1.5px solid var(--line);
+  font-weight: 700;
+}
+.mg-disclosure {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 16px 0 24px;
+  max-width: 90ch;
+}
+.mg-inline-warning,
+.mg-stock-alert {
+  color: var(--accent-ink);
+}
+.mg-notice {
+  background: var(--soft);
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-card);
+  padding: 20px 24px;
+  margin: 24px 0;
+}
+.mg-notice h2 {
+  font: 700 21px var(--display);
+  margin: 0 0 10px;
+}
+.mg-notice p {
+  line-height: 1.6;
+  max-width: 75ch;
+  font-size: 14px;
+  margin: 8px 0;
+}
+.mg-notice a {
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-block;
+  margin-top: 8px;
+  text-underline-offset: 3px;
+}
+.mg-stat-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  padding: 8px 0 22px;
+  border-bottom: 1.5px solid var(--line);
+  margin: 0 0 28px;
+}
+.mg-stat-line p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+.mg-stat-line strong {
+  color: var(--ink);
+  font: 700 15px var(--mono);
+  margin-right: 5px;
+}
+.mg-paper {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-card);
+}
+.mg-report-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 22px;
+}
+.mg-report-grid > section {
+  padding: 24px;
+  min-width: 0;
+}
+.mg-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.mg-section-heading h2,
+.mg-spaced-heading {
+  font: 700 23px/1.2 var(--display);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.mg-section-heading > span {
+  font: 400 11px var(--mono);
+  color: var(--muted);
+}
+.mg-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: 14px;
+  overflow: visible;
+}
+.mg-chart text {
+  font: 12px var(--sans);
+  fill: var(--muted);
+}
+.mg-trend summary,
+.mg-settings summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 12px 0;
+}
+.mg-channel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin: 28px 0 0;
+}
+.mg-channel-list dt {
+  font-size: 14px;
+  font-weight: 600;
+}
+.mg-channel-list small,
+.mg-ranking small {
+  display: block;
+  color: var(--muted);
+  font: 400 12px var(--sans);
+  margin-top: 6px;
+}
+.mg-ranking {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.mg-ranking li {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.mg-ranking li:last-child {
+  border: 0;
+  padding-bottom: 0;
+}
+.mg-ranking strong {
+  font: 700 16px var(--mono);
+}
+.mg-action-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mg-action-list li {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+}
+.mg-action-list li:last-child {
+  border: 0;
+  padding-bottom: 0;
+}
+.mg-action-list strong {
+  font-size: 14px;
+}
+.mg-action-list span {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.mg-action-list a {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-ink);
+  text-underline-offset: 4px;
+  min-height: 30px;
+}
+.mg-toolbar {
+  align-items: center;
+  margin: 22px 0;
+  gap: 22px;
+}
+.mg-toolbar > div:first-child {
+  flex: 1;
+  min-width: 210px;
+}
+.mg-toolbar p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 48ch;
+  margin: 0;
+}
+.mg-actions {
+  align-items: center;
+  justify-content: flex-end;
+}
+.mg-search {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-width: 330px;
+  font-size: 12px;
+}
+.mg-editor {
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-card);
+  padding: 28px;
+  margin: 26px 0;
+  scroll-margin-top: 24px;
+}
+.mg-editor h2:focus {
+  outline: none;
+}
+.mg-form fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.mg-form fieldset:disabled {
+  opacity: 0.7;
+}
+.mg-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+.mg-form > fieldset > .mg-field {
+  margin: 20px 0;
+  max-width: 650px;
+}
+.mg-form-actions {
+  justify-content: flex-start;
+  padding-top: 24px;
+  margin-top: 24px;
+  border-top: 1.5px solid var(--line);
+}
+.mg-line {
+  display: grid;
+  gap: 15px;
+  align-items: start;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--line);
+}
+.mg-lines {
+  margin: 22px 0;
+}
+.mg-lines > .secondary-button {
+  margin-top: 20px;
+}
+.mg-ingredient-line {
+  grid-template-columns: 1.5fr 1fr auto;
+}
+.mg-purchase-line {
+  grid-template-columns: 1.5fr 0.7fr 0.8fr 1fr 1fr auto;
+}
+.mg-sale-line {
+  grid-template-columns: 1.5fr 0.6fr 1fr auto;
+}
+.mg-sale-line > .mg-sale-addons {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+}
+.mg-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.mg-checkbox input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--ink);
+  flex-shrink: 0;
+}
+.mg-recoveries {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 24px 0;
+}
+.mg-table-wrap {
+  position: relative;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-color: var(--line-strong) var(--paper);
+  scrollbar-width: thin;
+}
+.mg-table-wrap table {
+  width: 100%;
+  min-width: 650px;
+  border-collapse: collapse;
+  text-align: left;
+}
+.mg-table-wrap th,
+.mg-table-wrap td {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.mg-table-wrap thead th {
+  color: var(--muted);
+  font: 400 11px var(--mono);
+  background: var(--paper);
+  padding: 14px 20px;
+  white-space: nowrap;
+}
+.mg-table-wrap tbody th {
+  font-weight: 600;
+  min-width: 180px;
+  max-width: 380px;
+  overflow-wrap: anywhere;
+}
+.mg-table-wrap td {
+  font-variant-numeric: tabular-nums;
+}
+.mg-table-wrap td small,
+.mg-table-wrap th small {
+  display: block;
+  font: 400 12px/1.6 var(--sans);
+  margin-top: 6px;
+  color: var(--muted);
+}
+.mg-table-wrap td .mg-stock-alert,
+.mg-table-wrap th .mg-stock-alert {
+  color: var(--accent-ink);
+}
+.mg-table-wrap tr:last-child th,
+.mg-table-wrap tr:last-child td {
+  border-bottom: 0;
+}
+.mg-row-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: start;
+}
+.mg-negative {
+  color: var(--danger);
+}
+.mg-correction {
+  display: block;
+}
+.mg-empty {
+  padding: 40px 0;
+  border-block: 1.5px solid var(--line);
+  margin: 24px 0;
+}
+.mg-empty h2 {
+  font: 700 clamp(23px, 3vw, 31px)/1.15 var(--display);
+  letter-spacing: -0.025em;
+  max-width: 28ch;
+  margin: 0 0 14px;
+}
+.mg-empty p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--muted);
+  max-width: 65ch;
+}
+.mg-empty .secondary-button {
+  margin-top: 12px;
+}
+.mg-muted {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 12px 0;
+}
+.mg-movement-section,
+.mg-spaced-heading {
+  margin-top: 42px;
+  margin-bottom: 20px;
+}
+.mg-export-form {
+  justify-content: flex-start;
+  margin-bottom: 20px;
+}
+.mg-success {
+  background: var(--surface);
+  border: 1.5px solid var(--open-text);
+  border-radius: var(--radius);
+  padding: 16px;
+  color: var(--open-text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.mg-settings {
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1.5px solid var(--line-strong);
+}
+.mg-workspace > .secondary-button,
+.mg-movement-section > .secondary-button {
+  margin-top: 16px;
+}
+.mg-workspace .text-button {
+  min-height: 44px;
+}
+.mg-workspace ::selection,
+.mg-report-grid ::selection {
+  background: var(--accent);
+  color: var(--ink);
+}
+@media (max-width: 1050px) {
+  .mg-purchase-line {
+    grid-template-columns: 1.5fr 1fr 1fr;
+  }
+  .mg-period {
+    align-items: start;
+  }
+  .mg-main-result {
+    padding: 26px;
+  }
+  .mg-equation {
+    padding: 24px;
+  }
+}
+@media (max-width: 700px) {
+  .mg-heading {
+    align-items: start;
+    flex-direction: column;
+    margin-top: 28px;
+  }
+  .mg-nav {
+    gap: 4px 18px;
+  }
+  .mg-period {
+    align-items: stretch;
+  }
+  .mg-date-form {
+    gap: 12px;
+    width: 100%;
+  }
+  .mg-date-form > label {
+    flex: 1;
+    min-width: 120px;
+  }
+  .mg-date-form > button {
+    width: 100%;
+  }
+  .mg-scoreboard,
+  .mg-report-grid,
+  .mg-form-grid,
+  .mg-recoveries {
+    grid-template-columns: 1fr;
+  }
+  .mg-result-amount {
+    font-size: 34px;
+  }
+  .mg-main-result {
+    padding: 26px 22px;
+  }
+  .mg-equation {
+    padding: 24px 22px;
+  }
+  .mg-equation dd {
+    font-size: 14px;
+  }
+  .mg-stat-line {
+    gap: 16px;
+  }
+  .mg-stat-line > p {
+    flex-basis: 45%;
+  }
+  .mg-report-grid > section {
+    padding: 20px;
+  }
+  .mg-toolbar {
+    align-items: stretch;
+  }
+  .mg-toolbar > div:first-child,
+  .mg-search {
+    max-width: none;
+    width: 100%;
+  }
+  .mg-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+  .mg-actions > .primary-button {
+    flex: 1;
+  }
+  .mg-editor {
+    padding: 20px 16px;
+  }
+  .mg-ingredient-line,
+  .mg-purchase-line,
+  .mg-sale-line {
+    grid-template-columns: 1fr;
+  }
+  .mg-line > .text-button {
+    justify-self: start;
+  }
+  .mg-form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .mg-export-form {
+    align-items: stretch;
+  }
+  .mg-export-form > label {
+    flex: 1;
+    min-width: 120px;
+  }
+  .mg-export-form > button {
+    width: 100%;
+  }
+  .mg-section-heading h2 {
+    font-size: 21px;
+  }
+}

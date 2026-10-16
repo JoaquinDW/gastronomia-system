@@ -25,8 +25,8 @@ export default async function OrdersPage({
           <p className="eyebrow">DE LA TIENDA A TU MOSTRADOR</p>
           <h1 className="panel-title">Pedidos.</h1>
           <p>
-            Revisá los pendientes y confirmá con el cliente. Aceptar todavía no
-            genera comandas ni descuenta stock.
+            Revisá los pendientes y confirmá con el cliente. Aceptar registra la
+            venta y descuenta los insumos que tengan receta configurada.
           </p>
         </div>
       </div>

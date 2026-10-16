@@ -1,0 +1,367 @@
+import Link from "next/link";
+import type { Report, StockItem } from "@/lib/management";
+import { channels } from "@/lib/management";
+import { fixed, money, shiftDate } from "@/lib/management-math";
+
+function change(current: string, previous: string) {
+  const a = BigInt(current),
+    b = BigInt(previous);
+  if (b === 0n) return a === 0n ? "Sin cambios" : "Sin base de comparación";
+  const percent = ((a - b) * 1000n) / (b < 0n ? -b : b);
+  return `${percent > 0n ? "+" : ""}${Number(percent) / 10}% vs. período anterior`;
+}
+function dateLabel(date: string) {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T12:00:00Z`));
+}
+
+export function ManagementReport({
+  report,
+  businessId,
+  today,
+  items,
+  cutoffHour,
+}: {
+  report: Report;
+  businessId: string;
+  today: string;
+  items: StockItem[];
+  cutoffHour: number;
+}) {
+  const root = `/panel/negocios/${businessId}/gestion`,
+    api = `/api/businesses/${businessId}/management`;
+  const { totals: t } = report;
+  const low = items.filter((i) => fixed(i.quantity) <= fixed(i.minimum));
+  const unknown = items.filter(
+    (i) => i.unitCost === null && fixed(i.quantity) !== 0n,
+  );
+  const points = report.days;
+  const max = points.reduce((m, d) => {
+    const n = BigInt(d.revenue);
+    return n > m ? n : m;
+  }, 1n);
+  const min = points.reduce((m, d) => {
+    const n = BigInt(d.revenue);
+    return n < m ? n : m;
+  }, 0n);
+  const y = (n: string) =>
+    156 - Number(((BigInt(n) - min) * 128n) / (max - min));
+  const x = (i: number) => 20 + (i * 660) / Math.max(points.length - 1, 1);
+  const path = points
+    .map((d, i) => `${i ? "L" : "M"}${x(i)},${y(d.revenue)}`)
+    .join(" ");
+  return (
+    <>
+      <section className="mg-period" aria-label="Período de resultados">
+        <div className="mg-period-links">
+          {[
+            ["Hoy", today],
+            ["7 días", shiftDate(today, -6)],
+            ["Este mes", `${today.slice(0, 7)}-01`],
+          ].map(([label, from]) => (
+            <Link
+              key={label}
+              href={`${root}?from=${from}&to=${today}`}
+              aria-current={
+                report.from === from && report.to === today ? "page" : undefined
+              }
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+        <form className="mg-date-form" action={root}>
+          <label>
+            Desde
+            <input
+              type="date"
+              name="from"
+              required
+              defaultValue={report.from}
+            />
+          </label>
+          <label>
+            Hasta
+            <input type="date" name="to" required defaultValue={report.to} />
+          </label>
+          <button className="secondary-button" type="submit">
+            Ver período
+          </button>
+        </form>
+      </section>
+      <div className="mg-report-intro">
+        <p>
+          {dateLabel(report.from)} al {dateLabel(report.to)} · Jornada hasta las{" "}
+          {cutoffHour.toString().padStart(2, "0")}:00
+        </p>
+        <a
+          className="text-button"
+          href={`${api}?view=export-results&from=${report.from}&to=${report.to}`}
+        >
+          Exportar resultados CSV
+        </a>
+      </div>
+      <section className="mg-scoreboard" aria-label="Los números de tu negocio">
+        <div className="mg-main-result">
+          <h2>Lo que quedó</h2>
+          <p className="mg-result-amount">
+            {t.result === null ? "Faltan costos" : money(t.result)}
+          </p>
+          <p>Resultado operativo estimado</p>
+          <span>
+            {t.result === null
+              ? "Completá los costos para calcularlo."
+              : report.previous.result === null
+                ? "El período anterior tiene costos pendientes"
+                : change(t.result, report.previous.result)}
+          </span>
+        </div>
+        <dl className="mg-equation">
+          <div>
+            <dt>Ventas netas</dt>
+            <dd>{money(t.revenue)}</dd>
+          </div>
+          <div>
+            <dt>
+              − Costo de lo vendido{" "}
+              {t.costsIncomplete ? (
+                <span className="mg-inline-warning">parcial</span>
+              ) : null}
+            </dt>
+            <dd>{money(t.cost)}</dd>
+          </div>
+          <div className="mg-subtotal">
+            <dt>Margen bruto estimado</dt>
+            <dd>{money(t.grossMargin)}</dd>
+          </div>
+          <div>
+            <dt>− Gastos registrados</dt>
+            <dd>{money(t.expenses)}</dd>
+          </div>
+          <div>
+            <dt>
+              − Mermas{" "}
+              {t.wasteIncomplete ? (
+                <span className="mg-inline-warning">parcial</span>
+              ) : null}
+            </dt>
+            <dd>{money(t.waste)}</dd>
+          </div>
+        </dl>
+      </section>
+      <p className="mg-disclosure">
+        Son ventas confirmadas, no cobros acreditados. El resultado contempla
+        únicamente los costos y gastos registrados. Incluye {money(t.delivery)}{" "}
+        por envíos; cargá el costo del reparto en Gastos.
+      </p>
+      {t.result === null || report.legacyCount ? (
+        <section className="mg-notice" aria-label="Datos por completar">
+          <h2>Antes de sacar conclusiones</h2>
+          <p>
+            {t.completeCount} de {t.saleCount} ventas tienen todos sus costos.
+            Los importes conocidos se muestran como parciales; también puede
+            faltar la valoración de alguna merma.
+          </p>
+          {report.legacyCount ? (
+            <p>
+              {report.legacyCount} pedidos históricos están incluidos en ventas,
+              sin inventarles costos ni movimientos de stock.
+            </p>
+          ) : null}
+          <Link href={`${root}/recetas`}>Revisar recetas y costos</Link>
+        </section>
+      ) : null}
+      <div className="mg-stat-line">
+        <p>
+          <strong>{t.saleCount}</strong> ventas registradas
+        </p>
+        <p>
+          <strong>{money(t.ticket)}</strong> ticket promedio neto
+        </p>
+        <p>
+          <strong>{t.cancelledCount}</strong> anulaciones
+        </p>
+        <p>{change(t.revenue, report.previous.revenue)}</p>
+      </div>
+      {!t.saleCount && !t.cancelledCount && t.expenses === "0" ? (
+        <section className="mg-empty">
+          <h2>Los números empiezan con tu primera venta.</h2>
+          <p>
+            Los pedidos que aceptes se suman solos. También podés cargar ventas
+            de mostrador o WhatsApp.
+          </p>
+          <Link className="secondary-button" href={`${root}/ventas`}>
+            Registrar una venta
+          </Link>
+        </section>
+      ) : null}
+      <div className="mg-report-grid">
+        <section className="mg-paper mg-trend">
+          <div className="mg-section-heading">
+            <h2>Cómo vienen las ventas</h2>
+            <span>Por jornada</span>
+          </div>
+          <svg
+            className="mg-chart"
+            viewBox="0 0 700 190"
+            role="img"
+            aria-label={`Evolución de ventas entre ${report.from} y ${report.to}. El detalle está en la tabla.`}
+          >
+            <line
+              x1="20"
+              x2="680"
+              y1={y("0")}
+              y2={y("0")}
+              stroke="var(--line-strong)"
+              strokeWidth="1"
+            />
+            <path
+              d={path}
+              fill="none"
+              stroke="var(--ink)"
+              strokeWidth="3"
+              strokeLinejoin="round"
+            />
+            {points.length <= 31
+              ? points.map((d, i) => (
+                  <circle
+                    key={d.date}
+                    cx={x(i)}
+                    cy={y(d.revenue)}
+                    r="3"
+                    fill="var(--accent)"
+                    stroke="var(--ink)"
+                  >
+                    <title>{`${dateLabel(d.date)}: ${money(d.revenue)}`}</title>
+                  </circle>
+                ))
+              : null}
+            <text x="20" y="184">
+              {dateLabel(report.from)}
+            </text>
+            <text x="680" y="184" textAnchor="end">
+              {dateLabel(report.to)}
+            </text>
+          </svg>
+          <details>
+            <summary>Ver los importes por día</summary>
+            <div className="mg-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Jornada</th>
+                    <th>Ventas</th>
+                    <th>Costos conocidos</th>
+                    <th>Gastos</th>
+                    <th>Merma</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {points.map((d) => (
+                    <tr key={d.date}>
+                      <th>{dateLabel(d.date)}</th>
+                      <td>{money(d.revenue)}</td>
+                      <td>
+                        {money(d.cost)}
+                        {!d.complete ? " · parcial" : ""}
+                      </td>
+                      <td>{money(d.expenses)}</td>
+                      <td>{money(d.waste)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </section>
+        <section className="mg-paper">
+          <div className="mg-section-heading">
+            <h2>Por dónde vendés</h2>
+          </div>
+          {report.byChannel.length ? (
+            <dl className="mg-channel-list">
+              {report.byChannel.map((c) => (
+                <div key={c.channel}>
+                  <dt>
+                    {channels[c.channel as keyof typeof channels]}
+                    <small>{c.count} ventas netas</small>
+                  </dt>
+                  <dd>{money(c.revenue)}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <p className="mg-muted">Todavía no hay ventas en este período.</p>
+          )}
+        </section>
+        <section className="mg-paper">
+          <div className="mg-section-heading">
+            <h2>Lo más vendido</h2>
+            <span>Unidades netas</span>
+          </div>
+          {report.products.length ? (
+            <ol className="mg-ranking">
+              {report.products.map((p) => (
+                <li key={p.name}>
+                  <span>
+                    {p.name}
+                    <small>{money(p.revenue)}</small>
+                  </span>
+                  <strong>{p.quantity}</strong>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="mg-muted">Tus productos van a aparecer acá.</p>
+          )}
+        </section>
+        <section className="mg-paper">
+          <div className="mg-section-heading">
+            <h2>Para ocuparse hoy</h2>
+          </div>
+          <ul className="mg-action-list">
+            {low.length ? (
+              <li>
+                <strong>{low.length} insumos para reponer</strong>
+                <span>
+                  {low
+                    .slice(0, 3)
+                    .map((i) => i.name)
+                    .join(", ")}
+                  {low.length > 3 ? "…" : ""}
+                </span>
+                <Link href={`${root}/inventario`}>Revisar inventario</Link>
+              </li>
+            ) : (
+              <li>
+                <strong>
+                  {items.length
+                    ? "Stock por encima del mínimo"
+                    : "Cargá tus primeras existencias"}
+                </strong>
+                <Link href={`${root}/inventario`}>Ir al inventario</Link>
+              </li>
+            )}
+            {unknown.length ? (
+              <li>
+                <strong>{unknown.length} insumos sin valorizar</strong>
+                <span>Ingresá su valor total desde el conteo de stock.</span>
+                <Link href={`${root}/inventario`}>Completar costos</Link>
+              </li>
+            ) : null}
+            <li>
+              <strong>Que no quede ningún gasto afuera</strong>
+              <span>
+                Alquiler, servicios, sueldos y reparto también cuentan.
+              </span>
+              <Link href={`${root}/gastos`}>Registrar un gasto</Link>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </>
+  );
+}

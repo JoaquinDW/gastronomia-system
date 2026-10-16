@@ -4,7 +4,7 @@ export function BusinessNav({
   active,
 }: {
   id: string;
-  active: "home" | "menu" | "store" | "orders";
+  active: "home" | "menu" | "store" | "orders" | "management";
 }) {
   return (
     <nav className="business-nav" aria-label="Gestión del negocio">
@@ -13,6 +13,7 @@ export function BusinessNav({
         ["menu", "Carta", "/carta"],
         ["store", "Tienda", "/tienda"],
         ["orders", "Pedidos", "/pedidos"],
+        ["management", "Gestión", "/gestion"],
       ].map(([key, label, path]) => (
         <Link
           key={key}

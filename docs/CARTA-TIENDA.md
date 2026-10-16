@@ -9,7 +9,7 @@ Entrega del 16 de octubre de 2026. Continúa el alta autogestionada de negocios.
 3. En **Tienda**, configurar presentación, aclaraciones, horarios, retiro/delivery y medios de pago. Se admiten varios turnos por día y cierres después de medianoche en horario de Argentina. La importación puede sugerir horarios, pero aplicarlos requiere una acción del usuario.
 4. Revisar la vista previa privada. **Guardar y activar tienda** publica `/t/:slug` únicamente después de guardar una configuración válida y tener al menos un producto disponible. Pausar la tienda retira el acceso público. Una tienda activa no permite guardar horarios vacíos ni eliminar todas las modalidades de entrega.
 5. El cliente arma su carrito, elige retiro o zona de delivery y completa sus datos. El servidor guarda el pedido pendiente y devuelve un enlace de WhatsApp con el resumen. El cliente todavía debe abrir ese enlace y enviar el mensaje.
-6. En **Pedidos**, el negocio puede aceptar o rechazar. El pago continúa pendiente de verificación manual y la aceptación todavía no genera comandas ni reserva stock.
+6. En **Pedidos**, el negocio puede aceptar o rechazar. El pago continúa pendiente de verificación manual. Con [Gestión](./GESTION.md), aceptar registra la venta y consume los insumos configurados; todavía no genera comandas ni reservas separadas de cocina.
 
 El delivery tiene tarifa y compra mínima por zona seleccionada por el cliente. El negocio verifica la dirección antes de aceptar; no hay cálculo de distancia, geocodificación ni asignación de repartidor. Si se deshabilita retiro, la dirección del local no se incluye en la respuesta pública.
 

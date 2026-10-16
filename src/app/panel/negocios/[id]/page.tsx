@@ -29,6 +29,21 @@ export default async function BusinessPage({
         ← Mis negocios
       </Link>
       <BusinessNav id={id} active="home" />
+      {["owner", "manager"].includes(business.role) ? (
+        <section className="business-data" style={{ marginBottom: 24 }}>
+          <h2>Los números de tu negocio</h2>
+          <p>
+            Ventas, costos, stock y gastos, conectados para saber cómo te está
+            yendo.
+          </p>
+          <Link
+            className="secondary-button"
+            href={`/panel/negocios/${id}/gestion`}
+          >
+            Abrir Gestión
+          </Link>
+        </section>
+      ) : null}
       <div className="business-welcome">
         <span className="welcome-check" aria-hidden="true">
           ✓

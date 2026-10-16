@@ -24,7 +24,7 @@ export async function POST(r: NextRequest, { params }: Context) {
   try {
     sameOrigin(r);
     const { id } = await params;
-    await authorizeBusiness(id, true);
+    const { user } = await authorizeBusiness(id, true);
     const body = z
       .object({
         orderId: z.uuid(),
@@ -34,7 +34,13 @@ export async function POST(r: NextRequest, { params }: Context) {
       .strict()
       .parse(await readJson(r));
     return json({
-      order: await decideOrder(id, body.orderId, body.version, body.status),
+      order: await decideOrder(
+        id,
+        body.orderId,
+        body.version,
+        body.status,
+        user.id,
+      ),
     });
   } catch (e) {
     return apiError(e);

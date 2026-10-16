@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { getPool } from "./postgres";
-import { HttpError } from "./http";
+import { HttpError } from "./errors";
 import { lockBusiness } from "./menu";
 import {
   isStoreOpen,
@@ -10,8 +10,9 @@ import {
   type StoreSettings,
 } from "@/lib/menu";
 import type { CheckoutInput, Order, OrderItem } from "@/lib/checkout";
+import { recordStoreSale } from "./management";
 
-const fields = `id,number,status,customer_name AS "customerName",customer_phone AS "customerPhone",fulfillment,address,zone_name AS "zoneName",payment_method AS "paymentMethod",note,items,subtotal_cents AS "subtotalCents",delivery_cents AS "deliveryCents",total_cents AS "totalCents",version,created_at AS "createdAt"`;
+const fields = `id,number,status,customer_name AS "customerName",customer_phone AS "customerPhone",fulfillment,address,zone_name AS "zoneName",payment_method AS "paymentMethod",note,items,subtotal_cents AS "subtotalCents",delivery_cents AS "deliveryCents",total_cents AS "totalCents",version,created_at AS "createdAt",accepted_at AS "acceptedAt"`;
 function orderResult(order: Order, whatsapp: string, businessName: string) {
   const message = [
     `Hola ${businessName}, quiero confirmar el pedido #${order.number}.`,
@@ -119,6 +120,9 @@ export async function checkout(slug: string, input: CheckoutInput) {
           "Cambió un precio. Actualizá la carta y revisá el total antes de confirmar.",
         );
       items.push({
+        productId: line.productId,
+        variantId: line.variantId,
+        addOnIds: line.addOnIds,
         name: product.name,
         variant: variant.name,
         addOns: addOns.map((a) => a!.name),
@@ -185,7 +189,7 @@ export async function checkout(slug: string, input: CheckoutInput) {
 }
 export async function listOrders(businessId: string): Promise<Order[]> {
   const { rows } = await getPool().query<Order>(
-    `SELECT ${fields} FROM orders WHERE business_id=$1 ORDER BY created_at DESC LIMIT 100`,
+    `SELECT ${fields},(SELECT s.id FROM management_sales s WHERE s.business_id=orders.business_id AND s.order_id=orders.id) AS "saleId" FROM orders WHERE business_id=$1 ORDER BY created_at DESC LIMIT 100`,
     [businessId],
   );
   return rows;
@@ -195,15 +199,31 @@ export async function decideOrder(
   id: string,
   version: number,
   status: "accepted" | "rejected",
+  actor = "system",
 ) {
-  const { rows } = await getPool().query<Order>(
-    `UPDATE orders SET status=$4,version=version+1 WHERE business_id=$1 AND id=$2 AND version=$3 AND status='pending_confirmation' RETURNING ${fields}`,
-    [businessId, id, version, status],
-  );
-  if (!rows[0])
-    throw new HttpError(
-      409,
-      "El pedido ya fue atendido en otra pantalla. Actualizá la lista.",
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    await lockBusiness(client, businessId);
+    const { rows } = await client.query<Order>(
+      `UPDATE orders SET status=$4::varchar,version=version+1,accepted_at=CASE WHEN $4::varchar='accepted' THEN now() ELSE accepted_at END WHERE business_id=$1 AND id=$2 AND version=$3 AND status='pending_confirmation' RETURNING ${fields}`,
+      [businessId, id, version, status],
     );
-  return rows[0];
+    if (!rows[0])
+      throw new HttpError(
+        409,
+        "El pedido ya fue atendido en otra pantalla. Actualizá la lista.",
+      );
+    const management =
+      status === "accepted"
+        ? await recordStoreSale(client, businessId, actor, rows[0])
+        : null;
+    await client.query("COMMIT");
+    return { ...rows[0], management };
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
 }

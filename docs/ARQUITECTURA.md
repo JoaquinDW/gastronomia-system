@@ -2,7 +2,7 @@
 
 ## Estado actual
 
-La app Next.js incluye registro/login/logout con Neon Auth, alta de negocios, carta manual/importada con OpenAI, configuración y publicación de tienda, carrito y pedidos pendientes con resumen de WhatsApp y aceptación en el panel. Drizzle versiona `businesses`, `locations`, `memberships`, `menu_products`, `store_settings`, `menu_imports` y `orders`. Cocina, caja, stock y otras entidades de este diseño siguen pendientes. Ver [Alta](./ALTA-NEGOCIOS.md) y [Carta y tienda](./CARTA-TIENDA.md).
+La app Next.js incluye registro/login/logout con Neon Auth, alta de negocios, carta manual/importada con OpenAI, tienda, pedidos y Gestión. Drizzle también versiona inventario, movimientos, recetas, operaciones, ventas, proveedores, gastos y jornada. Gestión consume stock al aceptar ventas y conserva costos históricos; todavía no hay reservas ligadas a cocina ni caja completa. Ver [Alta](./ALTA-NEGOCIOS.md), [Carta y tienda](./CARTA-TIENDA.md) y [Gestión](./GESTION.md). Los modelos y transiciones propuestos más abajo representan el objetivo completo de V1, no todas las reglas actuales.
 
 Neon está vinculado a la organización `org-proud-voice-23148089`, proyecto `soft-tooth-38969404`, rama `production` (`br-empty-resonance-b5ar105u`). `neon.ts` y `neon deploy` gestionan Postgres y Neon Auth. Neon no publica el frontend: el hosting de la app sigue pendiente.
 

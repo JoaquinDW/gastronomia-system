@@ -1,6 +1,6 @@
 # Sistema gastronómico — propuesta de V1
 
-Estado al 16 de octubre de 2026: alta de cuentas/negocios, carta, configuración y publicación de tienda, checkout por WhatsApp y bandeja de pedidos implementados. Ver [Alta](./ALTA-NEGOCIOS.md) y [Carta y tienda](./CARTA-TIENDA.md) para el estado real y sus límites; este documento conserva el alcance objetivo de V1, incluida cocina, caja y stock aún pendientes.
+Estado al 16 de octubre de 2026: alta de cuentas/negocios, carta, configuración y publicación de tienda, checkout por WhatsApp, pedidos y módulo de Gestión implementados. Ver [Alta](./ALTA-NEGOCIOS.md), [Carta y tienda](./CARTA-TIENDA.md) y [Gestión](./GESTION.md) para el estado real y sus límites. Este documento conserva el alcance objetivo de V1; cocina, caja completa y reservas de stock por etapa siguen pendientes. En la entrega actual, el consumo ocurre al aceptar una venta.
 
 ## 1. Qué vamos a construir
 

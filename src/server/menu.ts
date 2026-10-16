@@ -8,7 +8,7 @@ import {
   type StoreSettings,
   type StoreSettingsInput,
 } from "@/lib/menu";
-import { HttpError } from "./http";
+import { HttpError } from "./errors";
 import type { PoolClient } from "pg";
 
 const productFields = `id, name, description, category, kind, variants, add_ons AS "addOns", COALESCE(image_url,'') AS "imageUrl", is_available AS "isAvailable", sort_order AS "sortOrder", version`;
