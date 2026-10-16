@@ -10,10 +10,8 @@ try {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(base, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: "Comprobar conexión" }).click();
   await page
-    .getByRole("status")
-    .filter({ hasText: "Conexión verificada con Postgres." })
+    .getByRole("heading", { name: "Tu tienda, lista en una tarde." })
     .waitFor();
   assert.equal(
     await page.evaluate(
@@ -26,47 +24,18 @@ try {
     fullPage: true,
     animations: "disabled",
   });
-  console.log(
-    "PASS: desktop interaction verifies the real Neon connection; no horizontal overflow",
-  );
-
-  await page.route("**/api/health/db", (route) =>
-    route.fulfill({
-      status: 503,
-      contentType: "application/json",
-      body: JSON.stringify({ status: "unavailable", service: "postgres" }),
-    }),
-  );
-  await page.getByRole("button", { name: "Comprobar conexión" }).click();
-  await page
-    .getByRole("status")
-    .filter({ hasText: "No pudimos conectar." })
-    .waitFor();
-  await page.unroute("**/api/health/db");
-  await page.getByRole("button", { name: "Comprobar conexión" }).click();
-  await page
-    .getByRole("status")
-    .filter({ hasText: "Conexión verificada con Postgres." })
-    .waitFor();
-  console.log(
-    "PASS: simulated unavailable response displays an error; retry recovers with a real query",
-  );
+  console.log("PASS: desktop landing renders; no horizontal overflow");
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(base, { waitUntil: "networkidle" });
-  await page.getByRole("link", { name: "Conocé el alcance de la V1" }).click();
-  assert.match(page.url(), /#alcance$/);
+  await page.getByRole("link", { name: "Mirá cómo funciona" }).click();
+  assert.match(page.url(), /#como-funciona$/);
   assert.equal(
     await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth,
     ),
     false,
   );
-  await page.getByRole("button", { name: "Comprobar conexión" }).click();
-  await page
-    .getByRole("status")
-    .filter({ hasText: "Conexión verificada con Postgres." })
-    .waitFor();
   await page.screenshot({
     path: "/tmp/gastronomia-mobile.png",
     fullPage: true,
@@ -74,7 +43,7 @@ try {
   });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: mobile layout, scope navigation and database interaction; no JavaScript errors",
+    "PASS: mobile layout and in-page navigation; no JavaScript errors",
   );
 } finally {
   await browser.close();
