@@ -24,7 +24,7 @@ npm ci
 npm run dev
 ```
 
-App: http://localhost:3000. Desde “Crear mi tienda” se crea una cuenta y luego el negocio. En `/panel/negocios/:id` aparecen Carta, Tienda, Pedidos y Gestión. La tienda pública usa `/t/:slug`.
+App: http://localhost:3000. Desde “Crear mi tienda” se crea una cuenta y luego el negocio. En `/panel/negocios/:id` aparecen Carta, Tienda, Pedidos y Gestión. La tienda pública usa `/t/:slug`; con `NEXT_PUBLIC_ROOT_DOMAIN` pasa a `slug.<dominio>` (ver Dominios).
 
 El alta guarda nombre, rubro, WhatsApp con código de país, ciudad y dirección opcional. Crea negocio, sucursal “Casa central” y membresía de propietario en una sola transacción. El identificador es único; los reintentos de la misma solicitud no duplican el negocio. El panel muestra solo los negocios asociados a la cuenta autenticada. Cada propietario configura su carta, horarios y entregas antes de activar la tienda explícitamente.
 
@@ -55,7 +55,20 @@ Si la CLI necesita autenticación, ejecutar `neon login` y completar el inicio d
 
 `neon deploy` también descarga `NEON_AUTH_BASE_URL` y `NEON_AUTH_JWKS_URL`. Agregar `NEON_AUTH_COOKIE_SECRET` a `.env.local`: un secreto aleatorio privado de al menos 32 caracteres, distinto por entorno. En este equipo ya está generado. Usar un gestor de secretos en el hosting; no copiarlo al repositorio.
 
-El origen de la aplicación debe estar permitido en Neon Auth. Para el desarrollo local hay que tener permitido `http://localhost:3000`. Al desplegar, agregar el dominio HTTPS del hosting en la rama correspondiente.
+## Dominios
+
+Con `NEXT_PUBLIC_ROOT_DOMAIN=pedipue.com`, `src/proxy.ts` rutea por host:
+
+- `pedipue.com` (y `www.`): landing. `/ingresar`, `/registro`, `/panel` y `/alta` redirigen a `app.`.
+- `app.pedipue.com`: login, registro y panel. `/` lleva a `/panel`. La vista previa de la tienda (`/t/:slug?preview=1`) queda acá porque necesita la sesión.
+- `<slug>.pedipue.com`: la tienda pública (se reescribe internamente a `/t/:slug`). `/t/:slug` en otro host del dominio redirige al subdominio.
+- Los slugs reservados (`app`, `www`, `api`, `admin`, etc., en `src/lib/hosts.ts`) no se pueden usar como tienda y sus subdominios redirigen a la landing.
+
+Hace falta un registro DNS comodín `*.pedipue.com` y su certificado; en Vercel, el dominio tiene que usar sus nameservers. Sin la variable, o en hosts que no son del dominio (previews), todo funciona en un solo host como antes.
+
+En local: `NEXT_PUBLIC_ROOT_DOMAIN=localhost:3000` y abrir `http://localhost:3000`, `http://app.localhost:3000` y `http://<slug>.localhost:3000`. Neon Auth tiene que permitir `http://app.localhost:3000`.
+
+El origen de la aplicación debe estar permitido en Neon Auth. Con dominios, el origen del login es `https://app.pedipue.com`. Para el desarrollo local hay que tener permitido `http://localhost:3000`. Al desplegar, agregar el dominio HTTPS del hosting en la rama correspondiente.
 
 El build no consulta la base. `GET /api/health/db` sí la consulta en cada request y devuelve 200 si funciona o 503 si falla, sin credenciales ni errores internos y sin caché. Es un diagnóstico de conectividad, no una prueba de que existan módulos de negocio.
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { businessKinds } from "@/lib/business-input";
+import { storeUrl } from "@/lib/hosts";
 import { findBusiness } from "@/server/businesses";
 import { requireUser } from "@/server/auth";
 import { getProducts, getSettings } from "@/server/menu";
@@ -147,7 +148,7 @@ export default async function BusinessPage({
           </ol>
           <p className="form-footnote">
             {settings.isPublished ? (
-              <Link href={`/t/${business.slug}`} target="_blank">
+              <Link href={storeUrl(business.slug)} target="_blank">
                 Ver mi tienda pública ↗
               </Link>
             ) : (

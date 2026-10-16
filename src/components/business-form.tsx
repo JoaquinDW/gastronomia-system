@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { businessInput, businessKinds, slugify } from "@/lib/business-input";
+import { storeUrl } from "@/lib/hosts";
 
 export function BusinessForm({ email }: { email: string }) {
   const router = useRouter();
@@ -107,7 +108,7 @@ export function BusinessForm({ email }: { email: string }) {
             {hint("name")}
           </label>
           <label>
-            Identificador de tu negocio
+            Dirección de tu tienda
             <input
               name="slug"
               value={slug}
@@ -126,8 +127,11 @@ export function BusinessForm({ email }: { email: string }) {
             {hint("slug")}
           </label>
           <p id="slug-hint" className="field-hint">
-            Reservamos este identificador para tu futura tienda. Podés
-            personalizarlo.
+            Tu tienda va a estar en{" "}
+            <strong>
+              {storeUrl(slug || "tu-negocio").replace(/^https?:\/\//, "")}
+            </strong>
+            . Podés personalizarla.
           </p>
           <label>
             ¿Qué preparás?
