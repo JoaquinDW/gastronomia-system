@@ -31,6 +31,18 @@ export const addOnSchema = z
     priceCents: price,
   })
   .strict();
+// An uploaded photo, an external HTTPS link, or empty for no photo.
+const imageUrlSchema = z.union([
+  z.literal(""),
+  z.string().regex(uploadedImagePattern, "La imagen no es válida."),
+  z
+    .url()
+    .refine(
+      (url) => URL.canParse(url) && new URL(url).protocol === "https:",
+      "La imagen debe usar HTTPS.",
+    ),
+]);
+const focusSchema = z.number().int().min(0).max(100).default(50);
 export const productInput = z
   .object({
     name: z.string().trim().min(2).max(120),
@@ -39,22 +51,10 @@ export const productInput = z
     kind: z.enum(["product", "combo"]).default("product"),
     variants: z.array(variantSchema).min(1).max(20),
     addOns: z.array(addOnSchema).max(20).default([]),
-    imageUrl: z
-      .union([
-        z.literal(""),
-        z.string().regex(uploadedImagePattern, "La imagen no es válida."),
-        z
-          .url()
-          .refine(
-            (url) =>
-              URL.canParse(url) && new URL(url).protocol === "https:",
-            "La imagen debe usar HTTPS.",
-          ),
-      ])
-      .default(""),
+    imageUrl: imageUrlSchema.default(""),
     // Which part of the photo stays visible when cards crop it (CSS object-position, in %).
-    imageFocusX: z.number().int().min(0).max(100).default(50),
-    imageFocusY: z.number().int().min(0).max(100).default(50),
+    imageFocusX: focusSchema,
+    imageFocusY: focusSchema,
     isAvailable: z.boolean().default(true),
     sortOrder: z.number().int().min(0).max(9999).default(0),
   })
@@ -104,6 +104,9 @@ export const settingsInput = z
   .object({
     description: z.string().trim().max(600),
     menuNote: z.string().trim().max(2500),
+    coverImageUrl: imageUrlSchema.default(""),
+    coverFocusX: focusSchema,
+    coverFocusY: focusSchema,
     hours: z.array(hourSchema).max(21),
     pickupEnabled: z.boolean(),
     pickupInstructions: z.string().trim().max(500),
@@ -155,6 +158,9 @@ export type StoreSettings = StoreSettingsInput & {
 export const emptySettings: StoreSettings = {
   description: "",
   menuNote: "",
+  coverImageUrl: "",
+  coverFocusX: 50,
+  coverFocusY: 50,
   hours: [],
   pickupEnabled: true,
   pickupInstructions: "",

@@ -193,6 +193,9 @@ export function Storefront({
   } | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const requestKey = useRef<string | null>(null);
+  const cover = settings.coverImageUrl
+    ? productImage(settings.coverImageUrl)
+    : null;
   const cartStorage = `gastronomia-cart-v1:${business.slug}`;
   useEffect(() => {
     try {
@@ -344,7 +347,6 @@ export function Storefront({
       ) : null}
       <header className="shop-header">
         <a href="#menu" className="shop-brand">
-          <span aria-hidden="true">{business.name.slice(0, 1)}</span>
           {business.name}
         </a>
         <span className={`store-status ${open ? "active" : ""}`}>
@@ -353,13 +355,43 @@ export function Storefront({
         </span>
       </header>
       <main>
+        <section className={`shop-cover ${cover ? "has-photo" : ""}`}>
+          <div className="shop-cover-media">
+            {cover ? (
+              <img
+                className="shop-cover-photo"
+                src={cover.src}
+                srcSet={cover.srcSet}
+                sizes="(max-width: 1250px) 100vw, 1160px"
+                alt=""
+                fetchPriority="high"
+                referrerPolicy="no-referrer"
+                style={{
+                  objectPosition: `${settings.coverFocusX}% ${settings.coverFocusY}%`,
+                }}
+              />
+            ) : (
+              <div className="shop-cover-marquee" aria-hidden="true">
+                {[0, 1].map((n) => (
+                  <span key={n}>
+                    {Array.from({ length: 4 }, () => business.name).join(" ✳ ")}
+                    {" ✳ "}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="shop-cover-content">
+            <p className="eyebrow">HECHO ACÁ, PEDIDO DIRECTO</p>
+            <h1>{business.name}</h1>
+          </div>
+          <span className="shop-cover-logo" aria-hidden="true">
+            {business.name.trim().slice(0, 1)}
+          </span>
+        </section>
         <section className="shop-hero">
           <div>
-            <p className="eyebrow">HECHO ACÁ, PEDIDO DIRECTO</p>
-            <h1>
-              {business.name}
-              <span>¿Qué te tentó hoy?</span>
-            </h1>
+            <p className="shop-tagline">¿Qué te tentó hoy?</p>
             {settings.description ? <p>{settings.description}</p> : null}
             <div className="shop-meta">
               <span>{business.city}</span>

@@ -10,6 +10,7 @@ import {
   type Hours,
   type StoreSettings,
 } from "@/lib/menu";
+import { ProductPhotoField } from "./product-photo-field";
 export function StoreConfigurator({
   businessId,
   slug,
@@ -33,6 +34,7 @@ export function StoreConfigurator({
     })),
   );
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [copied, setCopied] = useState(false);
@@ -122,6 +124,20 @@ export function StoreConfigurator({
                 <span>01</span> Presentación
               </h2>
             </div>
+            <ProductPhotoField
+              kind="cover"
+              businessId={businessId}
+              value={s.coverImageUrl}
+              onChange={(coverImageUrl) =>
+                setS((prev) => ({ ...prev, coverImageUrl }))
+              }
+              focus={{ x: s.coverFocusX, y: s.coverFocusY }}
+              onFocusChange={({ x, y }) =>
+                setS((prev) => ({ ...prev, coverFocusX: x, coverFocusY: y }))
+              }
+              onBusyChange={setUploading}
+              disabled={busy}
+            />
             <label>
               Descripción de tu negocio
               <textarea
@@ -443,7 +459,11 @@ export function StoreConfigurator({
             </p>
           </section>
         </fieldset>
-        <button type="submit" className="primary-button" disabled={busy}>
+        <button
+          type="submit"
+          className="primary-button"
+          disabled={busy || uploading}
+        >
           {busy ? "Guardando…" : "Guardar configuración"}
         </button>
       </form>
@@ -481,7 +501,11 @@ export function StoreConfigurator({
         >
           Vista previa de la tienda ↗
         </Link>
-        <button className="primary-button" disabled={busy} onClick={publish}>
+        <button
+          className="primary-button"
+          disabled={busy || uploading}
+          onClick={publish}
+        >
           {busy
             ? "Actualizando…"
             : s.isPublished

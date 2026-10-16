@@ -25,7 +25,31 @@ async function shrink(file: File): Promise<Blob> {
   );
 }
 
+// Texts for each kind of photo. The cover is the wide banner on top of the store.
+const copy = {
+  product: {
+    label: "Foto del producto",
+    subject: "la foto del producto",
+    empty: "Subí una foto que dé hambre",
+    sizes: "(max-width: 600px) 100vw, 660px",
+    hintEmpty:
+      "Mejor horizontal, con buena luz y el plato centrado. En la tienda se muestra grande. Mínimo 600 px por lado.",
+    hintPhoto:
+      "Lo que ves en el recuadro es lo que se ve en la tienda. Arrastrá la foto para que el producto quede bien encuadrado.",
+  },
+  cover: {
+    label: "Portada",
+    subject: "la portada",
+    empty: "Subí una portada para tu tienda",
+    sizes: "(max-width: 600px) 100vw, 760px",
+    hintEmpty:
+      "Va arriba de todo, con el nombre del local encima. Usá una foto horizontal: el local, la plancha, tu plato estrella. Mínimo 600 px por lado.",
+    hintPhoto:
+      "Así se ve en la compu. En el celular se recorta un poco de los costados, así que dejá lo importante cerca del centro.",
+  },
+};
 export function ProductPhotoField({
+  kind = "product",
   businessId,
   value,
   onChange,
@@ -34,6 +58,7 @@ export function ProductPhotoField({
   onBusyChange,
   disabled,
 }: {
+  kind?: keyof typeof copy;
   businessId: string;
   value: string;
   onChange: (url: string) => void;
@@ -131,12 +156,13 @@ export function ProductPhotoField({
       if (input.current) input.current.value = "";
     }
   }
+  const text = copy[kind];
   const image = value ? productImage(value) : null;
   const locked = disabled || uploading;
   return (
-    <div className="photo-field">
+    <div className={`photo-field photo-field-${kind}`}>
       <div className="photo-field-label">
-        Foto del producto <span className="optional-label">opcional</span>
+        {text.label} <span className="optional-label">opcional</span>
       </div>
       <div
         className={`photo-drop ${image ? "has-photo" : ""} ${dragging ? "is-dragging" : ""}`}
@@ -156,8 +182,8 @@ export function ProductPhotoField({
           <img
             src={image.src}
             srcSet={image.srcSet}
-            sizes="(max-width: 600px) 100vw, 660px"
-            alt="Vista previa de la foto del producto. Arrastrala o usá las flechas para acomodarla."
+            sizes={text.sizes}
+            alt={`Vista previa de ${text.subject}. Arrastrala o usá las flechas para acomodarla.`}
             referrerPolicy="no-referrer"
             draggable={false}
             tabIndex={locked ? -1 : 0}
@@ -180,7 +206,7 @@ export function ProductPhotoField({
               <path d="M4 7h3l2-3h6l2 3h3v13H4z" />
               <circle cx="12" cy="13" r="4" />
             </svg>
-            <strong>Subí una foto que dé hambre</strong>
+            <strong>{text.empty}</strong>
             <span>Arrastrala acá o tocá para elegirla</span>
           </button>
         )}
@@ -201,7 +227,7 @@ export function ProductPhotoField({
         accept="image/jpeg,image/png,image/webp"
         className="sr-only"
         tabIndex={-1}
-        aria-label="Elegir foto del producto"
+        aria-label={`Elegir ${text.subject}`}
         onChange={(e) => upload(e.target.files?.[0])}
       />
       {image ? (
@@ -233,9 +259,7 @@ export function ProductPhotoField({
         </div>
       ) : null}
       <p className="field-hint standalone-hint">
-        {image
-          ? "Lo que ves en el recuadro es lo que se ve en la tienda. Arrastrá la foto para que el producto quede bien encuadrado."
-          : "Mejor horizontal, con buena luz y el plato centrado. En la tienda se muestra grande. Mínimo 600 px por lado."}
+        {image ? text.hintPhoto : text.hintEmpty}
       </p>
       {error ? (
         <p className="form-error" role="alert">
