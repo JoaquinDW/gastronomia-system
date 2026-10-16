@@ -137,11 +137,12 @@ h1 {
   margin: 0 0 28px;
 }
 h1 em {
+  /* Inline-block keeps the highlight inside its own line box, so it never
+     covers the line above when the title wraps. */
+  display: inline-block;
   font-style: normal;
   background: var(--accent);
   padding: 0 0.12em;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
 }
 .hero-description {
   max-width: 430px;
