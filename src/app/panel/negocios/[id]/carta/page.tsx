@@ -4,7 +4,7 @@ import { authorizeBusiness } from "@/server/http";
 import { getProducts } from "@/server/menu";
 import { BusinessNav } from "@/components/business-nav";
 import { MenuManager } from "@/components/menu-manager";
-export const metadata = { title: "Tu carta — Gastronomía" };
+export const metadata = { title: "Tu carta — Pedipue" };
 export default async function MenuPage({
   params,
 }: {

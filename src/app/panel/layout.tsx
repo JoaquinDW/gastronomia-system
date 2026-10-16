@@ -26,7 +26,7 @@ export default async function PanelLayout({
         {children}
       </main>
       <footer>
-        <span>gastronomía · tu espacio de gestión</span>
+        <span>pedipue · tu espacio de gestión</span>
         <span>Cada negocio, con sus propios datos.</span>
       </footer>
     </div>

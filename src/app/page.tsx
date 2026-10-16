@@ -35,11 +35,13 @@ export default function Home() {
         Ir al contenido
       </a>
       <header className="site-header">
-        <a href="/" className="wordmark" aria-label="Gastronomía, inicio">
+        <a href="/" className="wordmark" aria-label="Pedipue, inicio">
           <span className="brand-mark" aria-hidden="true">
-            g.
-          </span>{" "}
-          gastronomía
+            p
+          </span>
+          <span>
+            pedipue<span className="wordmark-dot">.</span>
+          </span>
         </a>
         <nav className="header-actions" aria-label="Acceso al sistema">
           <Link className="quiet-link" href="/ingresar">
@@ -159,7 +161,7 @@ export default function Home() {
       </main>
       <footer>
         <span>
-          gastronomía <span className="footer-dot">·</span> nombre de trabajo
+          pedipue.com <span className="footer-dot">·</span> pedí directo
         </span>
         <span>Negocios chicos. Una operación bien pensada.</span>
       </footer>

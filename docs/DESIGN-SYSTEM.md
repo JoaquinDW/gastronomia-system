@@ -79,7 +79,7 @@ Mantener los avisos que ya existen sobre pago y confirmación (abrir WhatsApp no
 
 ## Plan de implementación
 
-Las pantallas actuales usan `src/app/globals.css` y `src/app/workspace.css`, con tokens `--paper`, `--ink`, `--muted`, `--line`, `--accent`, `--soft`, `--serif` y `--sans` y unos 70 colores escritos a mano. El orden propuesto, de menor a mayor riesgo:
+Las pantallas usan `src/app/globals.css` y `src/app/workspace.css`. **Estado: etapas 1 y 2 aplicadas** (tokens en `:root` de `globals.css`, sin colores sueltos salvo blancos y transparencias; `--serif` queda como alias de `--display` mientras se migra). Como Mostaza no alcanza contraste como texto sobre Vereda, el texto de énfasis usa `--accent-ink` (`#855700`). El orden, de menor a mayor riesgo:
 
 1. **Tokens y fuentes.** Reemplazar los valores de `:root` por los de esta guía, agregar `--asphalt`, `--surface`, `--promo`, `--open`, `--closed`, `--display` y `--mono`, cambiar el `@import` de Google Fonts y apuntar `--serif` a la display mientras se migra. Sustituir los hex sueltos por tokens. Renombrar la marca en `brand.tsx` y en la metadata de `layout.tsx`. Solo esto ya cambia el aspecto de todas las pantallas.
 2. **Componentes base compartidos.** `.primary-button`, `.secondary-button`, `.text-button`, `.icon-button`, inputs y selects de `.app-form`, `.small-badge`, `.store-status`, `.eyebrow` (pasa a Space Mono) y tarjetas. Al estar compartidas, se actualizan panel, alta y tienda a la vez.
