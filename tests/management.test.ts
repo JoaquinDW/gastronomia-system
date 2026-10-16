@@ -86,3 +86,68 @@ test("commands reject fractional monetary cents and invalid quantities", () => {
     false,
   );
 });
+
+// The historical quote uses all recipe components once, including extras and packaging.
+import { historicalRecipeCost } from "../src/lib/management-recipe-cost";
+import type { Recipe, StockItem } from "../src/lib/management";
+test("historical recipe quotes respect quantity, extras, rounding and missing costs", () => {
+  const item: StockItem = {
+    id: "item",
+    name: "Ingrediente",
+    kind: "ingredient",
+    unit: "g",
+    minimum: "0",
+    quantity: "10",
+    unitCost: "3.333333",
+    version: 1,
+  };
+  const base: Recipe = {
+    id: "base",
+    productId: "p",
+    optionId: "v",
+    optionKind: "variant",
+    version: 1,
+    lines: [{ itemId: "item", quantity: "100" }],
+    noConsumption: false,
+  };
+  const addon: Recipe = {
+    ...base,
+    id: "addon",
+    optionKind: "addon",
+    optionId: "a",
+    lines: [{ itemId: "item", quantity: "50" }],
+  };
+  const choice = { productId: "p", variantId: "v", addOnIds: ["a"] };
+  const quote = historicalRecipeCost(choice, 3, [base, addon], [item]);
+  assert.equal(quote?.costCents, "1500");
+  assert.deepEqual(quote?.recipeIds, ["base", "addon"]);
+  assert.equal(quote?.components[0].quantity, "300");
+  assert.equal(historicalRecipeCost(choice, 1, [base], [item]), null);
+  assert.equal(
+    historicalRecipeCost(
+      choice,
+      1,
+      [base, addon],
+      [{ ...item, unitCost: null }],
+    ),
+    null,
+  );
+  assert.equal(
+    historicalRecipeCost(
+      { ...choice, productId: "other" },
+      1,
+      [base, addon],
+      [item],
+    ),
+    null,
+  );
+  assert.equal(
+    historicalRecipeCost(
+      { ...choice, addOnIds: [] },
+      1,
+      [{ ...base, lines: [], noConsumption: true }],
+      [],
+    )?.costCents,
+    "0",
+  );
+});

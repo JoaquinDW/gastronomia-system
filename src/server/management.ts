@@ -17,6 +17,7 @@ import type {
   Expense,
   Sale,
   SaleLine,
+  HistoricalOrder,
 } from "@/lib/management";
 import {
   averageCost,
@@ -29,6 +30,8 @@ import {
   SCALE,
   unitCostOf,
 } from "@/lib/management-math";
+
+import { historicalRecipeCost } from "@/lib/management-recipe-cost";
 
 const itemFields = `id,name,kind,unit,minimum,quantity,unit_cost AS "unitCost",version`;
 const recipeFields = `id,product_id AS "productId",option_id AS "optionId",option_kind AS "optionKind",version,lines,no_consumption AS "noConsumption"`;
@@ -381,7 +384,12 @@ export async function executeManagement(
   input: ManagementCommand,
   owner: boolean,
 ) {
-  if (!owner && ["expense", "reverse_expense", "settings"].includes(input.type))
+  if (
+    !owner &&
+    ["expense", "reverse_expense", "settings", "historical_cost"].includes(
+      input.type,
+    )
+  )
     throw new HttpError(
       403,
       "Solo el propietario puede gestionar gastos y configuración.",
@@ -399,6 +407,91 @@ export async function executeManagement(
     const items = await stock(client, businessId);
     let result: Record<string, unknown> = { id: op.id };
     switch (input.type) {
+      case "historical_cost": {
+        const order = (
+          await client.query<HistoricalOrder>(
+            `SELECT id,number,items FROM orders o WHERE business_id=$1 AND id=$2 AND status='accepted' AND NOT EXISTS(SELECT 1 FROM management_sales s WHERE s.business_id=o.business_id AND s.order_id=o.id) FOR UPDATE`,
+            [businessId, input.orderId],
+          )
+        ).rows[0];
+        if (!order)
+          throw new HttpError(
+            422,
+            "No encontramos un pedido anterior pendiente en este negocio.",
+          );
+        if (
+          (
+            await client.query(
+              `SELECT id FROM management_operations WHERE business_id=$1 AND type='historical_cost' AND result->>'orderId'=$2`,
+              [businessId, order.id],
+            )
+          ).rowCount
+        )
+          throw new HttpError(
+            409,
+            "El costo de este pedido ya está guardado. Actualizá los resultados.",
+          );
+        if (
+          input.lines.length !== order.items.length ||
+          new Set(input.lines.map((l) => l.lineIndex)).size !==
+            order.items.length ||
+          input.lines.some((l) => l.lineIndex >= order.items.length)
+        )
+          throw new HttpError(
+            422,
+            "Elegí una receta para cada producto del pedido, sin repetir líneas.",
+          );
+        const recipes = (
+          await client.query<Recipe>(
+            `SELECT DISTINCT ON(product_id,option_id,option_kind) ${recipeFields} FROM management_recipes WHERE business_id=$1 ORDER BY product_id,option_id,option_kind,version DESC`,
+            [businessId],
+          )
+        ).rows;
+        const products = (
+          await client.query<
+            Pick<Product, "id" | "name" | "variants" | "addOns">
+          >(
+            `SELECT id,name,variants,add_ons AS "addOns" FROM menu_products WHERE business_id=$1 AND archived_at IS NULL`,
+            [businessId],
+          )
+        ).rows;
+        const lines = input.lines.map((line) => {
+          const original = order.items[line.lineIndex];
+          const product = products.find((p) => p.id === line.productId);
+          if (
+            !product?.variants.some((v) => v.id === line.variantId) ||
+            new Set(line.addOnIds).size !== line.addOnIds.length ||
+            line.addOnIds.some((id) => !product.addOns.some((a) => a.id === id))
+          )
+            throw new HttpError(
+              422,
+              "Elegí productos y adicionales de la carta de este negocio.",
+            );
+          const quote = historicalRecipeCost(line, original.quantity, recipes, [
+            ...items.values(),
+          ]);
+          if (!quote)
+            throw new HttpError(
+              422,
+              "A la receta elegida le faltan ingredientes o costos. Completalos antes de continuar.",
+            );
+          if (quote.costCents !== line.expectedCostCents)
+            throw new HttpError(
+              409,
+              "Los costos cambiaron. Actualizá la página y revisá el importe antes de confirmar.",
+            );
+          return { ...line, original, selectedName: product.name, ...quote };
+        });
+        result = {
+          id: op.id,
+          orderId: order.id,
+          costCents: lines
+            .reduce((total, l) => total + BigInt(l.costCents), 0n)
+            .toString(),
+          lines,
+        };
+        break;
+      }
       case "item": {
         if (input.id) {
           const item = requireItem(items, input.id);

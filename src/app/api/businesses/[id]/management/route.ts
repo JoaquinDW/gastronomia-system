@@ -63,6 +63,11 @@ export async function GET(r: NextRequest, { params }: Context) {
           ["Ventas registradas", report.totals.saleCount],
           ["Anulaciones", report.totals.cancelledCount],
           ["Ventas con costo completo", report.totals.completeCount],
+          [
+            "Pedidos anteriores con costo estimado",
+            report.legacyEstimatedCount,
+          ],
+          ["Pedidos anteriores pendientes de costo", report.legacyPendingCount],
           ["Ticket promedio neto", report.totals.ticket],
           [
             "Costos de ventas incompletos",

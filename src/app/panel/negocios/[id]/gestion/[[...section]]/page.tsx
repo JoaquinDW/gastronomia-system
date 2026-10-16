@@ -127,6 +127,8 @@ export default async function ManagementPage({
           today={data.today}
           items={data.items}
           cutoffHour={data.settings.cutoffHour}
+          recipes={data.recipes}
+          products={products}
         />
       ) : null}
       <ManagementWorkspace

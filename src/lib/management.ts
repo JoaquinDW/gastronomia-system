@@ -45,6 +45,27 @@ export const commandSchema = z.discriminatedUnion("type", [
   z
     .object({
       ...key,
+      type: z.literal("historical_cost"),
+      orderId: z.uuid(),
+      lines: z
+        .array(
+          z
+            .object({
+              lineIndex: z.number().int().min(0),
+              productId: z.uuid(),
+              variantId: z.uuid(),
+              addOnIds: z.array(z.uuid()).max(20),
+              expectedCostCents: cents,
+            })
+            .strict(),
+        )
+        .min(1)
+        .max(80),
+    })
+    .strict(),
+  z
+    .object({
+      ...key,
       type: z.literal("item"),
       id: z.uuid().optional(),
       version: z.number().int().positive().optional(),
@@ -318,4 +339,17 @@ export type Report = {
   products: { name: string; quantity: string; revenue: string }[];
   byChannel: { channel: string; revenue: string; count: number }[];
   legacyCount: number;
+  legacyPendingCount: number;
+  legacyEstimatedCount: number;
+  historicalOrders: HistoricalOrder[];
+};
+export type HistoricalOrder = {
+  id: string;
+  number: number;
+  items: {
+    name: string;
+    variant: string;
+    addOns: string[];
+    quantity: number;
+  }[];
 };

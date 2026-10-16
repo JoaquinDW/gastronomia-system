@@ -581,6 +581,175 @@ async function main() {
   console.log(
     "PASS: legacy accepted orders remain visible without guessed costs or retroactive inventory",
   );
+  assert.equal(legacy.legacyPendingCount, 1);
+  assert.equal(legacy.historicalOrders.length, 1);
+  const historicalOrderId = legacy.historicalOrders[0].id;
+  const historicalIngredient = String(
+    (
+      await run(otherId, {
+        type: "item",
+        name: "Insumo histórico",
+        kind: "ingredient",
+        unit: "g",
+        minimum: "0",
+        initialQuantity: "1000",
+        initialValueCents: "10000",
+      })
+    ).id,
+  );
+  const historicalVariant = randomUUID();
+  const historicalAddon = randomUUID();
+  const historicalProduct = await saveProduct(otherId, {
+    name: "Nombre actual distinto",
+    description: "",
+    category: "Prueba",
+    kind: "product",
+    variants: [{ id: historicalVariant, name: "Actual", priceCents: 10000 }],
+    addOns: [{ id: historicalAddon, name: "Extra", priceCents: 1000 }],
+    imageUrl: "",
+    isAvailable: true,
+    sortOrder: 0,
+  });
+  const selection = {
+    lineIndex: 0,
+    productId: historicalProduct.id,
+    variantId: historicalVariant,
+    addOnIds: [historicalAddon],
+    expectedCostCents: "1500",
+  };
+  const historicalCommand = {
+    type: "historical_cost",
+    orderId: historicalOrderId,
+    lines: [selection],
+  };
+  await assert.rejects(
+    () => run(otherId, historicalCommand, false),
+    /propietario/,
+  );
+  await assert.rejects(
+    () => run(businessId, historicalCommand),
+    /pedido anterior/,
+  );
+  await assert.rejects(
+    () =>
+      run(otherId, {
+        ...historicalCommand,
+        lines: [
+          {
+            ...selection,
+            productId: product.id,
+            variantId: variant,
+            addOnIds: [],
+          },
+        ],
+      }),
+    /carta de este negocio/,
+  );
+  await assert.rejects(
+    () => run(otherId, historicalCommand),
+    /faltan ingredientes/,
+  );
+  await run(otherId, {
+    type: "recipe",
+    productId: historicalProduct.id,
+    optionId: historicalVariant,
+    optionKind: "variant",
+    version: 0,
+    lines: [{ itemId: historicalIngredient, quantity: "100" }],
+  });
+  await run(otherId, {
+    type: "recipe",
+    productId: historicalProduct.id,
+    optionId: historicalAddon,
+    optionKind: "addon",
+    version: 0,
+    lines: [{ itemId: historicalIngredient, quantity: "50" }],
+  });
+  await assert.rejects(
+    () => run(otherId, { ...historicalCommand, lines: [selection, selection] }),
+    /sin repetir/,
+  );
+  await assert.rejects(
+    () =>
+      run(otherId, {
+        ...historicalCommand,
+        lines: [{ ...selection, expectedCostCents: "1" }],
+      }),
+    /costos cambiaron/,
+  );
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*)::int AS n FROM management_operations WHERE business_id=$1 AND type='historical_cost'",
+        [otherId],
+      )
+    ).rows[0].n,
+    0,
+  );
+  const stockBeforeHistoricalCost = (await getManagementData(otherId)).items;
+  const movementsBeforeHistoricalCost = (await getManagementData(otherId))
+    .movements;
+  const request = commandSchema.parse({
+    ...historicalCommand,
+    requestKey: randomUUID(),
+  });
+  const concurrentCosts = await Promise.all([
+    executeManagement(otherId, actor, request, true),
+    executeManagement(otherId, actor, request, true),
+  ]);
+  assert.deepEqual(concurrentCosts[0], concurrentCosts[1]);
+  await assert.rejects(
+    () => run(otherId, historicalCommand),
+    /ya está guardado/,
+  );
+  const completed = await getManagementReport(otherId);
+  assert.equal(completed.legacyPendingCount, 0);
+  assert.equal(completed.legacyEstimatedCount, 1);
+  assert.equal(completed.historicalOrders.length, 0);
+  assert.equal(completed.totals.result, "8500");
+  assert.equal(completed.totals.cost, "1500");
+  assert.equal(completed.totals.completeCount, 1);
+  assert.deepEqual(
+    (await getManagementData(otherId)).items,
+    stockBeforeHistoricalCost,
+  );
+  assert.deepEqual(
+    (await getManagementData(otherId)).movements,
+    movementsBeforeHistoricalCost,
+  );
+  const historicalOriginal = (
+    await pool.query(
+      "SELECT items FROM orders WHERE business_id=$1 AND id=$2",
+      [otherId, historicalOrderId],
+    )
+  ).rows[0].items;
+  assert.equal(historicalOriginal[0].name, "Producto histórico");
+  assert.equal(historicalOriginal[0].productId, undefined);
+  await run(otherId, {
+    type: "recipe",
+    productId: historicalProduct.id,
+    optionId: historicalVariant,
+    optionKind: "variant",
+    version: 1,
+    lines: [{ itemId: historicalIngredient, quantity: "200" }],
+  });
+  await run(otherId, {
+    type: "purchase",
+    supplierId: null,
+    lines: [
+      {
+        itemId: historicalIngredient,
+        quantity: "1000",
+        unit: "g",
+        totalCents: "50000",
+      },
+    ],
+  });
+  assert.equal((await getManagementReport(otherId)).totals.cost, "1500");
+  assert.equal((await getManagementReport(businessId)).legacyCount, 0);
+  console.log(
+    "PASS: explicit historical mapping, exact recipe + addon quote, owner-only access, isolation, stale quotes, rollback, concurrent retries, no stock changes, frozen historical estimates",
+  );
   writeFileSync(
     "/tmp/gastronomia-management-fixture.json",
     JSON.stringify({

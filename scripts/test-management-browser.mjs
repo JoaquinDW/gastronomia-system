@@ -354,6 +354,124 @@ try {
       elements.map((e) => ({ tag: e.tagName, labels: e.labels?.length })),
     );
   assert.ok(names.every((n) => n.labels > 0));
+  // An accepted order from before Gestión needs explicit mapping, not new stock.
+  const legacyItems = [
+    {
+      name: "Nombre anterior",
+      variant: "Anterior",
+      addOns: [],
+      quantity: 2,
+      unitCents: 850000,
+      lineCents: 1700000,
+    },
+    {
+      name: "Otro nombre anterior",
+      variant: "Anterior",
+      addOns: ["Extra anterior"],
+      quantity: 1,
+      unitCents: 950000,
+      lineCents: 950000,
+    },
+  ];
+  await db.query(
+    `INSERT INTO orders(business_id,number,request_key,payload_hash,status,customer_name,customer_phone,fulfillment,payment_method,items,subtotal_cents,delivery_cents,total_cents) VALUES($1,1,$2,'historical-browser','accepted','Sintético','+5493511234567','pickup','cash',$3,2650000,0,2650000)`,
+    [id, randomUUID(), JSON.stringify(legacyItems)],
+  );
+  const beforeHistoricalStock = (await api(owner, management)).d.items;
+  const historicalReport = (await api(owner, `${management}?view=report`)).d;
+  assert.equal(historicalReport.legacyPendingCount, 1);
+  await page.goto(`${base}${root}`);
+  await page
+    .locator(".mg-result-amount")
+    .filter({ hasText: "Pedidos sin costo" })
+    .waitFor();
+  await page
+    .getByRole("link", { name: "Completar costos de pedidos anteriores" })
+    .click();
+  await page
+    .getByText("Completar costo del pedido #1", { exact: true })
+    .click();
+  const historicalForm = page.locator(".mg-historical-order form");
+  assert.equal(
+    await historicalForm
+      .getByRole("button", { name: "Confirmar costo estimado" })
+      .isDisabled(),
+    true,
+  );
+  for (const name of [
+    "Nombre anterior (línea 1)",
+    "Otro nombre anterior (línea 2)",
+  ]) {
+    await historicalForm
+      .getByLabel(`Receta para ${name}`)
+      .selectOption(`${product.id}:${variant}`);
+  }
+  await historicalForm.getByLabel("Extra cheddar · línea 2").check();
+  await historicalForm
+    .getByText("Costo estimado del pedido: $ 5.080", { exact: true })
+    .waitFor();
+  await page.screenshot({
+    path: `${screenshots}/historical-cost-mobile.png`,
+    fullPage: true,
+  });
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+    false,
+  );
+  await page.setViewportSize({ width: 1440, height: 1100 });
+  await page.waitForFunction(() => innerWidth === 1440);
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+    return document.fonts.ready;
+  });
+  await page.screenshot({
+    path: `${screenshots}/historical-cost-desktop.png`,
+    fullPage: true,
+  });
+  await page.route(`**${management}`, async (route) => {
+    if (route.request().method() === "POST")
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Fallo de prueba histórica" }),
+      });
+    else await route.continue();
+  });
+  await historicalForm
+    .getByRole("button", { name: "Confirmar costo estimado" })
+    .click();
+  await historicalForm
+    .getByRole("alert")
+    .filter({ hasText: "Fallo de prueba histórica" })
+    .waitFor();
+  assert.equal(
+    await historicalForm
+      .getByLabel("Receta para Nombre anterior (línea 1)")
+      .inputValue(),
+    `${product.id}:${variant}`,
+  );
+  await page.unroute(`**${management}`);
+  await historicalForm
+    .getByRole("button", { name: "Confirmar costo estimado" })
+    .click();
+  await page.locator(".mg-historical-order").waitFor({ state: "detached" });
+  const completedHistoricalReport = (
+    await api(owner, `${management}?view=report`)
+  ).d;
+  assert.notEqual(completedHistoricalReport.totals.result, null);
+  assert.equal(completedHistoricalReport.legacyEstimatedCount, 1);
+  assert.equal(
+    BigInt(completedHistoricalReport.totals.cost) -
+      BigInt(historicalReport.totals.cost),
+    508000n,
+  );
+  assert.deepEqual(
+    (await api(owner, management)).d.items,
+    beforeHistoricalStock,
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
   // Missing-cost actions must lead to a usable form and preserve stock/history.
   const unpriced = await command({
     type: "item",
@@ -478,10 +596,29 @@ try {
     ).r.status(),
     403,
   );
+  assert.equal(
+    (
+      await api(other, management, {
+        type: "historical_cost",
+        requestKey: randomUUID(),
+        orderId: historicalReport.historicalOrders[0].id,
+        lines: [
+          {
+            lineIndex: 0,
+            productId: product.id,
+            variantId: variant,
+            addOnIds: [],
+            expectedCostCents: "0",
+          },
+        ],
+      })
+    ).r.status(),
+    403,
+  );
   assert.equal((await api(other, management)).d.expenses.length, 0);
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: real Auth, tenant and role permissions, item + supplier + sale UI, failed save retains input, complete report, missing-cost shortcuts, immutable past costs, CSV, mobile sections and labeled forms",
+    "PASS: real Auth, tenant and role permissions, item + supplier + sale UI, failed save retains input, complete report, missing-cost shortcuts, immutable past costs, explicit historical order costing, CSV, mobile sections and labeled forms",
   );
   console.log(`Screenshots: ${screenshots}`);
   console.log(`Synthetic business: ${id}`);

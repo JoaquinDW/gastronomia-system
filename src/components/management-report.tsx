@@ -1,5 +1,7 @@
 import Link from "next/link";
-import type { Report, StockItem } from "@/lib/management";
+import type { Product } from "@/lib/menu";
+import { HistoricalOrderCosts } from "./management-historical-costs";
+import type { Report, StockItem, Recipe } from "@/lib/management";
 import { channels } from "@/lib/management";
 import { fixed, money, shiftDate } from "@/lib/management-math";
 
@@ -25,16 +27,24 @@ export function ManagementReport({
   today,
   items,
   cutoffHour,
+  recipes,
+  products,
 }: {
   report: Report;
   businessId: string;
   today: string;
   items: StockItem[];
   cutoffHour: number;
+  recipes: Recipe[];
+  products: Product[];
 }) {
   const root = `/panel/negocios/${businessId}/gestion`,
     api = `/api/businesses/${businessId}/management`;
   const { totals: t } = report;
+  const onlyHistoricalMissing =
+    report.legacyPendingCount > 0 &&
+    report.legacyPendingCount === t.incompleteCount &&
+    !t.wasteIncomplete;
   const low = items.filter((i) => fixed(i.quantity) <= fixed(i.minimum));
   const unknown = items.filter(
     (i) => i.unitCost === null && fixed(i.quantity) !== 0n,
@@ -109,12 +119,18 @@ export function ManagementReport({
         <div className="mg-main-result">
           <h2>Lo que quedó</h2>
           <p className="mg-result-amount">
-            {t.result === null ? "Faltan costos" : money(t.result)}
+            {t.result === null
+              ? onlyHistoricalMissing
+                ? "Pedidos sin costo"
+                : "Faltan costos"
+              : money(t.result)}
           </p>
           <p>Lo que te queda (estimado)</p>
           <span>
             {t.result === null
-              ? "Cargá los costos para calcular cuánto te queda en las próximas ventas."
+              ? report.legacyPendingCount
+                ? "Este período incluye pedidos anteriores a Gestión. Revisá sus productos para completar el costo."
+                : "Hay ventas o pérdidas con costos pendientes. Revisá sus ingredientes y costos."
               : report.previous.result === null
                 ? "El período anterior tiene costos pendientes"
                 : change(t.result, report.previous.result)}
@@ -124,12 +140,21 @@ export function ManagementReport({
               className="mg-cost-actions"
               aria-label="Dónde cargar los costos"
             >
-              <Link href={`${root}/inventario?action=costs`}>
-                Cargar costos de insumos
-              </Link>
-              <Link href={`${root}/recetas?action=recipe`}>
-                Indicar ingredientes por producto
-              </Link>
+              {report.legacyPendingCount ? (
+                <a href="#costos-anteriores">
+                  Completar costos de pedidos anteriores
+                </a>
+              ) : null}
+              {!onlyHistoricalMissing ? (
+                <>
+                  <Link href={`${root}/inventario?action=costs`}>
+                    Cargar costos de insumos
+                  </Link>
+                  <Link href={`${root}/recetas?action=recipe`}>
+                    Indicar ingredientes por producto
+                  </Link>
+                </>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -173,30 +198,76 @@ export function ManagementReport({
         reparto en Gastos. Las pérdidas son insumos o productos que ya no podés
         usar o vender.
       </p>
-      {t.result === null || report.legacyCount ? (
+      {report.legacyEstimatedCount ? (
+        <p className="mg-disclosure">
+          Incluye {report.legacyEstimatedCount} pedidos anteriores cuyo costo
+          estimaste con las recetas que elegiste. Esos costos quedan guardados.
+        </p>
+      ) : null}
+      {t.result === null ? (
         <section className="mg-notice" aria-label="Datos por completar">
-          <h2>Antes de sacar conclusiones</h2>
+          <h2>
+            {onlyHistoricalMissing
+              ? "Falta completar un pedido anterior"
+              : "Antes de sacar conclusiones"}
+          </h2>
           <p>
-            {t.completeCount} de {t.saleCount} ventas tienen todos sus costos.
-            Mostramos los costos que conocemos, pero todavía faltan datos de
-            productos o pérdidas.
+            {t.completeCount} de {t.saleCount} ventas tienen sus costos
+            completos.
           </p>
-          {report.legacyCount ? (
+          {report.legacyPendingCount ? (
             <p>
-              {report.legacyCount === 1
-                ? "Hay un pedido anterior a Gestión"
-                : `Hay ${report.legacyCount} pedidos anteriores a Gestión`}{" "}
-              sin costos guardados. Cargar costos ahora sirve para las próximas
-              ventas; no cambia los resultados de esas ventas anteriores.
+              {report.legacyPendingCount === 1
+                ? "Hay un pedido de antes de Gestión que no guardó qué productos de la carta se vendieron."
+                : `Hay ${report.legacyPendingCount} pedidos de antes de Gestión sin productos vinculados a la carta.`}{" "}
+              Podés elegir sus recetas abajo para estimar el costo, sin volver a
+              descontar stock.
             </p>
           ) : null}
-          <Link href={`${root}/recetas?action=recipe`}>
-            Cargar ingredientes de los productos
-          </Link>
-          {" · "}
-          <Link href={`${root}/inventario?action=costs`}>
-            Cargar costos de los insumos
-          </Link>
+          {!onlyHistoricalMissing ? (
+            <>
+              <p>
+                Hay ventas o pérdidas que se registraron sin todos sus costos.
+                Los cambios de recetas se usan para las próximas ventas.
+              </p>
+              <Link href={`${root}/recetas?action=recipe`}>
+                Revisar ingredientes
+              </Link>
+              {" · "}
+              <Link href={`${root}/inventario?action=costs`}>
+                Revisar costos de insumos
+              </Link>
+            </>
+          ) : null}
+        </section>
+      ) : null}
+      {report.historicalOrders.length ? (
+        <section
+          className="mg-paper mg-historical-costs"
+          id="costos-anteriores"
+          aria-label="Costos de pedidos anteriores"
+        >
+          <h2>Completá los costos de tus pedidos anteriores</h2>
+          <p>
+            El pedido conserva los nombres originales. Elegí a qué producto
+            corresponde cada uno; no los asociamos por nombre.
+          </p>
+          {report.historicalOrders.map((order) => (
+            <HistoricalOrderCosts
+              key={order.id}
+              order={order}
+              products={products}
+              recipes={recipes}
+              items={items}
+              businessId={businessId}
+            />
+          ))}
+          {report.legacyPendingCount > report.historicalOrders.length ? (
+            <p>
+              Mostramos los primeros {report.historicalOrders.length} pedidos
+              pendientes. Al completarlos, aparecerán los siguientes.
+            </p>
+          ) : null}
         </section>
       ) : null}
       <div className="mg-stat-line">

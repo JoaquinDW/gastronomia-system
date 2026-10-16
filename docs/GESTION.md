@@ -14,7 +14,7 @@ Entrega del 16 de octubre de 2026. Ruta: `/panel/negocios/:id/gestion`.
 
 El dashboard usa palabras cotidianas: **Total vendido**, **Ventas menos su costo**, **Pérdidas** y **Lo que te queda (estimado)**. Las pérdidas son insumos o productos que ya no se pueden usar o vender.
 
-Si aparece **Faltan costos**, los accesos directos abren el formulario de costo del stock o el de ingredientes por producto. Inventario también ofrece **Cargar costo** junto a cada insumo con stock positivo sin costo. Estos cambios completan las próximas ventas; no reescriben costos históricos.
+Si aparece **Faltan costos**, los accesos directos abren el formulario de costo del stock o el de ingredientes por producto. Inventario también ofrece **Cargar costo** junto a cada insumo con stock positivo sin costo. Estos cambios completan las próximas ventas; no reescriben costos históricos. Los pedidos anteriores a Gestión tienen un aviso separado y permiten elegir explícitamente las recetas de cada línea para guardar una estimación de su costo, sin mover stock.
 
 ## Costos y resultados
 
@@ -33,7 +33,7 @@ Si aparece **Faltan costos**, los accesos directos abren el formulario de costo 
 - Una compra o elaboración confirmada no se sobrescribe ni borra. **Registrar ajuste** abre un conteo vinculado a la operación original. Para corregir una elaboración deben ajustarse también los insumos afectados desde Inventario. El conteo permite reemplazar el saldo real y valorizarlo; una merma descuenta solo la cantidad perdida.
 - Los conteos y ediciones comprueban versión. Compras, ventas, elaboración y anulaciones son transacciones completas con clave idempotente, actor y bloqueo por negocio y saldos ordenados. Un reintento idéntico devuelve su resultado; reutilizar una clave con otros datos devuelve 409.
 - Zona horaria del negocio y corte inicial **04:00**. La jornada de cada operación queda capturada; cambiar el corte afecta solo operaciones nuevas. Para históricos que carecen de fecha de aceptación se usa la fecha de creación con el corte actual, y se identifican como históricos.
-- Los pedidos nuevos conservan identificadores de producto, variante y adicionales. Los antiguos siguen siendo legibles, sin asociarlos por nombre ni descontarles stock retroactivamente. Los antiguos aceptados aparecen en resultados con costo pendiente; los pendientes antiguos que se acepten conservan esa limitación.
+- Los pedidos nuevos conservan identificadores de producto, variante y adicionales. Los antiguos siguen siendo legibles, sin asociarlos por nombre ni descontarles stock retroactivamente. Los antiguos aceptados aparecen con costo pendiente. El propietario puede asociar explícitamente cada línea a un producto, variante y adicionales mediante `historical_cost`: se guarda la receta y valoración actual como una estimación separada en `management_operations`. No se cambian el pedido original, ventas confirmadas ni movimientos de inventario. Los cambios posteriores de recetas y costos conservan la estimación guardada. El costo se incluye en la fecha del pedido; los reportes y CSV identifican cuántos pedidos usan esta estimación. Las claves de reintento, el bloqueo por negocio y la comprobación del importe visto impiden duplicados y guardados con costos desactualizados.
 
 ## Interfaces y permisos
 

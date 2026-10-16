@@ -4,7 +4,7 @@ import { getPool } from "./postgres";
 import { managementContext } from "./management";
 import { HttpError } from "./errors";
 import { operationalDate, rounded, shiftDate } from "@/lib/management-math";
-import type { Report, Totals } from "@/lib/management";
+import type { Report, Totals, HistoricalOrder } from "@/lib/management";
 
 export function reportRange(
   from: string | undefined,
@@ -44,14 +44,14 @@ const events = `WITH sale_events AS (
   UNION ALL
   SELECT s.*,o.operational_date AS day,-1 AS sign FROM management_sales s JOIN management_operations o ON o.business_id=s.business_id AND o.id=s.cancellation_id WHERE s.business_id=$1
 ), legacy AS (
-  SELECT o.*,to_char((COALESCE(accepted_at,created_at) AT TIME ZONE $4)-make_interval(hours => $5),'YYYY-MM-DD') AS day FROM orders o WHERE o.business_id=$1 AND o.status='accepted' AND NOT EXISTS(SELECT 1 FROM management_sales s WHERE s.business_id=o.business_id AND s.order_id=o.id)
+  SELECT o.*,c.result->>'costCents' AS historical_cost,to_char((COALESCE(accepted_at,created_at) AT TIME ZONE $4)-make_interval(hours => $5),'YYYY-MM-DD') AS day FROM orders o LEFT JOIN LATERAL(SELECT result FROM management_operations WHERE business_id=o.business_id AND type='historical_cost' AND result->>'orderId'=o.id::text ORDER BY created_at,id LIMIT 1) c ON true WHERE o.business_id=$1 AND o.status='accepted' AND NOT EXISTS(SELECT 1 FROM management_sales s WHERE s.business_id=o.business_id AND s.order_id=o.id)
 ), facts AS (
-  SELECT day,total_cents*sign AS revenue,delivery_cents*sign AS delivery,known_cost_cents*sign AS cost,0::numeric AS expense,0::numeric AS waste,CASE WHEN sign=1 THEN 1 ELSE 0 END AS sales,CASE WHEN sign=-1 THEN 1 ELSE 0 END AS cancellations,CASE WHEN sign=1 AND cost_complete THEN 1 ELSE 0 END AS complete,CASE WHEN sign=1 AND NOT cost_complete THEN 1 ELSE 0 END AS incomplete,CASE WHEN NOT cost_complete THEN 1 ELSE 0 END AS unknown,0 AS legacy,0 AS unknown_waste FROM sale_events
-  UNION ALL SELECT day,total_cents,delivery_cents,0,0,0,1,0,0,1,1,1,0 FROM legacy
-  UNION ALL SELECT date,0,0,0,amount_cents,0,0,0,0,0,0,0,0 FROM management_expenses WHERE business_id=$1
-  UNION ALL SELECT o.operational_date,0,0,0,-e.amount_cents,0,0,0,0,0,0,0,0 FROM management_expenses e JOIN management_operations o ON o.business_id=e.business_id AND o.id=e.reversal_id WHERE e.business_id=$1
-  UNION ALL SELECT o.operational_date,0,0,0,0,COALESCE(m.cost_cents,0),0,0,0,0,CASE WHEN m.cost_cents IS NULL THEN 1 ELSE 0 END,0,CASE WHEN m.cost_cents IS NULL THEN 1 ELSE 0 END FROM inventory_movements m JOIN management_operations o ON o.business_id=m.business_id AND o.id=m.operation_id WHERE m.business_id=$1 AND m.kind='waste'
-  UNION ALL SELECT operational_date,0,0,0,0,0,0,0,0,0,1,0,1 FROM management_operations WHERE business_id=$1 AND type='cancel_sale' AND result->>'incompleteWaste'='true'
+  SELECT day,total_cents*sign AS revenue,delivery_cents*sign AS delivery,known_cost_cents*sign AS cost,0::numeric AS expense,0::numeric AS waste,CASE WHEN sign=1 THEN 1 ELSE 0 END AS sales,CASE WHEN sign=-1 THEN 1 ELSE 0 END AS cancellations,CASE WHEN sign=1 AND cost_complete THEN 1 ELSE 0 END AS complete,CASE WHEN sign=1 AND NOT cost_complete THEN 1 ELSE 0 END AS incomplete,CASE WHEN NOT cost_complete THEN 1 ELSE 0 END AS unknown,0 AS legacy,0 AS unknown_waste,0 AS estimated FROM sale_events
+  UNION ALL SELECT day,total_cents,delivery_cents,COALESCE(historical_cost::numeric,0),0,0,1,0,CASE WHEN historical_cost IS NOT NULL THEN 1 ELSE 0 END,CASE WHEN historical_cost IS NULL THEN 1 ELSE 0 END,CASE WHEN historical_cost IS NULL THEN 1 ELSE 0 END,1,0,CASE WHEN historical_cost IS NOT NULL THEN 1 ELSE 0 END FROM legacy
+  UNION ALL SELECT date,0,0,0,amount_cents,0,0,0,0,0,0,0,0,0 FROM management_expenses WHERE business_id=$1
+  UNION ALL SELECT o.operational_date,0,0,0,-e.amount_cents,0,0,0,0,0,0,0,0,0 FROM management_expenses e JOIN management_operations o ON o.business_id=e.business_id AND o.id=e.reversal_id WHERE e.business_id=$1
+  UNION ALL SELECT o.operational_date,0,0,0,0,COALESCE(m.cost_cents,0),0,0,0,0,CASE WHEN m.cost_cents IS NULL THEN 1 ELSE 0 END,0,CASE WHEN m.cost_cents IS NULL THEN 1 ELSE 0 END,0 FROM inventory_movements m JOIN management_operations o ON o.business_id=m.business_id AND o.id=m.operation_id WHERE m.business_id=$1 AND m.kind='waste'
+  UNION ALL SELECT operational_date,0,0,0,0,0,0,0,0,0,1,0,1,0 FROM management_operations WHERE business_id=$1 AND type='cancel_sale' AND result->>'incompleteWaste'='true'
 )`;
 type Day = {
   date: string;
@@ -67,6 +67,7 @@ type Day = {
   unknown: string;
   unknownWaste: string;
   legacy: string;
+  estimated: string;
 };
 function totals(days: Day[]): Totals {
   const sum = (key: keyof Day) => days.reduce((n, d) => n + BigInt(d[key]), 0n);
@@ -117,9 +118,9 @@ export async function getManagementReport(
     context.timezone,
     context.cutoffHour,
   ];
-  const [daily, products, channel] = await Promise.all([
+  const [daily, products, channel, historicalOrders] = await Promise.all([
     pool.query<Day>(
-      `${events} SELECT day AS date,sum(revenue)::text AS revenue,sum(delivery)::text AS delivery,sum(cost)::text AS cost,sum(expense)::text AS expenses,sum(waste)::text AS waste,sum(sales)::text AS "saleCount",sum(cancellations)::text AS "cancelledCount",sum(complete)::text AS "completeCount",sum(incomplete)::text AS "incompleteCount",sum(unknown)::text AS unknown,sum(unknown_waste)::text AS "unknownWaste",sum(legacy)::text AS legacy FROM facts WHERE day BETWEEN $2 AND $3 GROUP BY day ORDER BY day`,
+      `${events} SELECT day AS date,sum(revenue)::text AS revenue,sum(delivery)::text AS delivery,sum(cost)::text AS cost,sum(expense)::text AS expenses,sum(waste)::text AS waste,sum(sales)::text AS "saleCount",sum(cancellations)::text AS "cancelledCount",sum(complete)::text AS "completeCount",sum(incomplete)::text AS "incompleteCount",sum(unknown)::text AS unknown,sum(unknown_waste)::text AS "unknownWaste",sum(legacy)::text AS legacy,sum(estimated)::text AS estimated FROM facts WHERE day BETWEEN $2 AND $3 GROUP BY day ORDER BY day`,
       params,
     ),
     pool.query<{ name: string; quantity: string; revenue: string }>(
@@ -131,6 +132,10 @@ export async function getManagementReport(
     ),
     pool.query<{ channel: string; revenue: string; count: number }>(
       `${events} , channel_events AS (SELECT channel,total_cents*sign AS revenue,sign,day FROM sale_events UNION ALL SELECT 'store',total_cents,1,day FROM legacy) SELECT channel,sum(revenue)::text AS revenue,sum(sign)::integer AS count FROM channel_events WHERE day BETWEEN $2 AND $3 GROUP BY channel ORDER BY sum(revenue) DESC`,
+      [businessId, range.from, range.to, context.timezone, context.cutoffHour],
+    ),
+    pool.query<HistoricalOrder>(
+      `${events} SELECT id,number,items FROM legacy WHERE day BETWEEN $2 AND $3 AND historical_cost IS NULL ORDER BY created_at,id LIMIT 50`,
       [businessId, range.from, range.to, context.timezone, context.cutoffHour],
     ),
   ]);
@@ -158,6 +163,12 @@ export async function getManagementReport(
     products: products.rows,
     byChannel: channel.rows,
     legacyCount: current.reduce((n, d) => n + Number(d.legacy), 0),
+    legacyEstimatedCount: current.reduce((n, d) => n + Number(d.estimated), 0),
+    legacyPendingCount: current.reduce(
+      (n, d) => n + Number(d.legacy) - Number(d.estimated),
+      0,
+    ),
+    historicalOrders: historicalOrders.rows,
   };
 }
 
