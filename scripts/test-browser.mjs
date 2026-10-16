@@ -11,7 +11,7 @@ try {
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(base, { waitUntil: "networkidle" });
   await page
-    .getByRole("heading", { name: "Tu tienda, lista en una tarde." })
+    .getByRole("heading", { name: "En marcha en tres pasos." })
     .waitFor();
   assert.equal(
     await page.evaluate(
@@ -28,7 +28,7 @@ try {
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(base, { waitUntil: "networkidle" });
-  await page.getByRole("link", { name: "Mirá cómo funciona" }).click();
+  await page.getByRole("link", { name: "Cómo funciona" }).click();
   assert.match(page.url(), /#como-funciona$/);
   assert.equal(
     await page.evaluate(

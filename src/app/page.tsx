@@ -3,28 +3,30 @@ import Link from "next/link";
 const modules = [
   {
     number: "01",
-    name: "Tu tienda online",
+    name: "Tu tienda, con tu nombre",
     detail:
-      "Tu carta con fotos, variantes y adicionales en un link propio. El cliente arma el pedido y te lo manda por WhatsApp.",
+      "Un link propio con tu carta, fotos, variantes y adicionales. Lo pegás en tu Instagram, lo mandás por WhatsApp o lo imprimís en un QR.",
     tag: "Ya disponible",
   },
   {
     number: "02",
-    name: "Pedidos en un solo lugar",
+    name: "Pedidos claros, sin idas y vueltas",
     detail:
-      "Cada pedido entra a tu panel con número, detalle y total. Lo confirmás vos antes de que pase a cocina.",
+      "Cada pedido te llega con número, detalle y total. Se terminó anotar pedidos de audios y chats sueltos.",
     tag: "Ya disponible",
   },
   {
     number: "03",
-    name: "Cocina",
-    detail: "Comandas por estación y despacho coordinado, sin papelitos.",
+    name: "Cocina en orden",
+    detail:
+      "Los pedidos confirmados pasan a cocina como comandas, por estación.",
     tag: "Próximamente",
   },
   {
     number: "04",
     name: "Caja y stock",
-    detail: "Cobros, recetas, stock y los números del día, claros.",
+    detail:
+      "Cobros del día, recetas e insumos que se descuentan con cada venta.",
     tag: "Próximamente",
   },
 ];
@@ -32,22 +34,27 @@ const modules = [
 const steps = [
   {
     number: "01",
-    title: "Creá tu cuenta",
-    detail:
-      "Nombre del local, rubro y el WhatsApp donde querés recibir pedidos.",
+    title: "Registrá tu local",
+    detail: "Nombre, rubro y el WhatsApp donde querés recibir los pedidos.",
   },
   {
     number: "02",
-    title: "Cargá tu carta",
+    title: "Subí tu carta",
     detail:
-      "A mano, o subí una foto o un PDF del menú y te armamos un borrador para revisar.",
+      "Sacale una foto al menú o subí el PDF y te la armamos. Vos revisás precios y listo.",
   },
   {
     number: "03",
     title: "Compartí tu link",
     detail:
-      "Definí horarios, retiro o delivery, activá la tienda y pasala por Instagram, WhatsApp o un QR en el mostrador.",
+      "Poné tus horarios, elegí retiro o delivery y activá la tienda. Ya podés recibir pedidos.",
   },
+];
+
+const highlights = [
+  "Te cargamos la carta desde una foto",
+  "Retiro y delivery",
+  "Sin instalar nada",
 ];
 
 export default function Home() {
@@ -70,7 +77,7 @@ export default function Home() {
             Ingresar
           </Link>
           <Link className="primary-button compact-button" href="/registro">
-            Registrar mi negocio <span aria-hidden="true">↗</span>
+            Crear mi tienda <span aria-hidden="true">↗</span>
           </Link>
         </nav>
       </header>
@@ -78,25 +85,32 @@ export default function Home() {
       <main id="contenido">
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
-            <p className="eyebrow">HECHO PARA EL RITMO DE TU LOCAL</p>
+            <p className="eyebrow">
+              PARA HAMBURGUESERÍAS, ROTISERÍAS Y CASAS DE PASTAS
+            </p>
             <h1 id="hero-title">
-              De la primera orden
+              Tu tienda online.
               <br />
-              al último <em>despacho.</em>
+              Los pedidos, <em>directo.</em>
             </h1>
             <p className="hero-description">
-              Tu tienda online con link propio para que te pidan directo, sin
-              depender de las apps de delivery. Para hamburgueserías, rotiserías
-              y casas de pastas.
+              Tus clientes arman el pedido desde tu link y te lo mandan por
+              WhatsApp, ordenado y con el total. Vos lo confirmás desde el
+              panel. Sin pagarle comisión a las apps de delivery.
             </p>
             <div className="hero-actions">
               <Link className="primary-button compact-button" href="/registro">
-                Dar de alta mi negocio <span aria-hidden="true">→</span>
+                Crear mi tienda <span aria-hidden="true">→</span>
               </Link>
               <a className="text-link" href="#como-funciona">
-                Mirá cómo funciona <span aria-hidden="true">↓</span>
+                Cómo funciona <span aria-hidden="true">↓</span>
               </a>
             </div>
+            <ul className="hero-points" aria-label="Lo que incluye">
+              {highlights.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </div>
           <aside className="order-slip" aria-label="Cómo llega un pedido">
             <div className="slip-header">
@@ -152,12 +166,12 @@ export default function Home() {
           <div className="section-intro">
             <p className="eyebrow">QUÉ INCLUYE</p>
             <h2 id="scope-title">
-              Vender, preparar
-              <br /> y controlar.
+              Menos chats sueltos.
+              <br /> Más pedidos en orden.
             </h2>
             <p>
-              Arrancás con la tienda y los pedidos. Lo demás se suma a medida
-              que crece tu operación.
+              Hoy arrancás con la tienda y los pedidos. Cocina, caja y stock se
+              suman a tu mismo panel.
             </p>
           </div>
           <div className="module-list">
@@ -181,7 +195,7 @@ export default function Home() {
         >
           <div>
             <p className="eyebrow">CÓMO FUNCIONA</p>
-            <h2 id="foundation-title">Tu tienda, lista en una tarde.</h2>
+            <h2 id="foundation-title">En marcha en tres pasos.</h2>
             <ol className="start-steps">
               {steps.map((step) => (
                 <li key={step.number}>
@@ -194,18 +208,19 @@ export default function Home() {
               ))}
             </ol>
             <p className="foundation-note">
-              Abrir WhatsApp no significa que el pedido esté pago ni aceptado.
-              Vos lo confirmás desde el panel y recién ahí entra a cocina.
+              Vos tenés la última palabra: que el cliente abra WhatsApp no
+              significa que el pedido esté pago ni aceptado. Lo confirmás desde
+              el panel y recién ahí se prepara.
             </p>
           </div>
           <aside className="start-card" aria-labelledby="start-card-title">
-            <h2 id="start-card-title">¿Arrancamos?</h2>
+            <h2 id="start-card-title">Tu próximo pedido, por tu link.</h2>
             <p>
-              Creá tu cuenta, cargá la carta y compartí el link. Si ya tenés
-              cuenta, entrá a tu panel.
+              Armá tu tienda hoy y empezá a recibir pedidos directo, con tu
+              nombre y tu carta.
             </p>
             <Link className="primary-button" href="/registro">
-              Registrar mi negocio <span aria-hidden="true">→</span>
+              Crear mi tienda <span aria-hidden="true">→</span>
             </Link>
             <Link className="text-link" href="/ingresar">
               Ya tengo cuenta, ingresar
@@ -217,7 +232,7 @@ export default function Home() {
         <span>
           pedipue.com <span className="footer-dot">·</span> pedí directo
         </span>
-        <span>Para locales que cocinan en serio.</span>
+        <span>Hecho para el ritmo de tu local.</span>
       </footer>
     </div>
   );

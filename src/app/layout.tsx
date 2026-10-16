@@ -3,9 +3,9 @@ import "./globals.css";
 import "./workspace.css";
 
 export const metadata: Metadata = {
-  title: "Pedipue — pedí directo a tu local",
+  title: "Pedipue — tu tienda online, los pedidos directo",
   description:
-    "Tienda online y pedidos por WhatsApp para hamburgueserías, rotiserías y casas de pastas.",
+    "Tu tienda online con link propio y pedidos directo por WhatsApp, sin comisiones de apps de delivery. Para hamburgueserías, rotiserías y casas de pastas.",
   robots: { index: false, follow: false },
 };
 
