@@ -6,9 +6,10 @@ import { fixed, money, shiftDate } from "@/lib/management-math";
 function change(current: string, previous: string) {
   const a = BigInt(current),
     b = BigInt(previous);
-  if (b === 0n) return a === 0n ? "Sin cambios" : "Sin base de comparación";
+  if (b === 0n)
+    return a === 0n ? "Sin cambios" : "Todavía no hay datos para comparar";
   const percent = ((a - b) * 1000n) / (b < 0n ? -b : b);
-  return `${percent > 0n ? "+" : ""}${Number(percent) / 10}% vs. período anterior`;
+  return `${percent > 0n ? "+" : ""}${Number(percent) / 10}% frente al período anterior`;
 }
 function dateLabel(date: string) {
   return new Intl.DateTimeFormat("es-AR", {
@@ -94,8 +95,8 @@ export function ManagementReport({
       </section>
       <div className="mg-report-intro">
         <p>
-          {dateLabel(report.from)} al {dateLabel(report.to)} · Jornada hasta las{" "}
-          {cutoffHour.toString().padStart(2, "0")}:00
+          {dateLabel(report.from)} al {dateLabel(report.to)} · El día cierra a
+          las {cutoffHour.toString().padStart(2, "0")}:00
         </p>
         <a
           className="text-button"
@@ -110,31 +111,44 @@ export function ManagementReport({
           <p className="mg-result-amount">
             {t.result === null ? "Faltan costos" : money(t.result)}
           </p>
-          <p>Resultado operativo estimado</p>
+          <p>Lo que te queda (estimado)</p>
           <span>
             {t.result === null
-              ? "Completá los costos para calcularlo."
+              ? "Cargá los costos para calcular cuánto te queda en las próximas ventas."
               : report.previous.result === null
                 ? "El período anterior tiene costos pendientes"
                 : change(t.result, report.previous.result)}
           </span>
+          {t.result === null ? (
+            <div
+              className="mg-cost-actions"
+              aria-label="Dónde cargar los costos"
+            >
+              <Link href={`${root}/inventario?action=costs`}>
+                Cargar costos de insumos
+              </Link>
+              <Link href={`${root}/recetas?action=recipe`}>
+                Indicar ingredientes por producto
+              </Link>
+            </div>
+          ) : null}
         </div>
         <dl className="mg-equation">
           <div>
-            <dt>Ventas netas</dt>
+            <dt>Total vendido</dt>
             <dd>{money(t.revenue)}</dd>
           </div>
           <div>
             <dt>
               − Costo de lo vendido{" "}
               {t.costsIncomplete ? (
-                <span className="mg-inline-warning">parcial</span>
+                <span className="mg-inline-warning">faltan datos</span>
               ) : null}
             </dt>
             <dd>{money(t.cost)}</dd>
           </div>
           <div className="mg-subtotal">
-            <dt>Margen bruto estimado</dt>
+            <dt>Ventas menos su costo</dt>
             <dd>{money(t.grossMargin)}</dd>
           </div>
           <div>
@@ -143,9 +157,9 @@ export function ManagementReport({
           </div>
           <div>
             <dt>
-              − Mermas{" "}
+              − Pérdidas{" "}
               {t.wasteIncomplete ? (
-                <span className="mg-inline-warning">parcial</span>
+                <span className="mg-inline-warning">faltan datos</span>
               ) : null}
             </dt>
             <dd>{money(t.waste)}</dd>
@@ -153,25 +167,36 @@ export function ManagementReport({
         </dl>
       </section>
       <p className="mg-disclosure">
-        Son ventas confirmadas, no cobros acreditados. El resultado contempla
-        únicamente los costos y gastos registrados. Incluye {money(t.delivery)}{" "}
-        por envíos; cargá el costo del reparto en Gastos.
+        El total vendido ya descuenta las ventas anuladas. Confirmar una venta
+        no significa que esté cobrada. La estimación usa los costos y gastos que
+        cargaste. Incluye {money(t.delivery)} por envíos; cargá el costo del
+        reparto en Gastos. Las pérdidas son insumos o productos que ya no podés
+        usar o vender.
       </p>
       {t.result === null || report.legacyCount ? (
         <section className="mg-notice" aria-label="Datos por completar">
           <h2>Antes de sacar conclusiones</h2>
           <p>
             {t.completeCount} de {t.saleCount} ventas tienen todos sus costos.
-            Los importes conocidos se muestran como parciales; también puede
-            faltar la valoración de alguna merma.
+            Mostramos los costos que conocemos, pero todavía faltan datos de
+            productos o pérdidas.
           </p>
           {report.legacyCount ? (
             <p>
-              {report.legacyCount} pedidos históricos están incluidos en ventas,
-              sin inventarles costos ni movimientos de stock.
+              {report.legacyCount === 1
+                ? "Hay un pedido anterior a Gestión"
+                : `Hay ${report.legacyCount} pedidos anteriores a Gestión`}{" "}
+              sin costos guardados. Cargar costos ahora sirve para las próximas
+              ventas; no cambia los resultados de esas ventas anteriores.
             </p>
           ) : null}
-          <Link href={`${root}/recetas`}>Revisar recetas y costos</Link>
+          <Link href={`${root}/recetas?action=recipe`}>
+            Cargar ingredientes de los productos
+          </Link>
+          {" · "}
+          <Link href={`${root}/inventario?action=costs`}>
+            Cargar costos de los insumos
+          </Link>
         </section>
       ) : null}
       <div className="mg-stat-line">
@@ -179,7 +204,7 @@ export function ManagementReport({
           <strong>{t.saleCount}</strong> ventas registradas
         </p>
         <p>
-          <strong>{money(t.ticket)}</strong> ticket promedio neto
+          <strong>{money(t.ticket)}</strong> por venta, en promedio
         </p>
         <p>
           <strong>{t.cancelledCount}</strong> anulaciones
@@ -202,7 +227,7 @@ export function ManagementReport({
         <section className="mg-paper mg-trend">
           <div className="mg-section-heading">
             <h2>Cómo vienen las ventas</h2>
-            <span>Por jornada</span>
+            <span>Por día</span>
           </div>
           <svg
             className="mg-chart"
@@ -252,11 +277,11 @@ export function ManagementReport({
               <table>
                 <thead>
                   <tr>
-                    <th>Jornada</th>
+                    <th>Día</th>
                     <th>Ventas</th>
                     <th>Costos conocidos</th>
                     <th>Gastos</th>
-                    <th>Merma</th>
+                    <th>Pérdida</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -266,7 +291,7 @@ export function ManagementReport({
                       <td>{money(d.revenue)}</td>
                       <td>
                         {money(d.cost)}
-                        {!d.complete ? " · parcial" : ""}
+                        {!d.complete ? " · faltan costos" : ""}
                       </td>
                       <td>{money(d.expenses)}</td>
                       <td>{money(d.waste)}</td>
@@ -287,7 +312,7 @@ export function ManagementReport({
                 <div key={c.channel}>
                   <dt>
                     {channels[c.channel as keyof typeof channels]}
-                    <small>{c.count} ventas netas</small>
+                    <small>{c.count} ventas después de anulaciones</small>
                   </dt>
                   <dd>{money(c.revenue)}</dd>
                 </div>
@@ -300,7 +325,7 @@ export function ManagementReport({
         <section className="mg-paper">
           <div className="mg-section-heading">
             <h2>Lo más vendido</h2>
-            <span>Unidades netas</span>
+            <span>Sin contar anulaciones</span>
           </div>
           {report.products.length ? (
             <ol className="mg-ranking">
@@ -340,16 +365,18 @@ export function ManagementReport({
                 <strong>
                   {items.length
                     ? "Stock por encima del mínimo"
-                    : "Cargá tus primeras existencias"}
+                    : "Cargá el stock que tenés"}
                 </strong>
                 <Link href={`${root}/inventario`}>Ir al inventario</Link>
               </li>
             )}
             {unknown.length ? (
               <li>
-                <strong>{unknown.length} insumos sin valorizar</strong>
-                <span>Ingresá su valor total desde el conteo de stock.</span>
-                <Link href={`${root}/inventario`}>Completar costos</Link>
+                <strong>{unknown.length} insumos sin costo cargado</strong>
+                <span>Cargá cuánto te costó el stock que tenés.</span>
+                <Link href={`${root}/inventario?action=costs`}>
+                  Cargar costos de insumos
+                </Link>
               </li>
             ) : null}
             <li>

@@ -6,11 +6,15 @@ Entrega del 16 de octubre de 2026. Ruta: `/panel/negocios/:id/gestion`.
 
 1. En **Inventario**, cargar insumos, envases y terminados, su unidad base (g, ml o unidad), mínimos y existencia inicial. El valor inicial es el costo total de esa existencia; vacío significa desconocido.
 2. Registrar **Proveedores** opcionales y **Compras** con varias líneas. kg y litros convierten a g y ml; una presentación declara su contenido en unidades base. El costo es el total de la línea, en pesos, sin separador de miles y con coma decimal.
-3. En **Recetas y producción**, configurar los consumos de cada variante y adicional por unidad vendida. Una opción sin consumo debe declararse expresamente. Los combos tienen composición explícita; no consumen automáticamente otros productos de la carta.
+3. En **Recetas y preparación**, configurar los consumos de cada variante y adicional por unidad vendida. Una opción sin consumo debe declararse expresamente. Los combos tienen composición explícita; no consumen automáticamente otros productos de la carta.
 4. Para elaborar, crear previamente un terminado y registrar ingredientes reales utilizados y cantidad real obtenida. Esta versión consume solo insumos en la elaboración. La receta de venta utiliza el terminado y puede agregar envases u otros componentes; no vuelve a consumir sus ingredientes.
 5. Aceptar pedidos de tienda registra su venta y descuenta stock. **Ventas** permite cargar mostrador, WhatsApp y otros con sus precios efectivos, incluyendo adicionales. El cargo de envío se informa aparte. Ninguna acción acredita un cobro.
 6. Registrar **Gastos** por fecha y categoría, incluyendo reparto, servicios, alquiler y sueldos. Las compras de inventario no se repiten como gastos. Se admiten fechas de la jornada actual o anteriores, sin recurrencias automáticas.
 7. En **Resultados**, elegir hoy, últimos siete días, mes o un rango de hasta 366 días. Los gráficos, ranking, comparación y CSV consultan todo el período, independientemente de la paginación de las listas.
+
+El dashboard usa palabras cotidianas: **Total vendido**, **Ventas menos su costo**, **Pérdidas** y **Lo que te queda (estimado)**. Las pérdidas son insumos o productos que ya no se pueden usar o vender.
+
+Si aparece **Faltan costos**, los accesos directos abren el formulario de costo del stock o el de ingredientes por producto. Inventario también ofrece **Cargar costo** junto a cada insumo con stock positivo sin costo. Estos cambios completan las próximas ventas; no reescriben costos históricos.
 
 ## Costos y resultados
 

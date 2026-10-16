@@ -16,7 +16,7 @@ export const metadata = { title: "Gestión de tu negocio — Pedipue" };
 const sections = {
   resultados: "Resultados",
   inventario: "Inventario",
-  recetas: "Recetas y producción",
+  recetas: "Recetas y preparación",
   compras: "Compras",
   ventas: "Ventas",
   gastos: "Gastos",
@@ -27,7 +27,12 @@ export default async function ManagementPage({
   searchParams,
 }: {
   params: Promise<{ id: string; section?: string[] }>;
-  searchParams: Promise<{ from?: string; to?: string; page?: string }>;
+  searchParams: Promise<{
+    from?: string;
+    to?: string;
+    page?: string;
+    action?: string;
+  }>;
 }) {
   const user = await requireUser(),
     { id, section: path } = await params,
@@ -80,7 +85,7 @@ export default async function ManagementPage({
                   : section === "ventas"
                     ? "La tienda se suma sola. El resto, lo anotás acá."
                     : section === "compras"
-                      ? "Una compra registrada: existencias y costos al día."
+                      ? "Una compra registrada: stock y costos al día."
                       : section === "gastos"
                         ? "Los gastos también cuentan en el resultado."
                         : "Los contactos que abastecen tu negocio."}
@@ -125,12 +130,19 @@ export default async function ManagementPage({
         />
       ) : null}
       <ManagementWorkspace
-        key={section}
+        key={`${section}-${query.action ?? ""}`}
         businessId={id}
         section={section}
         initialData={data}
         products={products}
         owner={owner}
+        initialAction={
+          section === "recetas" && query.action === "recipe"
+            ? "recipe"
+            : section === "inventario" && query.action === "costs"
+              ? "costs"
+              : undefined
+        }
       />
     </>
   );

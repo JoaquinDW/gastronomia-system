@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { Product } from "@/lib/menu";
 import type { ManagementData, Sale } from "@/lib/management";
-import { pesosToCents } from "@/lib/management-math";
+import { fixed, pesosToCents } from "@/lib/management-math";
 import {
   EditorFields,
   editorTitles,
@@ -27,17 +28,30 @@ export function ManagementWorkspace({
   initialData,
   products,
   owner,
+  initialAction,
 }: {
   businessId: string;
   section: string;
   initialData: ManagementData;
   products: Product[];
   owner: boolean;
+  initialAction?: "recipe" | "costs";
 }) {
   const router = useRouter(),
     base = `/api/businesses/${businessId}/management`;
   const [data, setData] = useState(initialData),
-    [editor, setEditor] = useState<ManagementEditor | null>(null),
+    [editor, setEditor] = useState<ManagementEditor | null>(() => {
+      if (initialAction === "recipe" && products.length)
+        return { type: "recipe" };
+      if (initialAction === "costs") {
+        if (!initialData.items.length) return { type: "item" };
+        const item = initialData.items.find(
+          (i) => i.unitCost === null && fixed(i.quantity) > 0n,
+        );
+        if (item) return { type: "adjustment", item, costOnly: true };
+      }
+      return null;
+    }),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
@@ -261,7 +275,9 @@ export function ManagementWorkspace({
       open({ type: "cancel_sale", sale, movements });
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : "No pudimos cargar los consumos.",
+        e instanceof Error
+          ? e.message
+          : "No pudimos cargar los insumos usados.",
       );
     } finally {
       setBusy(false);
@@ -321,7 +337,7 @@ export function ManagementWorkspace({
                 {section === "ventas"
                   ? "Una venta confirmada descuenta stock y conserva su costo."
                   : section === "recetas"
-                    ? "Consumos por unidad vendida y registro de cada tanda."
+                    ? "Ingredientes por producto y registro de cada tanda preparada."
                     : "Cada registro conserva su fecha y responsable."}
               </p>
             )}
@@ -351,7 +367,7 @@ export function ManagementWorkspace({
                   busy || !data.items.some((i) => i.kind === "finished")
                 }
               >
-                Registrar elaboración
+                Registrar preparación
               </button>
             ) : null}
             <button
@@ -384,6 +400,47 @@ export function ManagementWorkspace({
       {message ? (
         <p className="mg-success" role="status">
           {message}
+          {message.includes("Faltan costos") ? (
+            <>
+              {" "}
+              <Link
+                href={`/panel/negocios/${businessId}/gestion/inventario?action=costs`}
+              >
+                Cargar costos de insumos
+              </Link>
+              {" · "}
+              <Link
+                href={`/panel/negocios/${businessId}/gestion/recetas?action=recipe`}
+              >
+                Indicar ingredientes por producto
+              </Link>
+            </>
+          ) : null}
+        </p>
+      ) : null}
+      {initialAction === "costs" ? (
+        <p className="mg-notice">
+          Cargá el costo total del stock que tenés. Si todavía no tenés stock,{" "}
+          <Link href={`/panel/negocios/${businessId}/gestion/compras`}>
+            registrá una compra
+          </Link>
+          .
+          {data.items.length &&
+          data.items.every(
+            (i) => i.unitCost !== null || fixed(i.quantity) <= 0n,
+          ) ? (
+            <>
+              {" "}
+              Los insumos con stock ya tienen costo. Si faltan costos en las
+              ventas,{" "}
+              <Link
+                href={`/panel/negocios/${businessId}/gestion/recetas?action=recipe`}
+              >
+                indicá los ingredientes de cada producto
+              </Link>
+              .
+            </>
+          ) : null}
         </p>
       ) : null}
       {error ? (
@@ -395,7 +452,9 @@ export function ManagementWorkspace({
         <section className="mg-editor" aria-labelledby="management-form-title">
           <div className="mg-section-heading">
             <h2 ref={formHeading} tabIndex={-1} id="management-form-title">
-              {editorTitles[editor.type]}
+              {editor.type === "adjustment" && editor.costOnly
+                ? `Cargar costo de ${editor.item.name}`
+                : editorTitles[editor.type]}
             </h2>
             <button
               type="button"
@@ -449,7 +508,7 @@ export function ManagementWorkspace({
       />
       {section === "resultados" && owner ? (
         <details className="mg-settings">
-          <summary>Configurar el cierre de jornada</summary>
+          <summary>Elegir a qué hora termina el día</summary>
           <form
             className="mg-date-form"
             onSubmit={(e) => {
@@ -462,7 +521,7 @@ export function ManagementWorkspace({
               });
             }}
           >
-            <Field label="La jornada termina a las">
+            <Field label="El día termina a las">
               <select name="cutoffHour" defaultValue={data.settings.cutoffHour}>
                 {Array.from({ length: 24 }, (_, h) => (
                   <option value={h} key={h}>
@@ -477,7 +536,7 @@ export function ManagementWorkspace({
           </form>
           <p className="mg-disclosure">
             Zona horaria: {data.settings.timezone}. El cambio se aplica a
-            operaciones nuevas; las jornadas ya registradas se conservan.
+            operaciones nuevas; los registros anteriores conservan su fecha.
           </p>
         </details>
       ) : null}

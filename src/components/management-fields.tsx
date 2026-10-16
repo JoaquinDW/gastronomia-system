@@ -134,7 +134,20 @@ export function RecipeEditor({
       label: `${p.name} · Adicional: ${a.name}`,
     })),
   ]);
-  const [selected, setSelected] = useState(options[0]?.value ?? "");
+  const [selected, setSelected] = useState(
+    () =>
+      options.find((o) => {
+        const [productId, optionKind, optionId] = o.value.split(":");
+        return !recipes.some(
+          (r) =>
+            r.productId === productId &&
+            r.optionKind === optionKind &&
+            r.optionId === optionId,
+        );
+      })?.value ??
+      options[0]?.value ??
+      "",
+  );
   const [productId, kind, optionId] = selected.split(":"),
     recipe = recipes.find(
       (r) =>
@@ -165,10 +178,11 @@ export function RecipeEditor({
         recipe={recipe}
       />
       <p className="mg-disclosure">
-        Cantidades por una unidad vendida. Para combos, cargá su composición
-        completa una sola vez. Si vendés un terminado ya elaborado, cargá ese
-        terminado: sus ingredientes se descontaron al producirlo. Los
-        adicionales se suman a la variante.
+        Indicá cuánto de cada ingrediente usás para vender una unidad. En un
+        combo, incluí todo lo que lleva una sola vez. Si vendés un producto que
+        ya preparaste, elegí ese producto: sus ingredientes ya se descontaron al
+        prepararlo. Los ingredientes de los adicionales se suman a los del
+        producto.
       </p>
     </>
   );
@@ -190,7 +204,7 @@ function RecipeConsumption({
           checked={none}
           onChange={(e) => setNone(e.target.checked)}
         />
-        Esta opción no consume stock (costo cero declarado)
+        Esta opción no usa insumos ni agrega costos
       </label>
       {!none ? <IngredientLines items={items} initial={recipe?.lines} /> : null}
     </>

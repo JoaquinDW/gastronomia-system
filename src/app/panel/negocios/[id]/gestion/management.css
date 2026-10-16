@@ -192,6 +192,32 @@
   font-size: 12px;
   margin-top: 12px;
 }
+.mg-cost-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 20px;
+}
+.mg-cost-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--paper);
+  border-radius: var(--radius);
+  color: var(--paper);
+  font: 600 13px/1.4 var(--sans);
+  text-decoration: none;
+}
+.mg-cost-actions a:hover {
+  background: var(--asphalt);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.mg-cost-actions a:focus-visible {
+  outline-color: var(--paper);
+}
 .mg-equation {
   margin: 0;
   padding: 25px 32px;

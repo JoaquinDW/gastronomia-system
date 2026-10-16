@@ -19,14 +19,14 @@ import type { ManagementEditor } from "./management-editor";
 import { Field, units } from "./management-fields";
 
 const movementNames: Record<string, string> = {
-  opening: "Existencia inicial",
+  opening: "Stock inicial",
   purchase: "Compra",
   production_input: "Insumos utilizados",
-  production_output: "Elaboración",
+  production_output: "Preparación",
   sale: "Venta",
   recovery: "Recuperación",
-  waste: "Merma",
-  adjustment: "Conteo / ajuste",
+  waste: "Pérdida",
+  adjustment: "Stock actualizado",
 };
 function localTime(date: string, timezone: string) {
   return formatManagementDate(date, timezone);
@@ -71,22 +71,22 @@ export function ManagementTables({
     return (
       <>
         <p className="mg-disclosure">
-          El stock se descuenta al confirmar ventas y elaboraciones. Los
+          El stock se descuenta al confirmar ventas y preparaciones. Los
           negativos se permiten y quedan señalados. Los costos son por unidad
           base.
         </p>
         {!data.items.length ? (
           <Empty title="Empezá por lo que tenés en la cocina.">
-            Cargá insumos, envases y productos terminados. Si conocés el valor
-            de las existencias iniciales, ya podés estimar tus costos.
+            Cargá insumos, envases y productos ya preparados. Si conocés el
+            valor del stock que tenés, ya podés estimar tus costos.
           </Empty>
         ) : (
           <div className="mg-table-wrap mg-paper">
             <table>
               <thead>
                 <tr>
-                  <th>Insumo / terminado</th>
-                  <th>Existencia</th>
+                  <th>Insumo / producto preparado</th>
+                  <th>Stock actual</th>
                   <th>Mínimo</th>
                   <th>Costo por unidad</th>
                   <th>Acciones</th>
@@ -99,7 +99,7 @@ export function ManagementTables({
                       {i.name}
                       <small>
                         {i.kind === "finished"
-                          ? "Producto terminado"
+                          ? "Producto ya preparado"
                           : "Insumo"}
                       </small>
                     </th>
@@ -122,7 +122,28 @@ export function ManagementTables({
                     </td>
                     <td>
                       {i.unitCost === null ? (
-                        "Sin valorizar"
+                        <>
+                          <span>Sin costo cargado</span>
+                          {fixed(i.quantity) > 0n ? (
+                            <button
+                              className="text-button"
+                              onClick={() =>
+                                open({
+                                  type: "adjustment",
+                                  item: i,
+                                  costOnly: true,
+                                })
+                              }
+                            >
+                              Cargar costo
+                              <span className="sr-only"> de {i.name}</span>
+                            </button>
+                          ) : (
+                            <small>
+                              Registrá una compra para cargar su costo.
+                            </small>
+                          )}
+                        </>
                       ) : (
                         <>
                           {formatUnitCost(i.unitCost)} / {units[i.unit]}
@@ -135,7 +156,7 @@ export function ManagementTables({
                           className="text-button"
                           onClick={() => open({ type: "adjustment", item: i })}
                         >
-                          Contar / merma
+                          Actualizar stock / pérdidas
                           <span className="sr-only"> de {i.name}</span>
                         </button>
                         <button
@@ -247,7 +268,7 @@ export function ManagementTables({
               <thead>
                 <tr>
                   <th>Producto / opción</th>
-                  <th>Consumo por venta</th>
+                  <th>Qué se usa en cada venta</th>
                   <th>Costo estimado actual</th>
                 </tr>
               </thead>
@@ -288,7 +309,7 @@ export function ManagementTables({
                         <td>
                           {recipe ? (
                             recipe.noConsumption ? (
-                              "Sin consumo (declarado)"
+                              "No usa insumos"
                             ) : (
                               recipe.lines
                                 .map((l) => {
@@ -301,7 +322,7 @@ export function ManagementTables({
                             )
                           ) : (
                             <span className="mg-stock-alert">
-                              Falta configurar receta
+                              Falta indicar los ingredientes
                             </span>
                           )}
                           {recipe ? (
@@ -331,7 +352,7 @@ export function ManagementTables({
             disabled={busy}
             onClick={() => more("operations")}
           >
-            Cargar operaciones anteriores
+            Ver registros anteriores
           </button>
         ) : null}
       </>
@@ -340,9 +361,9 @@ export function ManagementTables({
     return (
       <>
         <p className="mg-disclosure">
-          Las compras suman existencias y actualizan el promedio ponderado. Su
-          costo se reconoce al vender o registrar merma; no se resta de nuevo
-          como gasto. Si todavía no hay insumos, cargalos primero en Inventario.
+          Las compras suman stock y actualizan el costo promedio. Su costo se
+          reconoce al vender o registrar pérdida; no se resta de nuevo como
+          gasto. Si todavía no hay insumos, cargalos primero en Inventario.
         </p>
         <OperationList
           data={data}
@@ -357,7 +378,7 @@ export function ManagementTables({
             disabled={busy}
             onClick={() => more("operations")}
           >
-            Cargar operaciones anteriores
+            Ver registros anteriores
           </button>
         ) : null}
       </>
@@ -370,9 +391,9 @@ export function ManagementTables({
             <thead>
               <tr>
                 <th>Fecha / venta</th>
-                <th>Canal</th>
+                <th>Dónde vendiste</th>
                 <th>Total</th>
-                <th>Costo capturado</th>
+                <th>Costo guardado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -405,7 +426,18 @@ export function ManagementTables({
                     ) : (
                       <>
                         {money(s.knownCostCents)}
-                        <small>Parcial · faltan costos</small>
+                        <small>Faltan costos</small>
+                        <Link
+                          href={`/panel/negocios/${businessId}/gestion/inventario?action=costs`}
+                        >
+                          Cargar costos de insumos
+                        </Link>
+                        {" · "}
+                        <Link
+                          href={`/panel/negocios/${businessId}/gestion/recetas?action=recipe`}
+                        >
+                          Indicar ingredientes
+                        </Link>
                       </>
                     )}
                   </td>
@@ -569,7 +601,7 @@ function OperationList({
       >
         {kind === "purchase"
           ? "Podés cargar varios insumos en la misma compra, incluso por kilo, litro o presentación."
-          : "Registrá los ingredientes utilizados y la cantidad real obtenida. Al vender, solo se descuenta el producto terminado."}
+          : "Registrá los ingredientes utilizados y la cantidad real obtenida. Al vender, solo se descuenta el producto ya preparado."}
       </Empty>
     );
   return (

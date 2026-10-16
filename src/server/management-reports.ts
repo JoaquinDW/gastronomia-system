@@ -170,7 +170,10 @@ export function csv(rows: (string | number | null)[][]): string {
         row
           .map((value) => {
             const s = String(value ?? "");
-            const safe = !/^-?\d+(\.\d+)?$/.test(s) && /^[\s]*[=+@-]/.test(s) ? `'${s}` : s;
+            const safe =
+              !/^-?\d+(\.\d+)?$/.test(s) && /^[\s]*[=+@-]/.test(s)
+                ? `'${s}`
+                : s;
             return `"${safe.replace(/"/g, '""')}"`;
           })
           .join(";"),
@@ -207,7 +210,7 @@ export async function exportMovements(
   );
   return csv([
     [
-      "Jornada",
+      "Día",
       "Insumo",
       "Unidad",
       "Cantidad",

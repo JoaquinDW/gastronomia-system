@@ -34,6 +34,7 @@ const owner = await browser.newContext({
   guest = await browser.newContext();
 const errors = [];
 const page = await owner.newPage();
+page.setDefaultTimeout(20000);
 page.on("pageerror", (e) => errors.push(e.message));
 const screenshots =
   process.env.MANAGEMENT_SCREENSHOTS ?? "/tmp/gastronomia-management-review";
@@ -97,10 +98,12 @@ try {
     .click();
   const form = page.locator(".mg-editor");
   await form.getByLabel("Nombre", { exact: true }).fill("Carne picada");
-  await form.getByLabel("Existencia inicial", { exact: true }).fill("10000");
+  await form
+    .getByLabel("Cantidad que tenés ahora", { exact: true })
+    .fill("10000");
   await form.getByLabel("Stock mínimo", { exact: true }).fill("1000");
   await form
-    .getByLabel("Valor total de esa existencia ($)", { exact: true })
+    .getByLabel("Cuánto te costó todo ese stock ($)", { exact: true })
     .fill("80000");
   await page.route(`**${management}`, async (route) => {
     if (route.request().method() === "POST") {
@@ -351,6 +354,100 @@ try {
       elements.map((e) => ({ tag: e.tagName, labels: e.labels?.length })),
     );
   assert.ok(names.every((n) => n.labels > 0));
+  // Missing-cost actions must lead to a usable form and preserve stock/history.
+  const unpriced = await command({
+    type: "item",
+    name: "Envases sin costo",
+    kind: "ingredient",
+    unit: "unit",
+    minimum: "0",
+    initialQuantity: "10",
+    initialValueCents: null,
+  });
+  const missingVariant = randomUUID();
+  const missingProduct = await api(owner, `/api/businesses/${id}/menu`, {
+    name: "Producto sin ingredientes",
+    description: "Datos sintéticos",
+    category: "Hamburguesas",
+    kind: "product",
+    variants: [{ id: missingVariant, name: "Única", priceCents: 100000 }],
+    addOns: [],
+    imageUrl: "",
+    isAvailable: true,
+    sortOrder: 1,
+  });
+  assert.equal(missingProduct.r.status(), 201);
+  await command({
+    type: "sale",
+    channel: "counter",
+    lines: [
+      {
+        productId: missingProduct.d.product.id,
+        variantId: missingVariant,
+        addOnIds: [],
+        quantity: 1,
+        unitCents: "100000",
+      },
+    ],
+  });
+  await page.goto(`${base}${root}`);
+  await page
+    .locator(".mg-result-amount")
+    .filter({ hasText: "Faltan costos" })
+    .waitFor();
+  assert.equal(
+    await page.getByText(/mermas|margen bruto|resultado operativo/i).count(),
+    0,
+  );
+  await page.screenshot({
+    path: `${screenshots}/missing-costs-mobile.png`,
+    fullPage: true,
+  });
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+    false,
+  );
+  await page
+    .locator(".mg-cost-actions")
+    .getByRole("link", { name: "Cargar costos de insumos", exact: true })
+    .click();
+  await form
+    .getByRole("heading", { name: "Cargar costo de Envases sin costo" })
+    .waitFor();
+  assert.equal(
+    await form.getByLabel("Cantidad (un.)", { exact: true }).inputValue(),
+    "10",
+  );
+  await form
+    .getByLabel("Cuánto te costó todo este stock ($)", { exact: true })
+    .fill("1000");
+  await form.getByRole("button", { name: "Guardar y confirmar" }).click();
+  await page.getByRole("status").filter({ hasText: "Listo" }).waitFor();
+  const priced = (await api(owner, management)).d.items.find(
+    (i) => i.id === unpriced.id,
+  );
+  assert.equal(Number(priced.quantity), 10);
+  assert.equal(Number(priced.unitCost), 10000);
+  await page.goto(`${base}${root}`);
+  await page
+    .getByRole("link", {
+      name: "Indicar ingredientes por producto",
+      exact: true,
+    })
+    .click();
+  assert.equal(
+    await form.getByLabel("Producto y opción de la carta").inputValue(),
+    `${missingProduct.d.product.id}:variant:${missingVariant}`,
+  );
+  await form.getByLabel("Esta opción no usa insumos ni agrega costos").check();
+  await form.getByRole("button", { name: "Guardar y confirmar" }).click();
+  await page.getByRole("status").filter({ hasText: "Listo" }).waitFor();
+  assert.equal(
+    (await api(owner, `${management}?view=report`)).d.totals.result,
+    null,
+  );
   assert.equal((await api(guest, management)).r.status(), 401);
   await register(other, "Other");
   assert.equal((await api(other, management)).r.status(), 404);
@@ -384,7 +481,7 @@ try {
   assert.equal((await api(other, management)).d.expenses.length, 0);
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: real Auth, tenant and role permissions, item + supplier + sale UI, failed save retains input, complete report, CSV, mobile sections and labeled forms",
+    "PASS: real Auth, tenant and role permissions, item + supplier + sale UI, failed save retains input, complete report, missing-cost shortcuts, immutable past costs, CSV, mobile sections and labeled forms",
   );
   console.log(`Screenshots: ${screenshots}`);
   console.log(`Synthetic business: ${id}`);

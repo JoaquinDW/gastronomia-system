@@ -421,7 +421,7 @@ export async function executeManagement(
           )
             throw new HttpError(
               422,
-              "No se puede valorizar un stock inicial de cero.",
+              "No se puede cargar el costo de un stock inicial de cero.",
             );
           const unitCost =
             input.initialValueCents !== null &&
@@ -502,7 +502,7 @@ export async function executeManagement(
         if (input.noConsumption === !!input.lines.length)
           throw new HttpError(
             422,
-            "Agregá insumos o indicá expresamente que no consume stock.",
+            "Agregá ingredientes o marcá que esta opción no usa insumos.",
           );
         if (
           new Set(input.lines.map((l) => l.itemId)).size !== input.lines.length
@@ -578,7 +578,7 @@ export async function executeManagement(
         if (output.kind !== "finished")
           throw new HttpError(
             422,
-            "El resultado de la elaboración debe ser un producto terminado.",
+            "Elegí un producto ya preparado para registrar lo que obtuviste.",
           );
         let total = 0n,
           complete = true;
@@ -587,7 +587,7 @@ export async function executeManagement(
           if (item.kind !== "ingredient")
             throw new HttpError(
               422,
-              "La producción de una etapa solo consume insumos, no otros terminados.",
+              "Usá insumos como ingredientes de esta preparación.",
             );
           const cost = costOf(line.quantity, item.unitCost);
           if (cost === null) complete = false;
@@ -648,7 +648,7 @@ export async function executeManagement(
             ? fixed(input.quantity) - fixed(item.quantity)
             : -fixed(input.quantity);
         if (input.mode === "waste" && change === 0n)
-          throw new HttpError(422, "La merma debe ser mayor que cero.");
+          throw new HttpError(422, "La pérdida debe ser mayor que cero.");
         if (
           input.mode === "count" &&
           input.totalValueCents !== null &&
@@ -657,7 +657,7 @@ export async function executeManagement(
         )
           throw new HttpError(
             422,
-            "No se puede valorizar una existencia de cero.",
+            "Para cargar un costo, primero indicá cuánto stock tenés.",
           );
         const newCost =
           input.mode === "count" &&
@@ -741,7 +741,7 @@ export async function executeManagement(
         )
           throw new HttpError(
             422,
-            "Las recuperaciones no corresponden a los consumos de esta venta.",
+            "Las cantidades recuperadas no corresponden a los insumos usados en esta venta.",
           );
         for (const movement of consumed.rows) {
           const item = requireItem(items, movement.itemId),
@@ -822,7 +822,7 @@ export async function executeManagement(
         )
           throw new HttpError(
             422,
-            "Registrá el gasto en una jornada de hoy o anterior.",
+            "Elegí la fecha de hoy o una fecha anterior para el gasto.",
           );
         await supplierExists(client, businessId, input.supplierId);
         const { rows } = await client.query<{ id: string }>(

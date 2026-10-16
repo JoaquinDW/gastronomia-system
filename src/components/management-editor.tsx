@@ -22,17 +22,22 @@ import {
 export type ManagementEditor =
   | { type: "item"; item?: StockItem }
   | { type: "supplier"; supplier?: Supplier }
-  | { type: "adjustment"; item: StockItem; referenceId?: string }
+  | {
+      type: "adjustment";
+      item: StockItem;
+      referenceId?: string;
+      costOnly?: boolean;
+    }
   | { type: "purchase" | "recipe" | "production" | "sale" | "expense" }
   | { type: "cancel_sale"; sale: Sale; movements: Movement[] }
   | { type: "reverse_expense"; id: string };
 export const editorTitles = {
-  item: "Insumo o terminado",
+  item: "Insumo o producto preparado",
   supplier: "Proveedor",
-  adjustment: "Conteo o merma",
+  adjustment: "Actualizar stock o registrar pérdida",
   purchase: "Registrar compra",
-  recipe: "Receta de una opción",
-  production: "Registrar elaboración",
+  recipe: "Ingredientes de un producto",
+  production: "Registrar preparación",
   sale: "Registrar venta manual",
   expense: "Registrar gasto",
   cancel_sale: "Anular venta",
@@ -68,7 +73,7 @@ export function EditorFields({
               disabled={!!editor.item}
             >
               <option value="ingredient">Insumo</option>
-              <option value="finished">Producto terminado</option>
+              <option value="finished">Producto ya preparado</option>
             </select>
           </Field>
           <Field label="Unidad base">
@@ -95,7 +100,7 @@ export function EditorFields({
           {!editor.item ? (
             <>
               <Field
-                label="Existencia inicial"
+                label="Cantidad que tenés ahora"
                 hint="Cantidad en la unidad base elegida."
               >
                 <input
@@ -106,7 +111,7 @@ export function EditorFields({
                 />
               </Field>
               <Field
-                label="Valor total de esa existencia ($)"
+                label="Cuánto te costó todo ese stock ($)"
                 hint="Opcional. Dejalo vacío si no conocés el costo."
               >
                 <input
@@ -152,39 +157,72 @@ export function EditorFields({
       return (
         <>
           <p>
-            {editor.item.name} · {units[editor.item.unit]} · Existencia actual:{" "}
+            {editor.item.name} · {units[editor.item.unit]} · Stock actual:{" "}
             {decimal(fixed(editor.item.quantity))}
           </p>
           {editor.referenceId ? (
             <p className="mg-disclosure">
               Este ajuste queda vinculado a la operación original. El registro
-              anterior se conserva. Para corregir una elaboración, ajustá
+              anterior se conserva. Para corregir una preparación, ajustá
               también los insumos afectados desde Inventario.
             </p>
           ) : null}
           <div className="mg-form-grid">
-            <Field label="Qué vas a registrar">
-              <select name="mode">
-                <option value="count">
-                  Conteo: reemplazar por existencia real
-                </option>
-                <option value="waste">Merma: descontar cantidad perdida</option>
-              </select>
-            </Field>
+            {editor.costOnly ? (
+              <input type="hidden" name="mode" value="count" />
+            ) : (
+              <Field label="Qué vas a registrar">
+                <select name="mode">
+                  <option value="count">Actualizar cuánto stock queda</option>
+                  <option value="waste">
+                    Pérdida: descontar cantidad perdida
+                  </option>
+                </select>
+              </Field>
+            )}
             <Field
               label={`Cantidad (${units[editor.item.unit]})`}
-              hint="En conteo: cuánto queda. En merma: cuánto se perdió."
+              hint={
+                editor.costOnly
+                  ? "Revisá la cantidad que tenés. El costo se calcula con este stock."
+                  : "Si actualizás stock: cuánto queda. Si registrás una pérdida: cuánto se perdió."
+              }
             >
-              <input name="quantity" inputMode="decimal" required />
+              <input
+                name="quantity"
+                inputMode="decimal"
+                required
+                defaultValue={
+                  editor.costOnly
+                    ? decimal(fixed(editor.item.quantity))
+                    : undefined
+                }
+              />
             </Field>
             <Field
-              label="Valor total del stock contado ($)"
-              hint="Solo para conteo. Vacío conserva el costo anterior; completalo para valorizar toda la existencia."
+              label="Cuánto te costó todo este stock ($)"
+              hint={
+                editor.costOnly
+                  ? "Ingresá el costo total de la cantidad indicada arriba. Ejemplo: si tenés 5 kg y pagaste $ 40.000, ingresá 40000."
+                  : "Solo si actualizás stock. Dejalo vacío para mantener el costo anterior."
+              }
             >
-              <input name="totalValue" inputMode="decimal" />
+              <input
+                name="totalValue"
+                inputMode="decimal"
+                required={editor.costOnly}
+              />
             </Field>
             <Field label="Motivo">
-              <textarea name="reason" required minLength={3} maxLength={500} />
+              <textarea
+                name="reason"
+                required
+                minLength={3}
+                maxLength={500}
+                defaultValue={
+                  editor.costOnly ? "Carga de costo del insumo" : undefined
+                }
+              />
             </Field>
           </div>
         </>
@@ -219,9 +257,9 @@ export function EditorFields({
       return (
         <>
           <div className="mg-form-grid">
-            <Field label="Producto terminado obtenido">
+            <Field label="Producto ya preparado obtenido">
               <select name="outputItemId" required>
-                <option value="">Elegí un terminado</option>
+                <option value="">Elegí el producto preparado</option>
                 {data.items
                   .filter((i) => i.kind === "finished")
                   .map((i) => (
@@ -244,7 +282,7 @@ export function EditorFields({
           <IngredientLines
             items={data.items.filter((i) => i.kind === "ingredient")}
           />
-          <Field label="Notas de elaboración">
+          <Field label="Notas de preparación">
             <textarea name="note" maxLength={500} />
           </Field>
         </>
@@ -253,7 +291,7 @@ export function EditorFields({
       return (
         <>
           <div className="mg-form-grid">
-            <Field label="Canal">
+            <Field label="Dónde vendiste">
               <select name="channel">
                 <option value="counter">Mostrador</option>
                 <option value="whatsapp">WhatsApp</option>
@@ -298,7 +336,7 @@ export function EditorFields({
                 ))}
               </select>
             </Field>
-            <Field label="Concepto">
+            <Field label="Qué pagaste">
               <input
                 name="concept"
                 required
@@ -328,8 +366,8 @@ export function EditorFields({
       return (
         <>
           <p>
-            El gasto se conserva en el historial. Su importe se revierte en la
-            jornada de hoy.
+            El gasto se conserva en el historial. El importe deja de contar como
+            gasto desde hoy.
           </p>
           <Field label="Motivo de anulación">
             <textarea name="reason" required minLength={3} maxLength={500} />
@@ -340,14 +378,14 @@ export function EditorFields({
       return (
         <>
           <p>
-            Se revierte la venta de {money(editor.sale.totalCents)}. Indicá qué
-            recuperaste físicamente; el resto queda como merma sin descontarse
+            Se anula la venta de {money(editor.sale.totalCents)}. Indicá qué
+            recuperaste físicamente; el resto queda como pérdida sin descontarse
             dos veces del stock.
           </p>
           {!editor.sale.costComplete ? (
             <p className="mg-notice">
-              Esta venta tiene consumos o costos pendientes. La pérdida también
-              puede quedar incompleta; revisá las existencias reales.
+              A esta venta le faltan ingredientes o costos. No podemos calcular
+              toda la pérdida; revisá cuánto stock te queda.
             </p>
           ) : null}
           {editor.movements.length ? (
@@ -355,7 +393,7 @@ export function EditorFields({
               {editor.movements.map((m) => (
                 <Field
                   key={m.id}
-                  label={`${m.itemName} · consumido: ${decimal(-fixed(m.quantity))}`}
+                  label={`${m.itemName} · usado: ${decimal(-fixed(m.quantity))}`}
                   hint="Cantidad recuperada; 0 si ya se utilizó y no puede volver al stock."
                 >
                   <input
@@ -369,7 +407,7 @@ export function EditorFields({
             </div>
           ) : (
             <p className="mg-disclosure">
-              No hay consumos identificados para recuperar.
+              No hay ingredientes registrados para volver a sumar al stock.
             </p>
           )}
           <Field label="Motivo de anulación">
