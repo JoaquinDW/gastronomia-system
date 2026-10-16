@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { routeHost } from "../src/lib/hosts";
+import {
+  businessPanelUrl,
+  panelBase,
+  routeHost,
+  safeNext,
+  sessionCookieDomain,
+} from "../src/lib/hosts";
 
 test("separa landing, panel y tiendas por host", () => {
   const root = "pedipue.com";
@@ -24,4 +30,28 @@ test("funciona con puerto en desarrollo", () => {
     kind: "store",
     slug: "pastas",
   });
+});
+
+test("la gestión de cada local vive en su subdominio", () => {
+  const id = "209fffa6-5109-4079-b6da-db564010c5a7";
+  process.env.NEXT_PUBLIC_ROOT_DOMAIN = "pedipue.com";
+  assert.equal(panelBase(id), "/panel");
+  assert.equal(
+    businessPanelUrl(id, "la-esquina"),
+    "https://la-esquina.pedipue.com/panel",
+  );
+  assert.equal(sessionCookieDomain(), ".pedipue.com");
+  assert.equal(
+    safeNext("https://la-esquina.pedipue.com/panel/gestion"),
+    "https://la-esquina.pedipue.com/panel/gestion",
+  );
+  assert.equal(safeNext("https://evil.com/panel"), null);
+  assert.equal(safeNext("http://la-esquina.pedipue.com/panel"), null);
+  assert.equal(safeNext("https://www.pedipue.com/"), null);
+
+  delete process.env.NEXT_PUBLIC_ROOT_DOMAIN;
+  assert.equal(panelBase(id), `/panel/negocios/${id}`);
+  assert.equal(businessPanelUrl(id, "la-esquina"), `/panel/negocios/${id}`);
+  assert.equal(sessionCookieDomain(), undefined);
+  assert.equal(safeNext("https://la-esquina.pedipue.com/panel"), null);
 });

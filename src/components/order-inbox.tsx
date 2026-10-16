@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { formatMoney } from "@/lib/menu";
 import type { Order } from "@/lib/checkout";
+import { panelBase } from "@/lib/hosts";
 export function OrderInbox({
   businessId,
   initialOrders,
@@ -173,7 +174,7 @@ export function OrderInbox({
               {o.saleId && o.status === "accepted" ? (
                 <Link
                   className="text-button"
-                  href={`/panel/negocios/${businessId}/gestion/ventas`}
+                  href={`${panelBase(businessId)}/gestion/ventas`}
                 >
                   Ver venta o registrar anulación
                 </Link>

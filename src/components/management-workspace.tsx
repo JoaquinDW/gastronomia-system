@@ -12,6 +12,7 @@ import {
 } from "./management-editor";
 import { ManagementTables } from "./management-tables";
 import { Field } from "./management-fields";
+import { panelBase } from "@/lib/hosts";
 
 function text(form: FormData, key: string) {
   return String(form.get(key) ?? "").trim();
@@ -404,13 +405,13 @@ export function ManagementWorkspace({
             <>
               {" "}
               <Link
-                href={`/panel/negocios/${businessId}/gestion/inventario?action=costs`}
+                href={`${panelBase(businessId)}/gestion/inventario?action=costs`}
               >
                 Cargar costos de insumos
               </Link>
               {" · "}
               <Link
-                href={`/panel/negocios/${businessId}/gestion/recetas?action=recipe`}
+                href={`${panelBase(businessId)}/gestion/recetas?action=recipe`}
               >
                 Indicar ingredientes por producto
               </Link>
@@ -421,7 +422,7 @@ export function ManagementWorkspace({
       {initialAction === "costs" ? (
         <p className="mg-notice">
           Cargá el costo total del stock que tenés. Si todavía no tenés stock,{" "}
-          <Link href={`/panel/negocios/${businessId}/gestion/compras`}>
+          <Link href={`${panelBase(businessId)}/gestion/compras`}>
             registrá una compra
           </Link>
           .
@@ -434,7 +435,7 @@ export function ManagementWorkspace({
               Los insumos con stock ya tienen costo. Si faltan costos en las
               ventas,{" "}
               <Link
-                href={`/panel/negocios/${businessId}/gestion/recetas?action=recipe`}
+                href={`${panelBase(businessId)}/gestion/recetas?action=recipe`}
               >
                 indicá los ingredientes de cada producto
               </Link>

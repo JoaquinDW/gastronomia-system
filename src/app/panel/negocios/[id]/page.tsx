@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { businessKinds } from "@/lib/business-input";
-import { storeUrl } from "@/lib/hosts";
+import { appUrl, panelBase, storeUrl } from "@/lib/hosts";
 import { findBusiness } from "@/server/businesses";
 import { requireUser } from "@/server/auth";
 import { getProducts, getSettings } from "@/server/menu";
@@ -26,7 +26,7 @@ export default async function BusinessPage({
   ]);
   return (
     <>
-      <Link href="/panel" className="back-link">
+      <Link href={appUrl("/panel")} className="back-link">
         ← Mis negocios
       </Link>
       <BusinessNav id={id} active="home" />
@@ -37,10 +37,7 @@ export default async function BusinessPage({
             Ventas, costos, stock y gastos, conectados para saber cómo te está
             yendo.
           </p>
-          <Link
-            className="secondary-button"
-            href={`/panel/negocios/${id}/gestion`}
-          >
+          <Link className="secondary-button" href={`${panelBase(id)}/gestion`}>
             Abrir Gestión
           </Link>
         </section>
@@ -116,7 +113,7 @@ export default async function BusinessPage({
             <li className={products.length ? "done" : ""}>
               <span aria-hidden="true">{products.length ? "✓" : "03"}</span>
               <div>
-                <Link href={`/panel/negocios/${id}/carta`}>
+                <Link href={`${panelBase(id)}/carta`}>
                   {products.length ? "Administrar tu carta" : "Cargar tu carta"}{" "}
                   →
                 </Link>
@@ -132,7 +129,7 @@ export default async function BusinessPage({
                 {settings.isPublished ? "✓" : "04"}
               </span>
               <div>
-                <Link href={`/panel/negocios/${id}/tienda`}>
+                <Link href={`${panelBase(id)}/tienda`}>
                   {settings.isPublished
                     ? "Administrar tu tienda"
                     : "Activar tu tienda"}{" "}

@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { appUrl } from "@/lib/hosts";
 
 export function SignOut() {
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   return (
@@ -19,8 +18,7 @@ export function SignOut() {
           try {
             const result = await authClient.signOut();
             if (result.error) throw new Error("Sign out failed");
-            router.replace("/ingresar");
-            router.refresh();
+            window.location.assign(appUrl("/ingresar"));
           } catch {
             setError(true);
             setBusy(false);

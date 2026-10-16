@@ -17,6 +17,7 @@ import {
 } from "@/lib/management-math";
 import type { ManagementEditor } from "./management-editor";
 import { Field, units } from "./management-fields";
+import { panelBase } from "@/lib/hosts";
 
 const movementNames: Record<string, string> = {
   opening: "Stock inicial",
@@ -260,7 +261,7 @@ export function ManagementTables({
         {!products.length ? (
           <Empty title="Primero, tu carta.">
             Agregá productos y variantes para asociarles recetas.{" "}
-            <Link href={`/panel/negocios/${businessId}/carta`}>Ir a Carta</Link>
+            <Link href={`${panelBase(businessId)}/carta`}>Ir a Carta</Link>
           </Empty>
         ) : (
           <div className="mg-table-wrap mg-paper">
@@ -428,13 +429,13 @@ export function ManagementTables({
                         {money(s.knownCostCents)}
                         <small>Faltan costos</small>
                         <Link
-                          href={`/panel/negocios/${businessId}/gestion/inventario?action=costs`}
+                          href={`${panelBase(businessId)}/gestion/inventario?action=costs`}
                         >
                           Cargar costos de insumos
                         </Link>
                         {" · "}
                         <Link
-                          href={`/panel/negocios/${businessId}/gestion/recetas?action=recipe`}
+                          href={`${panelBase(businessId)}/gestion/recetas?action=recipe`}
                         >
                           Indicar ingredientes
                         </Link>

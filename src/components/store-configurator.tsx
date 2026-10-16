@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { storeUrl } from "@/lib/hosts";
+import { storePreviewUrl, storeUrl } from "@/lib/hosts";
 import {
   dayNames,
   moneyToCents,
@@ -476,7 +476,7 @@ export function StoreConfigurator({
         </ul>
         <Link
           className="secondary-button"
-          href={`/t/${slug}?preview=1`}
+          href={storePreviewUrl(slug)}
           target="_blank"
         >
           Vista previa de la tienda ↗

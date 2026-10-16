@@ -1,4 +1,5 @@
 import { Brand } from "@/components/brand";
+import { appUrl } from "@/lib/hosts";
 import { SignOut } from "@/components/sign-out";
 import { requireUser } from "@/server/auth";
 
@@ -16,7 +17,7 @@ export default async function PanelLayout({
         Ir al contenido
       </a>
       <header className="site-header">
-        <Brand />
+        <Brand href={appUrl("/panel")} />
         <div className="panel-account">
           <span>{user.name}</span>
           <SignOut />

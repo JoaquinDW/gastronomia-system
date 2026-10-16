@@ -4,6 +4,7 @@ import { authorizeBusiness } from "@/server/http";
 import { listOrders } from "@/server/orders";
 import { BusinessNav } from "@/components/business-nav";
 import { OrderInbox } from "@/components/order-inbox";
+import { panelBase } from "@/lib/hosts";
 export const metadata = { title: "Pedidos de tu tienda — Pedipue" };
 export default async function OrdersPage({
   params,
@@ -16,7 +17,7 @@ export default async function OrdersPage({
   const orders = await listOrders(id);
   return (
     <>
-      <Link className="back-link" href={`/panel/negocios/${id}`}>
+      <Link className="back-link" href={`${panelBase(id)}`}>
         ← {access.business.name}
       </Link>
       <BusinessNav id={id} active="orders" />

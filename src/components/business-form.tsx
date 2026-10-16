@@ -1,12 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { businessInput, businessKinds, slugify } from "@/lib/business-input";
-import { storeUrl } from "@/lib/hosts";
+import { appUrl, storeUrl } from "@/lib/hosts";
 
 export function BusinessForm({ email }: { email: string }) {
-  const router = useRouter();
   const requestKey = useRef<string | null>(null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -69,8 +67,10 @@ export function BusinessForm({ email }: { email: string }) {
         return;
       }
       if (typeof data.id !== "string") throw new Error("Missing business ID");
-      router.replace(`/panel/negocios/${encodeURIComponent(data.id)}`);
-      router.refresh();
+      // Recarga completa: con dominios, el proxy lleva al subdominio del local.
+      window.location.assign(
+        appUrl(`/panel/negocios/${encodeURIComponent(data.id)}`),
+      );
     } catch {
       setError(
         "No pudimos conectar. Tus datos siguen acá. Volvé a intentar; no vamos a duplicar tu negocio.",

@@ -4,6 +4,7 @@ import { authorizeBusiness } from "@/server/http";
 import { getProducts } from "@/server/menu";
 import { BusinessNav } from "@/components/business-nav";
 import { MenuManager } from "@/components/menu-manager";
+import { panelBase } from "@/lib/hosts";
 export const metadata = { title: "Tu carta — Pedipue" };
 export default async function MenuPage({
   params,
@@ -16,7 +17,7 @@ export default async function MenuPage({
   const products = await getProducts(id);
   return (
     <>
-      <Link href={`/panel/negocios/${id}`} className="back-link">
+      <Link href={`${panelBase(id)}`} className="back-link">
         ← {access.business.name}
       </Link>
       <BusinessNav id={id} active="menu" />

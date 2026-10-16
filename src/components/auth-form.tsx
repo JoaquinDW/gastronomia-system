@@ -5,7 +5,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
-export function AuthForm({ mode }: { mode: "register" | "login" }) {
+export function AuthForm({
+  mode,
+  next,
+}: {
+  mode: "register" | "login";
+  next?: string;
+}) {
   const registering = mode === "register";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -51,6 +57,8 @@ export function AuthForm({ mode }: { mode: "register" | "login" }) {
         setBusy(false);
         return;
       }
+      // Volver a la gestión del local que pidió el ingreso (otro subdominio).
+      if (next) return window.location.assign(next);
       router.replace(registering ? "/alta" : "/panel");
       router.refresh();
     } catch (reason) {

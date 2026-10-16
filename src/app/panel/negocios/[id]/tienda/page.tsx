@@ -6,6 +6,7 @@ import { recentImports } from "@/server/menu-imports";
 import { BusinessNav } from "@/components/business-nav";
 import { StoreConfigurator } from "@/components/store-configurator";
 import { hourSchema, hoursOverlap } from "@/lib/menu";
+import { panelBase } from "@/lib/hosts";
 export const metadata = { title: "Activar tu tienda — Pedipue" };
 export default async function StorePage({
   params,
@@ -29,7 +30,7 @@ export default async function StorePage({
       : [];
   return (
     <>
-      <Link className="back-link" href={`/panel/negocios/${id}`}>
+      <Link className="back-link" href={`${panelBase(id)}`}>
         ← {access.business.name}
       </Link>
       <BusinessNav id={id} active="store" />
