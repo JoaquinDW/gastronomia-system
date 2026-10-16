@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-const base = process.env.APP_URL ?? "http://127.0.0.1:3000";
+const base = process.env.APP_URL ?? "http://localhost:3000";
 const response = await fetch(`${base}/`, {
   signal: AbortSignal.timeout(15_000),
 });

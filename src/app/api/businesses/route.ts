@@ -32,7 +32,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  // Next may normalize nextUrl to localhost even when the browser uses 127.0.0.1.
+  // Next may normalize nextUrl to localhost even when the browser uses another loopback address.
   // Match the actual request host (or the host supplied by the hosting proxy).
   const host =
     request.headers.get("x-forwarded-host")?.split(",")[0].trim() ??

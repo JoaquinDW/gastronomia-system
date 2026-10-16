@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { chromium } from "@playwright/test";
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
-const base = process.env.APP_URL ?? "http://127.0.0.1:3000";
+const base = process.env.APP_URL ?? "http://localhost:3000";
 try {
   const page = await browser.newPage({
     viewport: { width: 1440, height: 1080 },
