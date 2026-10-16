@@ -7,6 +7,8 @@ import {
   moneyToCents,
   settingsInput,
   emptySettings,
+  productInput,
+  productImage,
 } from "../src/lib/menu";
 
 test("Argentine and decimal prices preserve the exact cent amount", () => {
@@ -96,4 +98,38 @@ test("transfer setup and zone uniqueness are checked before storing configuratio
     }).success,
     false,
   );
+});
+test("product photos accept uploaded media or HTTPS links only", () => {
+  const base = {
+    name: "Doble cheddar",
+    category: "Hamburguesas",
+    variants: [{ id: randomUUID(), name: "Única", priceCents: 650000 }],
+  };
+  const uploaded = `/api/media/${randomUUID()}`;
+  for (const imageUrl of ["", uploaded, "https://example.com/burger.jpg"])
+    assert.equal(
+      productInput.safeParse({ ...base, imageUrl }).success,
+      true,
+      imageUrl,
+    );
+  for (const imageUrl of [
+    "http://example.com/burger.jpg",
+    "/api/media/not-a-uuid",
+    `/api/media/${randomUUID()}/../x`,
+    "javascript:alert(1)",
+  ])
+    assert.equal(
+      productInput.safeParse({ ...base, imageUrl }).success,
+      false,
+      imageUrl,
+    );
+  assert.deepEqual(productImage(uploaded), {
+    src: `${uploaded}?size=small`,
+    srcSet: `${uploaded}?size=small 800w, ${uploaded} 1600w`,
+    large: uploaded,
+  });
+  assert.deepEqual(productImage("https://example.com/a.jpg"), {
+    src: "https://example.com/a.jpg",
+    large: "https://example.com/a.jpg",
+  });
 });

@@ -15,6 +15,7 @@ import {
   jsonb,
   numeric,
   foreignKey,
+  customType,
 } from "drizzle-orm/pg-core";
 import type { Variant, AddOn, Hours, DeliveryZone } from "../lib/menu";
 
@@ -135,6 +136,29 @@ export const menuProducts = pgTable(
       sql`jsonb_typeof(${t.variants}) = 'array' AND jsonb_array_length(${t.variants}) > 0`,
     ),
   ],
+);
+
+const bytea = customType<{ data: Buffer }>({ dataType: () => "bytea" });
+
+// Product photos live in Postgres so the store works without extra storage credentials.
+// Rows are immutable: replacing a photo uploads a new row, so URLs can be cached forever.
+export const menuImages = pgTable(
+  "menu_images",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    businessId: uuid("business_id")
+      .notNull()
+      .references(() => businesses.id),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    large: bytea("large").notNull(),
+    small: bytea("small").notNull(),
+    createdBy: text("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("menu_images_business_idx").on(t.businessId, t.createdAt)],
 );
 
 export const storeSettings = pgTable("store_settings", {

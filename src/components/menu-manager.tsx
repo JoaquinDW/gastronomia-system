@@ -1,7 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { formatMoney, type Product, type ProductInput } from "@/lib/menu";
+import {
+  formatMoney,
+  productImage,
+  type Product,
+  type ProductInput,
+} from "@/lib/menu";
 import { ProductEditor } from "./product-editor";
 import { MenuImporter } from "./menu-importer";
 export function MenuManager({
@@ -166,6 +171,23 @@ export function MenuManager({
                       className={`catalog-product ${p.isAvailable ? "" : "is-paused"}`}
                       key={p.id}
                     >
+                      {p.imageUrl ? (
+                        <img
+                          className="catalog-product-photo"
+                          src={productImage(p.imageUrl).src}
+                          alt=""
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          className="catalog-product-photo is-empty"
+                          onClick={() => setEditor(p)}
+                        >
+                          + Foto<span className="sr-only"> para {p.name}</span>
+                        </button>
+                      )}
                       <div className="catalog-product-copy">
                         <div className="product-heading">
                           <h3>{p.name}</h3>
@@ -281,6 +303,7 @@ export function MenuManager({
       </div>
       {editor !== false ? (
         <ProductEditor
+          businessId={businessId}
           product={editor ?? undefined}
           categories={[...new Set(products.map((p) => p.category))]}
           onSave={save}
