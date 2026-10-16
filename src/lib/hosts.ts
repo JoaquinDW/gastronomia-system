@@ -1,22 +1,27 @@
 // Dominios de Pedipue. Con NEXT_PUBLIC_ROOT_DOMAIN (por ejemplo, pedipue.com)
-// la landing vive en el dominio raíz, el login y la lista de negocios en
-// app.<raíz>, y cada local en <slug>.<raíz>: la tienda en / y su gestión en
-// /panel. Sin esa variable todo sigue en un solo host con /t/<slug> y
-// /panel/negocios/<id>.
+// la landing vive en el dominio raíz, cada tienda en <slug>.<raíz> y el panel
+// en app.<raíz>: login, la lista de negocios en /panel y la gestión de cada
+// local en /<slug>. Sin esa variable todo sigue en un solo host con /t/<slug>
+// y /panel/negocios/<id>.
 
 export const reservedSlugs = new Set([
   "admin",
   "api",
   "app",
   "assets",
+  "alta",
+  "auth",
   "ayuda",
   "blog",
   "cdn",
   "dev",
   "docs",
   "help",
+  "ingresar",
   "mail",
+  "negocios",
   "panel",
+  "registro",
   "soporte",
   "staging",
   "static",
@@ -50,16 +55,17 @@ export function appUrl(path: string): string {
   return root ? `${hostOrigin(`app.${root}`)}${path}` : path;
 }
 
-// Base de los links internos de la gestión de un local.
-export function panelBase(id: string): string {
-  return rootDomain() ? "/panel" : `/panel/negocios/${id}`;
+// Base de los links internos de la gestión de un local (en app.).
+export function panelBase(id: string, slug: string): string {
+  return rootDomain() ? `/${slug}` : `/panel/negocios/${id}`;
 }
 
 export function businessPanelUrl(id: string, slug: string): string {
-  return rootDomain() ? `${storeUrl(slug)}/panel` : `/panel/negocios/${id}`;
+  return rootDomain() ? appUrl(`/${slug}`) : `/panel/negocios/${id}`;
 }
 
-// Dominio de la cookie de sesión: compartida entre app. y los locales.
+// Dominio de la cookie de sesión: compartida entre app. y las tiendas, para
+// la vista previa privada de la tienda.
 export function sessionCookieDomain(): string | undefined {
   const name = rootDomain().split(":")[0];
   return name && name !== "localhost" ? `.${name}` : undefined;

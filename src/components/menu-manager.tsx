@@ -9,7 +9,7 @@ import {
 } from "@/lib/menu";
 import { ProductEditor } from "./product-editor";
 import { MenuImporter } from "./menu-importer";
-import { panelBase } from "@/lib/hosts";
+import { usePanelBase } from "./panel-base";
 export function MenuManager({
   businessId,
   initialProducts,
@@ -19,6 +19,7 @@ export function MenuManager({
   initialProducts: Product[];
   aiAvailable: boolean;
 }) {
+  const panel = usePanelBase();
   const [products, setProducts] = useState(initialProducts);
   const [editor, setEditor] = useState<Product | null | false>(false);
   const [importing, setImporting] = useState(false);
@@ -295,7 +296,7 @@ export function MenuManager({
             recibir pedidos.
           </p>
         </div>
-        <Link className="text-link" href={`${panelBase(businessId)}/tienda`}>
+        <Link className="text-link" href={`${panel}/tienda`}>
           Configurar tienda →
         </Link>
       </div>

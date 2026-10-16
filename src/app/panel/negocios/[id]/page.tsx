@@ -20,6 +20,7 @@ export default async function BusinessPage({
   if (!z.uuid().safeParse(id).success) notFound();
   const business = await findBusiness(user.id, id);
   if (!business) notFound();
+  const base = panelBase(id, business.slug);
   const [products, settings] = await Promise.all([
     getProducts(id),
     getSettings(id),
@@ -29,7 +30,7 @@ export default async function BusinessPage({
       <Link href={appUrl("/panel")} className="back-link">
         ← Mis negocios
       </Link>
-      <BusinessNav id={id} active="home" />
+      <BusinessNav base={base} active="home" />
       {["owner", "manager"].includes(business.role) ? (
         <section className="business-data" style={{ marginBottom: 24 }}>
           <h2>Los números de tu negocio</h2>
@@ -37,7 +38,7 @@ export default async function BusinessPage({
             Ventas, costos, stock y gastos, conectados para saber cómo te está
             yendo.
           </p>
-          <Link className="secondary-button" href={`${panelBase(id)}/gestion`}>
+          <Link className="secondary-button" href={`${base}/gestion`}>
             Abrir Gestión
           </Link>
         </section>
@@ -113,7 +114,7 @@ export default async function BusinessPage({
             <li className={products.length ? "done" : ""}>
               <span aria-hidden="true">{products.length ? "✓" : "03"}</span>
               <div>
-                <Link href={`${panelBase(id)}/carta`}>
+                <Link href={`${base}/carta`}>
                   {products.length ? "Administrar tu carta" : "Cargar tu carta"}{" "}
                   →
                 </Link>
@@ -129,7 +130,7 @@ export default async function BusinessPage({
                 {settings.isPublished ? "✓" : "04"}
               </span>
               <div>
-                <Link href={`${panelBase(id)}/tienda`}>
+                <Link href={`${base}/tienda`}>
                   {settings.isPublished
                     ? "Administrar tu tienda"
                     : "Activar tu tienda"}{" "}

@@ -7,7 +7,7 @@ import type { HistoricalOrder, Recipe, StockItem } from "@/lib/management";
 import { historicalRecipeCost } from "@/lib/management-recipe-cost";
 import { money } from "@/lib/management-math";
 import { Field } from "./management-fields";
-import { panelBase } from "@/lib/hosts";
+import { usePanelBase } from "./panel-base";
 
 export function HistoricalOrderCosts({
   order,
@@ -22,6 +22,7 @@ export function HistoricalOrderCosts({
   items: StockItem[];
   businessId: string;
 }) {
+  const panel = usePanelBase();
   const router = useRouter();
   const [selections, setSelections] = useState(() =>
     order.items.map(() => ({ option: "", addOnIds: [] as string[] })),
@@ -44,7 +45,7 @@ export function HistoricalOrderCosts({
   const total = complete
     ? quotes.reduce((sum, q) => sum + BigInt(q!.costCents), 0n).toString()
     : null;
-  const root = `${panelBase(businessId)}/gestion`;
+  const root = `${panel}/gestion`;
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!complete || busy) return;

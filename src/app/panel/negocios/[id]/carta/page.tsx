@@ -14,13 +14,14 @@ export default async function MenuPage({
   const { id } = await params;
   const access = await authorizeBusiness(id, true).catch(() => null);
   if (!access) notFound();
+  const base = panelBase(id, access.business.slug);
   const products = await getProducts(id);
   return (
     <>
-      <Link href={`${panelBase(id)}`} className="back-link">
+      <Link href={base} className="back-link">
         ← {access.business.name}
       </Link>
-      <BusinessNav id={id} active="menu" />
+      <BusinessNav base={base} active="menu" />
       <div className="workspace-heading">
         <div>
           <p className="eyebrow">LO QUE SALE DE TU COCINA</p>

@@ -16,6 +16,7 @@ export default async function StorePage({
   const { id } = await params;
   const access = await authorizeBusiness(id, true).catch(() => null);
   if (!access) notFound();
+  const base = panelBase(id, access.business.slug);
   const [settings, products, imports] = await Promise.all([
     getSettings(id),
     getProducts(id),
@@ -30,10 +31,10 @@ export default async function StorePage({
       : [];
   return (
     <>
-      <Link className="back-link" href={`${panelBase(id)}`}>
+      <Link className="back-link" href={base}>
         ← {access.business.name}
       </Link>
-      <BusinessNav id={id} active="store" />
+      <BusinessNav base={base} active="store" />
       <div className="workspace-heading">
         <div>
           <p className="eyebrow">DE TU NEGOCIO A SUS CELULARES</p>

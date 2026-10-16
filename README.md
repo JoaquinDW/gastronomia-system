@@ -60,16 +60,17 @@ Si la CLI necesita autenticación, ejecutar `neon login` y completar el inicio d
 Con `NEXT_PUBLIC_ROOT_DOMAIN=pedipue.com`, `src/proxy.ts` rutea por host:
 
 - `pedipue.com` (y `www.`): landing. `/ingresar`, `/registro`, `/panel` y `/alta` redirigen a `app.`.
-- `app.pedipue.com`: login, registro, alta y la lista de negocios (`/panel`). `/` lleva a `/panel`, y `/panel/negocios/:id/...` redirige a la gestión en el subdominio del local.
-- `<slug>.pedipue.com`: la tienda pública en `/` y la gestión del local en `/panel` (`/panel/carta`, `/panel/pedidos`, `/panel/tienda`, `/panel/gestion/...`). Internamente se sirven desde `/t/:slug` y `/panel/negocios/:id`. Sin sesión, `/panel` manda a `app.pedipue.com/ingresar` y después vuelve.
-- La sesión se comparte entre `app.` y los locales con una cookie del dominio `.pedipue.com` (`sessionCookieDomain` en `src/lib/hosts.ts`). Un dominio propio de un local no podría compartirla.
-- Los slugs reservados (`app`, `www`, `api`, `admin`, etc., en `src/lib/hosts.ts`) no se pueden usar como tienda y sus subdominios redirigen a la landing.
+- `app.pedipue.com`: login, registro, alta y la lista de negocios (`/panel`). `/` lleva a `/panel`. La gestión de cada local vive en `app.pedipue.com/<slug>` (`/<slug>/carta`, `/<slug>/pedidos`, `/<slug>/tienda`, `/<slug>/gestion/...`), servida internamente desde `/panel/negocios/:id`. Sin sesión, se ingresa y se vuelve al local.
+- `<slug>.pedipue.com`: la tienda pública (se reescribe internamente a `/t/:slug`). `/t/:slug` en otro host del dominio redirige al subdominio.
+- Redirecciones de links viejos: `/panel/negocios/:id/...` y `<slug>.pedipue.com/panel/...` llevan a `app.pedipue.com/<slug>/...`.
+- La sesión usa una cookie del dominio `.pedipue.com` (`sessionCookieDomain` en `src/lib/hosts.ts`) para que la vista previa privada de la tienda funcione en su subdominio.
+- Los slugs reservados (`app`, `www`, `api`, `admin`, `panel`, `alta`, `ingresar`, etc., en `src/lib/hosts.ts`) no se pueden usar como tienda: chocan con subdominios o con rutas de `app.`.
 
 Hace falta un registro DNS comodín `*.pedipue.com` y su certificado; en Vercel, el dominio tiene que usar sus nameservers. La variable se lee al compilar: configurarla solo en el entorno Production de Vercel, así los previews (`*.vercel.app`) siguen funcionando en un solo host. Sin la variable todo funciona como antes, con `/t/:slug` y `/panel/negocios/:id`.
 
-En local: `NEXT_PUBLIC_ROOT_DOMAIN=lvh.me:3000` (`lvh.me` y sus subdominios apuntan a 127.0.0.1, y a diferencia de `localhost` permiten compartir la cookie). Abrir `http://lvh.me:3000`, `http://app.lvh.me:3000` y `http://<slug>.lvh.me:3000/panel`. Neon Auth tiene que permitir esos orígenes.
+En local: `NEXT_PUBLIC_ROOT_DOMAIN=lvh.me:3000` (`lvh.me` y sus subdominios apuntan a 127.0.0.1, y a diferencia de `localhost` permiten compartir la cookie). Abrir `http://lvh.me:3000`, `http://app.lvh.me:3000/<slug>` y `http://<slug>.lvh.me:3000`. Neon Auth tiene que permitir esos orígenes.
 
-El origen de la aplicación debe estar permitido en Neon Auth. Con dominios, hay que permitir `https://app.pedipue.com` y los subdominios de los locales (`https://*.pedipue.com`), porque el cierre de sesión y las APIs se llaman desde ahí. Para el desarrollo local hay que tener permitido `http://localhost:3000`. Al desplegar, agregar el dominio HTTPS del hosting en la rama correspondiente.
+El origen de la aplicación debe estar permitido en Neon Auth. Con dominios, hay que permitir `https://app.pedipue.com`. Para el desarrollo local hay que tener permitido `http://localhost:3000`. Al desplegar, agregar el dominio HTTPS del hosting en la rama correspondiente.
 
 El build no consulta la base. `GET /api/health/db` sí la consulta en cada request y devuelve 200 si funciona o 503 si falla, sin credenciales ni errores internos y sin caché. Es un diagnóstico de conectividad, no una prueba de que existan módulos de negocio.
 

@@ -4,7 +4,6 @@ import { HistoricalOrderCosts } from "./management-historical-costs";
 import type { Report, StockItem, Recipe } from "@/lib/management";
 import { channels } from "@/lib/management";
 import { fixed, money, shiftDate } from "@/lib/management-math";
-import { panelBase } from "@/lib/hosts";
 
 function change(current: string, previous: string) {
   const a = BigInt(current),
@@ -25,6 +24,7 @@ function dateLabel(date: string) {
 export function ManagementReport({
   report,
   businessId,
+  panel,
   today,
   items,
   cutoffHour,
@@ -33,13 +33,14 @@ export function ManagementReport({
 }: {
   report: Report;
   businessId: string;
+  panel: string;
   today: string;
   items: StockItem[];
   cutoffHour: number;
   recipes: Recipe[];
   products: Product[];
 }) {
-  const root = `${panelBase(businessId)}/gestion`,
+  const root = `${panel}/gestion`,
     api = `/api/businesses/${businessId}/management`;
   const { totals: t } = report;
   const onlyHistoricalMissing =

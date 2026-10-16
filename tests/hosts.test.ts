@@ -32,13 +32,13 @@ test("funciona con puerto en desarrollo", () => {
   });
 });
 
-test("la gestión de cada local vive en su subdominio", () => {
+test("la gestión de cada local vive en app./<slug>", () => {
   const id = "209fffa6-5109-4079-b6da-db564010c5a7";
   process.env.NEXT_PUBLIC_ROOT_DOMAIN = "pedipue.com";
-  assert.equal(panelBase(id), "/panel");
+  assert.equal(panelBase(id, "la-esquina"), "/la-esquina");
   assert.equal(
     businessPanelUrl(id, "la-esquina"),
-    "https://la-esquina.pedipue.com/panel",
+    "https://app.pedipue.com/la-esquina",
   );
   assert.equal(sessionCookieDomain(), ".pedipue.com");
   assert.equal(
@@ -50,7 +50,7 @@ test("la gestión de cada local vive en su subdominio", () => {
   assert.equal(safeNext("https://www.pedipue.com/"), null);
 
   delete process.env.NEXT_PUBLIC_ROOT_DOMAIN;
-  assert.equal(panelBase(id), `/panel/negocios/${id}`);
+  assert.equal(panelBase(id, "la-esquina"), `/panel/negocios/${id}`);
   assert.equal(businessPanelUrl(id, "la-esquina"), `/panel/negocios/${id}`);
   assert.equal(sessionCookieDomain(), undefined);
   assert.equal(safeNext("https://la-esquina.pedipue.com/panel"), null);

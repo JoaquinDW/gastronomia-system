@@ -18,7 +18,7 @@ import {
 import { resolveRecipe } from "@/lib/management-recipe-cost";
 import type { ManagementEditor } from "./management-editor";
 import { Field, units } from "./management-fields";
-import { panelBase } from "@/lib/hosts";
+import { usePanelBase } from "./panel-base";
 
 const movementNames: Record<string, string> = {
   opening: "Stock inicial",
@@ -66,6 +66,7 @@ export function ManagementTables({
   cancelSale,
   more,
 }: Props) {
+  const panel = usePanelBase();
   if (section === "inventario") {
     const visible = data.items.filter((i) =>
       i.name.toLocaleLowerCase("es").includes(search.toLocaleLowerCase("es")),
@@ -262,7 +263,7 @@ export function ManagementTables({
         {!products.length ? (
           <Empty title="Primero, tu carta.">
             Agregá productos y variantes para asociarles recetas.{" "}
-            <Link href={`${panelBase(businessId)}/carta`}>Ir a Carta</Link>
+            <Link href={`${panel}/carta`}>Ir a Carta</Link>
           </Empty>
         ) : (
           <div className="mg-table-wrap mg-paper">
@@ -444,15 +445,11 @@ export function ManagementTables({
                       <>
                         {money(s.knownCostCents)}
                         <small>Faltan costos</small>
-                        <Link
-                          href={`${panelBase(businessId)}/gestion/inventario?action=costs`}
-                        >
+                        <Link href={`${panel}/gestion/inventario?action=costs`}>
                           Cargar costos de insumos
                         </Link>
                         {" · "}
-                        <Link
-                          href={`${panelBase(businessId)}/gestion/recetas?action=recipe`}
-                        >
+                        <Link href={`${panel}/gestion/recetas?action=recipe`}>
                           Indicar ingredientes
                         </Link>
                       </>

@@ -12,7 +12,7 @@ import {
 } from "./management-editor";
 import { ManagementTables } from "./management-tables";
 import { Field } from "./management-fields";
-import { panelBase } from "@/lib/hosts";
+import { usePanelBase } from "./panel-base";
 
 function text(form: FormData, key: string) {
   return String(form.get(key) ?? "").trim();
@@ -38,6 +38,7 @@ export function ManagementWorkspace({
   owner: boolean;
   initialAction?: "recipe" | "costs";
 }) {
+  const panel = usePanelBase();
   const router = useRouter(),
     base = `/api/businesses/${businessId}/management`;
   const [data, setData] = useState(initialData),
@@ -424,15 +425,11 @@ export function ManagementWorkspace({
           {message.includes("Faltan costos") ? (
             <>
               {" "}
-              <Link
-                href={`${panelBase(businessId)}/gestion/inventario?action=costs`}
-              >
+              <Link href={`${panel}/gestion/inventario?action=costs`}>
                 Cargar costos de insumos
               </Link>
               {" · "}
-              <Link
-                href={`${panelBase(businessId)}/gestion/recetas?action=recipe`}
-              >
+              <Link href={`${panel}/gestion/recetas?action=recipe`}>
                 Indicar ingredientes por producto
               </Link>
             </>
@@ -442,10 +439,7 @@ export function ManagementWorkspace({
       {initialAction === "costs" ? (
         <p className="mg-notice">
           Cargá el costo total del stock que tenés. Si todavía no tenés stock,{" "}
-          <Link href={`${panelBase(businessId)}/gestion/compras`}>
-            registrá una compra
-          </Link>
-          .
+          <Link href={`${panel}/gestion/compras`}>registrá una compra</Link>.
           {data.items.length &&
           data.items.every(
             (i) => i.unitCost !== null || fixed(i.quantity) <= 0n,
@@ -454,9 +448,7 @@ export function ManagementWorkspace({
               {" "}
               Los insumos con stock ya tienen costo. Si faltan costos en las
               ventas,{" "}
-              <Link
-                href={`${panelBase(businessId)}/gestion/recetas?action=recipe`}
-              >
+              <Link href={`${panel}/gestion/recetas?action=recipe`}>
                 indicá los ingredientes de cada producto
               </Link>
               .
