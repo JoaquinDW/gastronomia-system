@@ -8,9 +8,10 @@ assert.equal(response.status, 200);
 const html = await response.text();
 assert.match(html, /De la primera orden/);
 assert.match(html, /Registrar mi negocio/);
+assert.doesNotMatch(html, /Neon|Postgres/);
 assert.doesNotMatch(html, /postgres(?:ql)?:\/\//i);
 console.log(
-  "PASS: GET / returns 200 and the planning page without connection secrets",
+  "PASS: GET / returns 200 and the landing page without connection secrets",
 );
 
 const health = await fetch(`${base}/api/health/db`, {

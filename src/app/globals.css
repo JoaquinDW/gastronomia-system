@@ -321,72 +321,57 @@ h1 em {
   border-left: 2px solid var(--accent);
   margin-top: 22px;
 }
-.connection {
-  padding: 25px 26px;
+.start-steps {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  max-width: 540px;
+}
+.start-steps li {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.start-steps li > span {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent-ink);
+  padding-top: 4px;
+}
+.start-steps h3 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  margin: 0 0 5px;
+}
+.start-steps p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0;
+}
+.start-card {
+  padding: 28px 26px;
   background: var(--surface);
   border-radius: 20px;
   align-self: start;
+  display: grid;
+  gap: 16px;
+  justify-items: start;
 }
-.connection-heading {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-.connection .connection-heading h2 {
-  font-family: var(--sans);
-  font-size: 16px;
-  letter-spacing: -0.4px;
-  font-weight: 600;
+.start-card h2 {
+  font-family: var(--display);
+  font-size: 28px;
+  letter-spacing: -0.5px;
   margin: 0;
 }
-.signal {
-  width: 7px;
-  height: 7px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--closed);
-}
-.signal-ok {
-  background: var(--open);
-}
-.signal-error {
-  background: var(--accent);
-}
-.signal-checking {
-  animation: pulse 1s ease-in-out infinite;
-}
-.connection > p {
-  font-size: 12px;
+.start-card p {
+  font-size: 13px;
   color: var(--muted);
   line-height: 1.6;
-  margin: 13px 0 19px;
-}
-.connection button {
-  border: 0;
-  border-radius: var(--radius);
-  background: var(--ink);
-  color: var(--paper);
-  padding: 12px 15px;
-  font-size: 11px;
-  display: flex;
-  justify-content: space-between;
-  gap: 25px;
-  width: 100%;
-  cursor: pointer;
-  min-height: 44px;
-  transition: background 0.15s;
-}
-.connection button:hover {
-  background: var(--asphalt);
-}
-.connection button:disabled {
-  cursor: progress;
-  opacity: 0.7;
-}
-.connection .connection-result {
-  font-size: 10px;
-  margin: 13px 0 0;
-  min-height: 32px;
+  margin: 0;
 }
 footer {
   padding: 22px 0 26px;
@@ -467,10 +452,12 @@ footer {
     gap: 36px;
   }
   .module-row {
-    gap: 13px;
+    gap: 8px 13px;
+    grid-template-columns: 26px 1fr;
   }
   .module-tag {
-    display: none;
+    grid-column: 2;
+    justify-self: start;
   }
 }
 @media (max-width: 700px) {
@@ -555,11 +542,8 @@ footer {
   .foundation h2 {
     font-size: 34px;
   }
-  .connection {
+  .start-card {
     padding: 24px;
-  }
-  .connection .connection-result {
-    min-height: 0;
   }
   footer {
     flex-direction: column;
