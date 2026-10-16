@@ -22,6 +22,13 @@
       "when": 1792169320534,
       "tag": "0002_wonderful_red_ghost",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792175383612,
+      "tag": "0003_menu_images",
+      "breakpoints": true
     }
   ]
 }

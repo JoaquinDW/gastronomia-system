@@ -1,6 +1,22 @@
 import { z } from "zod";
 
 const price = z.number().int().min(0).max(99_999_999);
+// Photos uploaded from the panel are served by /api/media/<id>.
+export const uploadedImagePattern =
+  /^\/api\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+/** Responsive sources for a product photo: uploaded photos have a light 800 px version. */
+export function productImage(url: string): {
+  src: string;
+  srcSet?: string;
+  large: string;
+} {
+  if (!uploadedImagePattern.test(url)) return { src: url, large: url };
+  return {
+    src: `${url}?size=small`,
+    srcSet: `${url}?size=small 800w, ${url} 1600w`,
+    large: url,
+  };
+}
 export const variantSchema = z
   .object({
     id: z.uuid(),
@@ -26,10 +42,12 @@ export const productInput = z
     imageUrl: z
       .union([
         z.literal(""),
+        z.string().regex(uploadedImagePattern, "La imagen no es válida."),
         z
           .url()
           .refine(
-            (url) => new URL(url).protocol === "https:",
+            (url) =>
+              URL.canParse(url) && new URL(url).protocol === "https:",
             "La imagen debe usar HTTPS.",
           ),
       ])

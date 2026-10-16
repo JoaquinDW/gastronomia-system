@@ -4,6 +4,7 @@ import {
   dayNames,
   formatMoney,
   isStoreOpen,
+  productImage,
   type Product,
   type StoreSettings,
 } from "@/lib/menu";
@@ -36,6 +37,8 @@ function ProductChoice({
   const [variant, setVariant] = useState(product.variants[0].id);
   const [extras, setExtras] = useState<string[]>([]);
   const [selected, setSelected] = useState(false);
+  const zoom = useRef<HTMLDialogElement>(null);
+  const image = product.imageUrl ? productImage(product.imageUrl) : null;
   const v =
     product.variants.find((v) => v.id === variant) ?? product.variants[0];
   const total =
@@ -44,22 +47,56 @@ function ProductChoice({
       .filter((a) => extras.includes(a.id))
       .reduce((n, a) => n + a.priceCents, 0);
   return (
-    <article className="shop-product">
-      {product.imageUrl ? (
-        <img
-          className="shop-product-image"
-          src={product.imageUrl}
-          alt=""
-          loading="lazy"
-          width={120}
-          height={120}
-          referrerPolicy="no-referrer"
-        />
+    <article className={`shop-product ${image ? "has-photo" : ""}`}>
+      {image ? (
+        <>
+          <button
+            type="button"
+            className="shop-product-photo"
+            onClick={() => zoom.current?.showModal()}
+            aria-label={`Ver foto de ${product.name}`}
+          >
+            <img
+              src={image.src}
+              srcSet={image.srcSet}
+              sizes="(max-width: 800px) calc(100vw - 48px), 400px"
+              alt={product.name}
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+            />
+            {product.kind === "combo" ? (
+              <span className="small-badge">Promo</span>
+            ) : null}
+          </button>
+          <dialog
+            ref={zoom}
+            className="photo-zoom"
+            aria-label={product.name}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) zoom.current?.close();
+            }}
+          >
+            <img
+              src={image.large}
+              alt={product.name}
+              referrerPolicy="no-referrer"
+            />
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => zoom.current?.close()}
+              aria-label="Cerrar foto"
+            >
+              ×
+            </button>
+          </dialog>
+        </>
       ) : null}
       <div className="shop-product-content">
         <div className="product-heading">
           <h3>{product.name}</h3>
-          {product.kind === "combo" ? (
+          {product.kind === "combo" && !image ? (
             <span className="small-badge">Promo</span>
           ) : null}
         </div>
@@ -407,14 +444,16 @@ export function Storefront({
                     <h2>{c}</h2>
                     <span>{list.length.toString().padStart(2, "0")}</span>
                   </div>
-                  {list.map((p) => (
-                    <ProductChoice
-                      key={p.id}
-                      product={p}
-                      onAdd={add}
-                      disabled={!open || preview || busy}
-                    />
-                  ))}
+                  <div className="shop-products">
+                    {list.map((p) => (
+                      <ProductChoice
+                        key={p.id}
+                        product={p}
+                        onAdd={add}
+                        disabled={!open || preview || busy}
+                      />
+                    ))}
+                  </div>
                 </section>
               ) : null;
             })}

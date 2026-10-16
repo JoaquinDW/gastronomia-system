@@ -6,12 +6,15 @@ import {
   type Product,
   type ProductInput,
 } from "@/lib/menu";
+import { ProductPhotoField } from "./product-photo-field";
 export function ProductEditor({
+  businessId,
   product,
   categories,
   onSave,
   onClose,
 }: {
+  businessId: string;
   product?: Product;
   categories: string[];
   onSave: (p: ProductInput) => Promise<void>;
@@ -20,6 +23,8 @@ export function ProductEditor({
   const dialog = useRef<HTMLDialogElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? "");
+  const [uploading, setUploading] = useState(false);
   const [variants, setVariants] = useState<
     { id: string; name: string; price: string }[]
   >(
@@ -75,7 +80,7 @@ export function ProductEditor({
         kind: form.get("kind") === "combo" ? "combo" : "product",
         variants: prices as ProductInput["variants"],
         addOns: extras as ProductInput["addOns"],
-        imageUrl: String(form.get("imageUrl")),
+        imageUrl,
         isAvailable: form.get("isAvailable") === "on",
         sortOrder: product?.sortOrder ?? 0,
       });
@@ -92,7 +97,7 @@ export function ProductEditor({
       ref={dialog}
       className="editor-dialog"
       onCancel={(e) => {
-        if (busy) e.preventDefault();
+        if (busy || uploading) e.preventDefault();
         else onClose();
       }}
       onClose={onClose}
@@ -156,24 +161,20 @@ export function ProductEditor({
               placeholder="Lo que incluye y lo que hace especial a este producto."
             />
           </label>
-          <div className="form-grid">
-            <label>
-              Tipo
-              <select name="kind" defaultValue={product?.kind ?? "product"}>
-                <option value="product">Producto</option>
-                <option value="combo">Combo o promoción</option>
-              </select>
-            </label>
-            <label>
-              URL de imagen <span className="optional-label">opcional</span>
-              <input
-                name="imageUrl"
-                type="url"
-                defaultValue={product?.imageUrl}
-                placeholder="https://..."
-              />
-            </label>
-          </div>
+          <ProductPhotoField
+            businessId={businessId}
+            value={imageUrl}
+            onChange={setImageUrl}
+            onBusyChange={setUploading}
+            disabled={busy}
+          />
+          <label>
+            Tipo
+            <select name="kind" defaultValue={product?.kind ?? "product"}>
+              <option value="product">Producto</option>
+              <option value="combo">Combo o promoción</option>
+            </select>
+          </label>
           <div className="section-label">
             <h3>Presentaciones y precios</h3>
             <button
@@ -317,12 +318,16 @@ export function ProductEditor({
           <button
             type="button"
             className="secondary-button"
-            disabled={busy}
+            disabled={busy || uploading}
             onClick={onClose}
           >
             Cancelar
           </button>
-          <button type="submit" className="primary-button" disabled={busy}>
+          <button
+            type="submit"
+            className="primary-button"
+            disabled={busy || uploading}
+          >
             {busy ? "Guardando…" : "Guardar producto"}
           </button>
         </div>
