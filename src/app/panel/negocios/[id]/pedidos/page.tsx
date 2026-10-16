@@ -14,13 +14,14 @@ export default async function OrdersPage({
   const { id } = await params;
   const access = await authorizeBusiness(id, true).catch(() => null);
   if (!access) notFound();
+  const base = panelBase(id, access.business.slug);
   const orders = await listOrders(id);
   return (
     <>
-      <Link className="back-link" href={`${panelBase(id)}`}>
+      <Link className="back-link" href={base}>
         ← {access.business.name}
       </Link>
-      <BusinessNav id={id} active="orders" />
+      <BusinessNav base={base} active="orders" />
       <div className="workspace-heading">
         <div>
           <p className="eyebrow">DE LA TIENDA A TU MOSTRADOR</p>

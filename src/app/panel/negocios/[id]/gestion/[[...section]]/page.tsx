@@ -48,7 +48,8 @@ export default async function ManagementPage({
     (!owner && ["resultados", "gastos"].includes(section))
   )
     notFound();
-  const root = `${panelBase(id)}/gestion`;
+  const base = panelBase(id, business.slug);
+  const root = `${base}/gestion`;
   const [data, products] = await Promise.all([
     getManagementData(id, { owner }),
     getProducts(id),
@@ -65,10 +66,10 @@ export default async function ManagementPage({
   }
   return (
     <>
-      <Link className="back-link" href={`${panelBase(id)}`}>
+      <Link className="back-link" href={base}>
         ← {business.name}
       </Link>
-      <BusinessNav id={id} active="management" />
+      <BusinessNav base={base} active="management" />
       <div className="mg-heading">
         <div>
           <h1 className="panel-title">
@@ -125,6 +126,7 @@ export default async function ManagementPage({
         <ManagementReport
           report={report}
           businessId={id}
+          panel={base}
           today={data.today}
           items={data.items}
           cutoffHour={data.settings.cutoffHour}

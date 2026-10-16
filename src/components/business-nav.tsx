@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { panelBase } from "@/lib/hosts";
 export function BusinessNav({
-  id,
+  base,
   active,
 }: {
-  id: string;
+  base: string;
   active: "home" | "menu" | "store" | "orders" | "management";
 }) {
   return (
@@ -18,7 +17,7 @@ export function BusinessNav({
       ].map(([key, label, path]) => (
         <Link
           key={key}
-          href={`${panelBase(id)}${path}`}
+          href={`${base}${path}`}
           aria-current={active === key ? "page" : undefined}
         >
           {label}

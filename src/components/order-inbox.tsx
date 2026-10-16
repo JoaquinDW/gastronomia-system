@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { formatMoney } from "@/lib/menu";
 import type { Order } from "@/lib/checkout";
-import { panelBase } from "@/lib/hosts";
+import { usePanelBase } from "./panel-base";
 export function OrderInbox({
   businessId,
   initialOrders,
@@ -11,6 +11,7 @@ export function OrderInbox({
   businessId: string;
   initialOrders: Order[];
 }) {
+  const panel = usePanelBase();
   const [orders, setOrders] = useState(initialOrders);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -172,10 +173,7 @@ export function OrderInbox({
                 </div>
               ) : null}
               {o.saleId && o.status === "accepted" ? (
-                <Link
-                  className="text-button"
-                  href={`${panelBase(businessId)}/gestion/ventas`}
-                >
+                <Link className="text-button" href={`${panel}/gestion/ventas`}>
                   Ver venta o registrar anulación
                 </Link>
               ) : null}
