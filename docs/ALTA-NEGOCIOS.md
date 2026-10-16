@@ -4,7 +4,7 @@ Entrega del 15 de octubre de 2026. Incluye cuentas personales con Neon Auth y cr
 
 ## Recorrido disponible
 
-1. Desde la portada, elegir **Registrar mi negocio**.
+1. Desde la portada, elegir **Crear mi tienda**.
 2. En `/registro`, completar nombre, email, contraseña y confirmación.
 3. Con la cuenta autenticada, `/alta` pide nombre del negocio, identificador, rubro, WhatsApp con código de país, ciudad y dirección opcional.
 4. El servidor crea el negocio, la sucursal **Casa central** y una membresía de **propietario** dentro de una transacción.

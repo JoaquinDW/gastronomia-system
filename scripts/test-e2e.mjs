@@ -6,8 +6,8 @@ const response = await fetch(`${base}/`, {
 });
 assert.equal(response.status, 200);
 const html = await response.text();
-assert.match(html, /De la primera orden/);
-assert.match(html, /Registrar mi negocio/);
+assert.match(html, /Tu tienda online\./);
+assert.match(html, /Crear mi tienda/);
 assert.doesNotMatch(html, /Neon|Postgres/);
 assert.doesNotMatch(html, /postgres(?:ql)?:\/\//i);
 console.log(

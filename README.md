@@ -23,7 +23,7 @@ npm ci
 npm run dev
 ```
 
-App: http://localhost:3000. Desde “Registrar mi negocio” se crea una cuenta y luego el negocio. En `/panel/negocios/:id` aparecen las secciones Carta, Tienda y Pedidos. La tienda pública usa `/t/:slug`.
+App: http://localhost:3000. Desde “Crear mi tienda” se crea una cuenta y luego el negocio. En `/panel/negocios/:id` aparecen las secciones Carta, Tienda y Pedidos. La tienda pública usa `/t/:slug`.
 
 El alta guarda nombre, rubro, WhatsApp con código de país, ciudad y dirección opcional. Crea negocio, sucursal “Casa central” y membresía de propietario en una sola transacción. El identificador es único; los reintentos de la misma solicitud no duplican el negocio. El panel muestra solo los negocios asociados a la cuenta autenticada. Cada propietario configura su carta, horarios y entregas antes de activar la tienda explícitamente.
 
