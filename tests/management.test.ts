@@ -88,7 +88,10 @@ test("commands reject fractional monetary cents and invalid quantities", () => {
 });
 
 // The historical quote uses all recipe components once, including extras and packaging.
-import { historicalRecipeCost } from "../src/lib/management-recipe-cost";
+import {
+  historicalRecipeCost,
+  resolveRecipe,
+} from "../src/lib/management-recipe-cost";
 import type { Recipe, StockItem } from "../src/lib/management";
 test("historical recipe quotes respect quantity, extras, rounding and missing costs", () => {
   const item: StockItem = {
@@ -149,5 +152,144 @@ test("historical recipe quotes respect quantity, extras, rounding and missing co
       [],
     )?.costCents,
     "0",
+  );
+});
+
+test("promo recipes expand products once, include extras and reject missing or nested recipes", () => {
+  const ingredient: StockItem = {
+    id: "meat",
+    name: "Carne",
+    kind: "ingredient",
+    unit: "g",
+    minimum: "0",
+    quantity: "1000",
+    unitCost: "10",
+    version: 1,
+  };
+  const box: StockItem = {
+    ...ingredient,
+    id: "box",
+    name: "Envase",
+    unit: "unit",
+    unitCost: "20",
+  };
+  const base: Recipe = {
+    id: "base",
+    productId: "burger",
+    optionId: "single",
+    optionKind: "variant",
+    version: 1,
+    lines: [{ itemId: "meat", quantity: "100" }],
+    noConsumption: false,
+  };
+  const promo: Recipe = {
+    id: "promo",
+    productId: "deal",
+    optionId: "two",
+    optionKind: "variant",
+    version: 1,
+    lines: [
+      { productId: "burger", variantId: "single", quantity: "2" },
+      { itemId: "box", quantity: "1" },
+    ],
+    noConsumption: false,
+  };
+  assert.deepEqual(resolveRecipe(promo, [base, promo]).lines, [
+    { itemId: "meat", quantity: "200" },
+    { itemId: "box", quantity: "1" },
+  ]);
+  const choice = { productId: "deal", variantId: "two", addOnIds: [] };
+  assert.equal(
+    historicalRecipeCost(choice, 3, [base, promo], [ingredient, box])
+      ?.costCents,
+    "6060",
+  );
+  assert.equal(
+    historicalRecipeCost(
+      choice,
+      1,
+      [{ ...base, lines: [{ itemId: "meat", quantity: "150" }] }, promo],
+      [ingredient, box],
+    )?.costCents,
+    "3020",
+  );
+  assert.equal(
+    historicalRecipeCost(choice, 1, [promo], [ingredient, box]),
+    null,
+  );
+  assert.equal(
+    historicalRecipeCost(
+      choice,
+      1,
+      [base, promo],
+      [{ ...ingredient, unitCost: null }, box],
+    ),
+    null,
+  );
+  assert.equal(
+    resolveRecipe(
+      {
+        ...promo,
+        lines: [{ productId: "deal", variantId: "two", quantity: "1" }],
+      },
+      [promo],
+    ).complete,
+    false,
+  );
+  assert.equal(
+    resolveRecipe(promo, [
+      {
+        ...base,
+        lines: [{ productId: "deal", variantId: "two", quantity: "1" }],
+      },
+    ]).complete,
+    false,
+  );
+  assert.equal(
+    historicalRecipeCost(
+      choice,
+      1,
+      [{ ...base, lines: [], noConsumption: true }, promo],
+      [box],
+    )?.costCents,
+    "20",
+  );
+  assert.equal(
+    historicalRecipeCost(
+      choice,
+      1,
+      [{ ...base, lines: [{ itemId: "finished", quantity: "1" }] }, promo],
+      [{ ...box, id: "finished", kind: "finished", unitCost: "100" }, box],
+    )?.costCents,
+    "220",
+  );
+});
+test("promo recipe commands keep old ingredient recipes and validate referenced products", () => {
+  const productId = "00000000-0000-4000-8000-000000000001",
+    variantId = "00000000-0000-4000-8000-000000000002";
+  const command = {
+    type: "recipe",
+    requestKey: productId,
+    productId,
+    optionId: variantId,
+    optionKind: "variant",
+    version: 0,
+    lines: [{ productId, variantId, quantity: "2" }],
+  };
+  assert.equal(commandSchema.safeParse(command).success, true);
+  for (const quantity of ["0", "-1", "1.5", "1000"])
+    assert.equal(
+      commandSchema.safeParse({
+        ...command,
+        lines: [{ productId, variantId, quantity }],
+      }).success,
+      false,
+    );
+  assert.equal(
+    commandSchema.safeParse({
+      ...command,
+      lines: [{ productId, variantId, itemId: productId, quantity: "2" }],
+    }).success,
+    false,
   );
 });

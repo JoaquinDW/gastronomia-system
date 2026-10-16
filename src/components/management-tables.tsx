@@ -15,6 +15,7 @@ import {
   money,
   formatManagementDate,
 } from "@/lib/management-math";
+import { resolveRecipe } from "@/lib/management-recipe-cost";
 import type { ManagementEditor } from "./management-editor";
 import { Field, units } from "./management-fields";
 
@@ -284,14 +285,20 @@ export function ManagementTables({
                           r.optionId === option.id &&
                           r.optionKind === option.optionKind,
                       ),
-                      costs = recipe?.lines.map((l) =>
+                      resolved = recipe
+                        ? resolveRecipe(recipe, data.recipes)
+                        : null,
+                      costs = resolved?.lines.map((l) =>
                         costOf(
                           l.quantity,
                           data.items.find((i) => i.id === l.itemId)?.unitCost ??
                             null,
                         ),
                       );
-                    const complete = recipe && costs?.every((c) => c !== null),
+                    const complete =
+                        recipe &&
+                        resolved?.complete &&
+                        costs?.every((c) => c !== null),
                       cost = complete
                         ? costs!.reduce((n, c) => n + BigInt(c!), 0n).toString()
                         : null;
@@ -313,6 +320,15 @@ export function ManagementTables({
                             ) : (
                               recipe.lines
                                 .map((l) => {
+                                  if (!("itemId" in l)) {
+                                    const product = products.find(
+                                      (p) => p.id === l.productId,
+                                    );
+                                    const variant = product?.variants.find(
+                                      (v) => v.id === l.variantId,
+                                    );
+                                    return `${l.quantity} × ${product?.name ?? "Producto"}${variant ? ` · ${variant.name}` : ""}`;
+                                  }
                                   const item = data.items.find(
                                     (i) => i.id === l.itemId,
                                   );

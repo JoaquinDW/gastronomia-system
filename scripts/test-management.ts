@@ -750,6 +750,267 @@ async function main() {
   console.log(
     "PASS: explicit historical mapping, exact recipe + addon quote, owner-only access, isolation, stale quotes, rollback, concurrent retries, no stock changes, frozen historical estimates",
   );
+  const promoBusiness = await createBusiness(actor, {
+    name: "Local de promos",
+    slug: `${slug}-promos`,
+    kind: "hamburgueseria",
+    whatsapp: "+5493511234567",
+    city: "Córdoba",
+    address: "",
+    requestKey: randomUUID(),
+  });
+  const promoMeat = String(
+    (
+      await run(promoBusiness, {
+        type: "item",
+        name: "Carne",
+        kind: "ingredient",
+        unit: "g",
+        minimum: "0",
+        initialQuantity: "1000",
+        initialValueCents: "10000",
+      })
+    ).id,
+  );
+  const promoBread = String(
+    (
+      await run(promoBusiness, {
+        type: "item",
+        name: "Pan",
+        kind: "ingredient",
+        unit: "unit",
+        minimum: "0",
+        initialQuantity: "10",
+        initialValueCents: "1000",
+      })
+    ).id,
+  );
+  const promoBox = String(
+    (
+      await run(promoBusiness, {
+        type: "item",
+        name: "Envase",
+        kind: "ingredient",
+        unit: "unit",
+        minimum: "0",
+        initialQuantity: "10",
+        initialValueCents: "200",
+      })
+    ).id,
+  );
+  const promoBaseVariant = randomUUID(),
+    promoVariant = randomUUID(),
+    promoAddon = randomUUID();
+  const promoBaseProduct = await saveProduct(promoBusiness, {
+    name: "Especial",
+    description: "",
+    category: "Prueba",
+    kind: "product",
+    variants: [{ id: promoBaseVariant, name: "Única", priceCents: 100000 }],
+    addOns: [],
+    imageUrl: "",
+    isAvailable: true,
+    sortOrder: 0,
+  });
+  const promoProduct = await saveProduct(promoBusiness, {
+    name: "Promo 2 especiales",
+    description: "",
+    category: "Prueba",
+    kind: "combo",
+    variants: [{ id: promoVariant, name: "Única", priceCents: 200000 }],
+    addOns: [{ id: promoAddon, name: "Extra", priceCents: 1000 }],
+    imageUrl: "",
+    isAvailable: true,
+    sortOrder: 1,
+  });
+  const promoRecipe = {
+    type: "recipe",
+    productId: promoProduct.id,
+    optionId: promoVariant,
+    optionKind: "variant",
+    version: 0,
+    lines: [
+      {
+        productId: promoBaseProduct.id,
+        variantId: promoBaseVariant,
+        quantity: "2",
+      },
+      { itemId: promoBox, quantity: "1" },
+    ],
+  };
+  await assert.rejects(
+    () => run(promoBusiness, promoRecipe),
+    /Primero cargá la receta/,
+  );
+  await run(promoBusiness, {
+    type: "recipe",
+    productId: promoBaseProduct.id,
+    optionId: promoBaseVariant,
+    optionKind: "variant",
+    version: 0,
+    lines: [
+      { itemId: promoMeat, quantity: "100" },
+      { itemId: promoBread, quantity: "1" },
+    ],
+  });
+  await assert.rejects(
+    () =>
+      run(promoBusiness, {
+        ...promoRecipe,
+        lines: [{ productId: product.id, variantId: variant, quantity: "2" }],
+      }),
+    /carta de este negocio/,
+  );
+  await assert.rejects(
+    () =>
+      run(promoBusiness, {
+        ...promoRecipe,
+        lines: [
+          {
+            productId: promoProduct.id,
+            variantId: promoVariant,
+            quantity: "2",
+          },
+        ],
+      }),
+    /sí misma/,
+  );
+  await assert.rejects(
+    () =>
+      run(promoBusiness, {
+        ...promoRecipe,
+        lines: [promoRecipe.lines[0], promoRecipe.lines[0]],
+      }),
+    /cantidades repetidas/,
+  );
+  await run(promoBusiness, promoRecipe);
+  await assert.rejects(
+    () =>
+      run(promoBusiness, {
+        type: "recipe",
+        productId: promoBaseProduct.id,
+        optionId: promoBaseVariant,
+        optionKind: "variant",
+        version: 1,
+        lines: [
+          {
+            productId: promoProduct.id,
+            variantId: promoVariant,
+            quantity: "1",
+          },
+        ],
+      }),
+    /se usa dentro de una promo/,
+  );
+  await run(promoBusiness, {
+    type: "recipe",
+    productId: promoProduct.id,
+    optionId: promoAddon,
+    optionKind: "addon",
+    version: 0,
+    lines: [{ itemId: promoMeat, quantity: "5" }],
+  });
+  await assert.rejects(
+    () =>
+      run(promoBusiness, {
+        type: "recipe",
+        productId: promoProduct.id,
+        optionId: promoAddon,
+        optionKind: "addon",
+        version: 1,
+        lines: [
+          {
+            productId: promoProduct.id,
+            variantId: promoVariant,
+            quantity: "1",
+          },
+        ],
+      }),
+    /no otras promos/,
+  );
+  const promoSale = await run(promoBusiness, {
+    type: "sale",
+    channel: "counter",
+    lines: [
+      {
+        productId: promoProduct.id,
+        variantId: promoVariant,
+        addOnIds: [promoAddon],
+        quantity: 2,
+        unitCents: "200000",
+      },
+    ],
+  });
+  const promoData = await getManagementData(promoBusiness);
+  assert.equal(
+    promoData.items.find((i) => i.id === promoMeat)?.quantity,
+    "590.000000",
+  );
+  assert.equal(
+    promoData.items.find((i) => i.id === promoBread)?.quantity,
+    "6.000000",
+  );
+  assert.equal(
+    promoData.items.find((i) => i.id === promoBox)?.quantity,
+    "8.000000",
+  );
+  assert.equal(promoData.sales[0].costCents, "4540");
+  const promoMovements = await saleConsumptions(
+    promoBusiness,
+    String(promoSale.id),
+  );
+  assert.equal(promoMovements.length, 3);
+  await run(promoBusiness, {
+    type: "cancel_sale",
+    saleId: promoSale.id,
+    reason: "Recuperamos todos los insumos",
+    recoveries: promoMovements.map((m) => ({
+      movementId: m.id,
+      quantity: String(-Number(m.quantity)),
+    })),
+  });
+  assert.equal(
+    (await getManagementData(promoBusiness)).items.find(
+      (i) => i.id === promoMeat,
+    )?.quantity,
+    "1000.000000",
+  );
+  await run(promoBusiness, {
+    type: "recipe",
+    productId: promoBaseProduct.id,
+    optionId: promoBaseVariant,
+    optionKind: "variant",
+    version: 1,
+    lines: [
+      { itemId: promoMeat, quantity: "150" },
+      { itemId: promoBread, quantity: "1" },
+    ],
+  });
+  const updatedPromoSale = await run(promoBusiness, {
+    type: "sale",
+    channel: "counter",
+    lines: [
+      {
+        productId: promoProduct.id,
+        variantId: promoVariant,
+        addOnIds: [],
+        quantity: 1,
+        unitCents: "200000",
+      },
+    ],
+  });
+  const updatedPromoData = await getManagementData(promoBusiness);
+  assert.equal(
+    updatedPromoData.sales.find((s) => s.id === updatedPromoSale.id)?.costCents,
+    "3220",
+  );
+  assert.equal(
+    updatedPromoData.sales.find((s) => s.id === promoSale.id)?.costCents,
+    "4540",
+  );
+  console.log(
+    "PASS: promo product references, own extras, addons and quantities consume once, cancellations restore once, current base recipes update future costs, historical costs freeze, tenant isolation and nested/cyclic promos rejected",
+  );
   writeFileSync(
     "/tmp/gastronomia-management-fixture.json",
     JSON.stringify({

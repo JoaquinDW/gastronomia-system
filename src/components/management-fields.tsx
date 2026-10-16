@@ -53,9 +53,11 @@ export function SupplierSelect({ suppliers }: { suppliers: Supplier[] }) {
 export function IngredientLines({
   items,
   initial = [],
+  allowEmpty = false,
 }: {
   items: StockItem[];
-  initial?: Recipe["lines"];
+  initial?: { itemId: string; quantity: string }[];
+  allowEmpty?: boolean;
 }) {
   const [rows, setRows] = useState(() =>
     initial.length
@@ -71,7 +73,7 @@ export function IngredientLines({
             <select
               name={`ingredientItem-${row.key}`}
               defaultValue={row.itemId}
-              required
+              required={!allowEmpty}
             >
               <option value="">Elegí un insumo</option>
               {items.map((item) => (
@@ -85,7 +87,7 @@ export function IngredientLines({
             <input
               name={`ingredientQuantity-${row.key}`}
               inputMode="decimal"
-              required
+              required={!allowEmpty}
               defaultValue={row.quantity}
             />
           </Field>
@@ -176,13 +178,16 @@ export function RecipeEditor({
         key={`${selected}-${recipe?.version ?? 0}`}
         items={items}
         recipe={recipe}
+        products={products}
+        recipes={recipes}
+        selected={selected}
       />
       <p className="mg-disclosure">
-        Indicá cuánto de cada ingrediente usás para vender una unidad. En un
-        combo, incluí todo lo que lleva una sola vez. Si vendés un producto que
-        ya preparaste, elegí ese producto: sus ingredientes ya se descontaron al
-        prepararlo. Los ingredientes de los adicionales se suman a los del
-        producto.
+        Cargá lo que lleva una unidad vendida. Para una promo de dos especiales,
+        agregá 2 × Especial en productos. Sus insumos se suman solos: no los
+        vuelvas a cargar abajo. Podés agregar envases u otros extras. Si cambia
+        la receta de la Especial, las próximas ventas de la promo usarán esa
+        receta.
       </p>
     </>
   );
@@ -190,9 +195,15 @@ export function RecipeEditor({
 function RecipeConsumption({
   recipe,
   items,
+  products,
+  recipes,
+  selected,
 }: {
   recipe?: Recipe;
   items: StockItem[];
+  products: Product[];
+  recipes: Recipe[];
+  selected: string;
 }) {
   const [none, setNone] = useState(recipe?.noConsumption ?? false);
   return (
@@ -206,10 +217,133 @@ function RecipeConsumption({
         />
         Esta opción no usa insumos ni agrega costos
       </label>
-      {!none ? <IngredientLines items={items} initial={recipe?.lines} /> : null}
+      {!none ? (
+        <>
+          <RecipeProductLines
+            products={products}
+            recipes={recipes}
+            selected={selected}
+            initial={recipe?.lines.filter((l) => "productId" in l) ?? []}
+          />
+          <h3>Insumos propios o extras</h3>
+          <IngredientLines
+            items={items}
+            initial={recipe?.lines.filter((l) => "itemId" in l)}
+            allowEmpty
+          />
+        </>
+      ) : null}
     </>
   );
 }
+function RecipeProductLines({
+  products,
+  recipes,
+  selected,
+  initial,
+}: {
+  products: Product[];
+  recipes: Recipe[];
+  selected: string;
+  initial: { productId: string; variantId: string; quantity: string }[];
+}) {
+  const [rows, setRows] = useState(() =>
+    initial.map((line, i) => ({
+      key: `initial-product-${i}`,
+      option: `${line.productId}:${line.variantId}`,
+      quantity: line.quantity,
+    })),
+  );
+  const options = products.flatMap((p) =>
+    p.variants
+      .filter((v) => {
+        const base = recipes.find(
+          (r) =>
+            r.productId === p.id &&
+            r.optionId === v.id &&
+            r.optionKind === "variant",
+        );
+        return (
+          `${p.id}:variant:${v.id}` !== selected &&
+          base &&
+          base.lines.every((l) => "itemId" in l)
+        );
+      })
+      .map((v) => ({
+        value: `${p.id}:${v.id}`,
+        label: `${p.name} · ${v.name}`,
+      })),
+  );
+  return (
+    <div className="mg-lines">
+      <h3>Productos que incluye (para promos)</h3>
+      {rows.map((row, i) => (
+        <div className="mg-line mg-ingredient-line" key={row.key}>
+          <input type="hidden" name="recipeProduct" value={row.key} />
+          <Field label={`Producto incluido ${i + 1}`}>
+            <select
+              name={`recipeProduct-${row.key}`}
+              defaultValue={row.option}
+              required
+            >
+              <option value="">Elegí un producto con receta</option>
+              {row.option && !options.some((o) => o.value === row.option) ? (
+                <option value={row.option}>
+                  Producto fuera de la carta o con receta pendiente
+                </option>
+              ) : null}
+              {options.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label={`Unidades del producto ${i + 1}`}>
+            <input
+              name={`recipeProductQuantity-${row.key}`}
+              type="number"
+              min="1"
+              max="999"
+              step="1"
+              required
+              defaultValue={row.quantity}
+            />
+          </Field>
+          <button
+            type="button"
+            className="text-button"
+            onClick={() =>
+              setRows((old) => old.filter((r) => r.key !== row.key))
+            }
+          >
+            Quitar<span className="sr-only"> producto {i + 1}</span>
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        className="secondary-button"
+        disabled={!options.length}
+        onClick={() =>
+          setRows((old) => [
+            ...old,
+            { key: crypto.randomUUID(), option: "", quantity: "1" },
+          ])
+        }
+      >
+        Agregar producto de la carta
+      </button>
+      {!options.length ? (
+        <p className="mg-disclosure">
+          Primero cargá los ingredientes de un producto para poder usarlo dentro
+          de una promo.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function PurchaseLines({ items }: { items: StockItem[] }) {
   const [rows, setRows] = useState([
     { key: "first", itemId: items[0]?.id ?? "" },

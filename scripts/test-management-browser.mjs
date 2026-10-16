@@ -354,6 +354,85 @@ try {
       elements.map((e) => ({ tag: e.tagName, labels: e.labels?.length })),
     );
   assert.ok(names.every((n) => n.labels > 0));
+  // Configure a promo as 2 × an existing product, leaving ingredient rows empty.
+  const promoVariant = randomUUID();
+  const promoResponse = await api(owner, `/api/businesses/${id}/menu`, {
+    name: "Promo 2 burgers",
+    description: "",
+    category: "Promos",
+    kind: "combo",
+    variants: [{ id: promoVariant, name: "Para dos", priceCents: 1500000 }],
+    addOns: [],
+    imageUrl: "",
+    isAvailable: true,
+    sortOrder: 1,
+  });
+  assert.equal(promoResponse.r.status(), 201);
+  const promo = promoResponse.d.product;
+  await page.goto(`${base}${root}/recetas`);
+  await page
+    .getByRole("button", { name: "Configurar receta", exact: true })
+    .click();
+  await form
+    .getByLabel("Producto y opción de la carta")
+    .selectOption(`${promo.id}:variant:${promoVariant}`);
+  await form
+    .getByRole("button", { name: "Agregar producto de la carta" })
+    .click();
+  await form
+    .getByLabel("Producto incluido 1", { exact: true })
+    .selectOption(`${product.id}:${variant}`);
+  await form.getByLabel("Unidades del producto 1", { exact: true }).fill("2");
+  await page.screenshot({
+    path: `${screenshots}/promo-recipe-mobile.png`,
+    fullPage: true,
+  });
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+    false,
+  );
+  await form.getByRole("button", { name: "Guardar y confirmar" }).click();
+  await page.getByRole("status").filter({ hasText: "Listo" }).waitFor();
+  const savedPromo = (await api(owner, management)).d.recipes.find(
+    (r) => r.productId === promo.id,
+  );
+  assert.deepEqual(savedPromo.lines, [
+    { productId: product.id, variantId: variant, quantity: "2" },
+  ]);
+  await page
+    .getByRole("cell", { name: "2 × Burger clásica · Simple" })
+    .waitFor();
+  const stockBeforePromo = (await api(owner, management)).d.items;
+  const promoSale = await command({
+    type: "sale",
+    channel: "counter",
+    lines: [
+      {
+        productId: promo.id,
+        variantId: promoVariant,
+        addOnIds: [],
+        quantity: 2,
+        unitCents: "1500000",
+      },
+    ],
+  });
+  const afterPromo = (await api(owner, management)).d;
+  assert.equal(
+    Number(stockBeforePromo.find((i) => i.id === meat).quantity) -
+      Number(afterPromo.items.find((i) => i.id === meat).quantity),
+    480,
+  );
+  assert.equal(
+    Number(stockBeforePromo.find((i) => i.id === bread).quantity) -
+      Number(afterPromo.items.find((i) => i.id === bread).quantity),
+    4,
+  );
+  assert.equal(
+    afterPromo.sales.find((s) => s.id === promoSale.id).costCents,
+    "624000",
+  );
   // An accepted order from before Gestión needs explicit mapping, not new stock.
   const legacyItems = [
     {
@@ -618,7 +697,7 @@ try {
   assert.equal((await api(other, management)).d.expenses.length, 0);
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: real Auth, tenant and role permissions, item + supplier + sale UI, failed save retains input, complete report, missing-cost shortcuts, immutable past costs, explicit historical order costing, CSV, mobile sections and labeled forms",
+    "PASS: real Auth, tenant and role permissions, item + supplier + sale UI, failed save retains input, complete report, missing-cost shortcuts, immutable past costs, explicit historical order costing, promo recipe references without double consumption, CSV, mobile sections and labeled forms",
   );
   console.log(`Screenshots: ${screenshots}`);
   console.log(`Synthetic business: ${id}`);

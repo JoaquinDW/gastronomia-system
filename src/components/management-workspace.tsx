@@ -192,10 +192,30 @@ export function ManagementWorkspace({
             noConsumption: f.has("noConsumption"),
             lines: f.has("noConsumption")
               ? []
-              : f.getAll("ingredient").map((k) => ({
-                  itemId: text(f, `ingredientItem-${k}`),
-                  quantity: quantity(f, `ingredientQuantity-${k}`),
-                })),
+              : [
+                  ...f
+                    .getAll("ingredient")
+                    .filter(
+                      (k) =>
+                        text(f, `ingredientItem-${k}`) ||
+                        text(f, `ingredientQuantity-${k}`),
+                    )
+                    .map((k) => ({
+                      itemId: text(f, `ingredientItem-${k}`),
+                      quantity: quantity(f, `ingredientQuantity-${k}`),
+                    })),
+                  ...f.getAll("recipeProduct").map((k) => {
+                    const [productId, variantId] = text(
+                      f,
+                      `recipeProduct-${k}`,
+                    ).split(":");
+                    return {
+                      productId,
+                      variantId,
+                      quantity: quantity(f, `recipeProductQuantity-${k}`),
+                    };
+                  }),
+                ],
           });
           break;
         }

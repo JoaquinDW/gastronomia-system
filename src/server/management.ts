@@ -31,7 +31,10 @@ import {
   unitCostOf,
 } from "@/lib/management-math";
 
-import { historicalRecipeCost } from "@/lib/management-recipe-cost";
+import {
+  historicalRecipeCost,
+  resolveRecipe,
+} from "@/lib/management-recipe-cost";
 
 const itemFields = `id,name,kind,unit,minimum,quantity,unit_cost AS "unitCost",version`;
 const recipeFields = `id,product_id AS "productId",option_id AS "optionId",option_kind AS "optionKind",version,lines,no_consumption AS "noConsumption"`;
@@ -280,7 +283,9 @@ export async function createSale(
         complete = false;
         continue;
       }
-      for (const component of recipe.lines) {
+      const resolved = resolveRecipe(recipe, recipes);
+      if (!resolved.complete) complete = false;
+      for (const component of resolved.lines) {
         const item = requireItem(items, component.itemId);
         const q = multiply(component.quantity, line.quantity.toString());
         const cost = costOf(q, item.unitCost);
@@ -595,16 +600,94 @@ export async function executeManagement(
         if (input.noConsumption === !!input.lines.length)
           throw new HttpError(
             422,
-            "Agregá ingredientes o marcá que esta opción no usa insumos.",
+            "Agregá ingredientes o productos, o marcá que esta opción no usa insumos.",
           );
         if (
-          new Set(input.lines.map((l) => l.itemId)).size !== input.lines.length
+          new Set(
+            input.lines.map((l) =>
+              "itemId" in l
+                ? `item/${l.itemId}`
+                : `product/${l.productId}/${l.variantId}`,
+            ),
+          ).size !== input.lines.length
         )
           throw new HttpError(
             422,
-            "Sumá los insumos repetidos en una sola línea.",
+            "Sumá las cantidades repetidas en una sola línea.",
           );
-        for (const line of input.lines) requireItem(items, line.itemId);
+        const latestRecipes = (
+          await client.query<Recipe>(
+            `SELECT DISTINCT ON(product_id,option_id,option_kind) ${recipeFields} FROM management_recipes WHERE business_id=$1 ORDER BY product_id,option_id,option_kind,version DESC`,
+            [businessId],
+          )
+        ).rows;
+        const productLines = input.lines.filter((l) => "productId" in l);
+        if (
+          productLines.length &&
+          latestRecipes.some(
+            (r) =>
+              r.lines.some(
+                (l) =>
+                  !("itemId" in l) &&
+                  l.productId === input.productId &&
+                  l.variantId === input.optionId,
+              ) && input.optionKind === "variant",
+          )
+        )
+          throw new HttpError(
+            422,
+            "Esta receta ya se usa dentro de una promo. Debe llevar sus propios insumos.",
+          );
+        const referencedProducts = productLines.length
+          ? (
+              await client.query<Pick<Product, "id" | "variants">>(
+                `SELECT id,variants FROM menu_products WHERE business_id=$1 AND id=ANY($2::uuid[]) AND archived_at IS NULL`,
+                [businessId, productLines.map((l) => l.productId)],
+              )
+            ).rows
+          : [];
+        for (const line of input.lines) {
+          if ("itemId" in line) {
+            requireItem(items, line.itemId);
+            continue;
+          }
+          if (
+            input.optionKind === "variant" &&
+            line.productId === input.productId &&
+            line.variantId === input.optionId
+          )
+            throw new HttpError(
+              422,
+              "Una receta no puede incluirse a sí misma.",
+            );
+          if (
+            !referencedProducts.some(
+              (p) =>
+                p.id === line.productId &&
+                p.variants.some((v) => v.id === line.variantId),
+            )
+          )
+            throw new HttpError(
+              422,
+              "Elegí un producto de la carta de este negocio.",
+            );
+          const base = latestRecipes.find(
+            (r) =>
+              r.productId === line.productId &&
+              r.optionId === line.variantId &&
+              r.optionKind === "variant",
+          );
+          if (!base)
+            throw new HttpError(
+              422,
+              "Primero cargá la receta del producto que querés incluir.",
+            );
+          if (base.lines.some((l) => !("itemId" in l)))
+            throw new HttpError(
+              422,
+              "Una promo puede incluir productos con insumos propios, pero no otras promos.",
+            );
+        }
         await client.query(
           `INSERT INTO management_recipes(business_id,product_id,option_id,option_kind,version,lines,no_consumption,operation_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
           [

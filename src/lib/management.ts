@@ -96,7 +96,25 @@ export const commandSchema = z.discriminatedUnion("type", [
       optionId: z.uuid(),
       optionKind: z.enum(["variant", "addon"]),
       version: z.number().int().nonnegative(),
-      lines: z.array(consumption).max(80),
+      lines: z
+        .array(
+          z.union([
+            consumption,
+            z
+              .object({
+                productId: z.uuid(),
+                variantId: z.uuid(),
+                quantity: z
+                  .string()
+                  .regex(
+                    /^[1-9]\d{0,2}$/,
+                    "Usá entre 1 y 999 unidades del producto.",
+                  ),
+              })
+              .strict(),
+          ]),
+        )
+        .max(80),
       noConsumption: z.boolean().default(false),
     })
     .strict(),
@@ -232,7 +250,10 @@ export type Recipe = {
   optionId: string;
   optionKind: "variant" | "addon";
   version: number;
-  lines: { itemId: string; quantity: string }[];
+  lines: (
+    | { itemId: string; quantity: string }
+    | { productId: string; variantId: string; quantity: string }
+  )[];
   noConsumption: boolean;
 };
 export type Movement = {
