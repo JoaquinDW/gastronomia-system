@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { getPool } from "./postgres";
 import {
   emptySettings,
@@ -265,3 +266,17 @@ export async function publicStore(slug: string, previewUserId?: string) {
     settings,
   };
 }
+
+// Datos mínimos de una tienda publicada para metadata e imagen Open Graph.
+export const publishedStoreCard = cache(async (slug: string) => {
+  const { rows } = await getPool().query<{
+    name: string;
+    kind: string;
+    city: string | null;
+    description: string | null;
+  }>(
+    `SELECT b.name,b.kind,s.description,(SELECT city FROM locations WHERE business_id=b.id ORDER BY created_at,id LIMIT 1) AS city FROM businesses b JOIN store_settings s ON s.business_id=b.id WHERE b.slug=$1 AND s.is_published`,
+    [slug],
+  );
+  return rows[0] ?? null;
+});
