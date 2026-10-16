@@ -10,6 +10,7 @@ Plataforma para hamburgueserías, rotiserías y casas de pastas independientes. 
 - [Verificación](docs/VERIFICACION.md): comandos ejecutados, resultados y límites.
 - [Alta de negocios](docs/ALTA-NEGOCIOS.md): funcionamiento y verificación de la entrega actual.
 - [Carta y tienda](docs/CARTA-TIENDA.md): configuración, importación con IA, checkout y pruebas.
+- [Design system Pedipue](docs/DESIGN-SYSTEM.md): marca, colores, tipografía, componentes, tono y plan para aplicarlo en todas las pantallas.
 
 Flujo acordado: **guardar pedido pendiente → abrir WhatsApp → el negocio confirma en el panel → cocina**. Abrir WhatsApp no acredita pago ni aceptación.
 

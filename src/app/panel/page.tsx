@@ -3,7 +3,7 @@ import { requireUser } from "@/server/auth";
 import { listBusinesses } from "@/server/businesses";
 import { businessKinds } from "@/lib/business-input";
 
-export const metadata = { title: "Mis negocios — Gastronomía" };
+export const metadata = { title: "Mis negocios — Pedipue" };
 
 export default async function PanelPage() {
   const user = await requireUser();

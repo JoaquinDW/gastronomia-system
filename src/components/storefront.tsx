@@ -668,7 +668,7 @@ export function Storefront({
       ) : null}
       <footer className="shop-footer">
         <span>{business.name} · Pedí directo a tu local</span>
-        <span>Con tecnología de gastronomía</span>
+        <span>Hecho con pedipue.com</span>
       </footer>
     </div>
   );

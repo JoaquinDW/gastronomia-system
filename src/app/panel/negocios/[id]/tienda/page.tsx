@@ -6,7 +6,7 @@ import { recentImports } from "@/server/menu-imports";
 import { BusinessNav } from "@/components/business-nav";
 import { StoreConfigurator } from "@/components/store-configurator";
 import { hourSchema, hoursOverlap } from "@/lib/menu";
-export const metadata = { title: "Activar tu tienda — Gastronomía" };
+export const metadata = { title: "Activar tu tienda — Pedipue" };
 export default async function StorePage({
   params,
 }: {

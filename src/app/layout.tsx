@@ -3,7 +3,7 @@ import "./globals.css";
 import "./workspace.css";
 
 export const metadata: Metadata = {
-  title: "Gastronomía — el comienzo de una buena operación",
+  title: "Pedipue — pedí directo a tu local",
   description:
     "Plan de V1 y base técnica para negocios gastronómicos independientes.",
   robots: { index: false, follow: false },

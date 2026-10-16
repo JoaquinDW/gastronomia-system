@@ -69,7 +69,7 @@ export function AccountShell({
         <div className="account-form-area">{children}</div>
       </main>
       <footer>
-        <span>gastronomía · nombre de trabajo</span>
+        <span>pedipue.com</span>
         <span>El primer paso hacia una operación más simple.</span>
       </footer>
     </div>

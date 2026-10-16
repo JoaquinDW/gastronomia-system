@@ -4,7 +4,7 @@ import { authorizeBusiness } from "@/server/http";
 import { listOrders } from "@/server/orders";
 import { BusinessNav } from "@/components/business-nav";
 import { OrderInbox } from "@/components/order-inbox";
-export const metadata = { title: "Pedidos de tu tienda — Gastronomía" };
+export const metadata = { title: "Pedidos de tu tienda — Pedipue" };
 export default async function OrdersPage({
   params,
 }: {

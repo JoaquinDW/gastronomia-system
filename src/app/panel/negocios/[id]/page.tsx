@@ -7,7 +7,7 @@ import { requireUser } from "@/server/auth";
 import { getProducts, getSettings } from "@/server/menu";
 import { BusinessNav } from "@/components/business-nav";
 
-export const metadata = { title: "Mi negocio — Gastronomía" };
+export const metadata = { title: "Mi negocio — Pedipue" };
 
 export default async function BusinessPage({
   params,
