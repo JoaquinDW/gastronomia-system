@@ -8,6 +8,13 @@
       "when": 1792114814875,
       "tag": "0000_business_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792157646589,
+      "tag": "0001_menu_storefront",
+      "breakpoints": true
     }
   ]
 }

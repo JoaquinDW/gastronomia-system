@@ -1,6 +1,6 @@
 # Sistema gastronómico — propuesta de V1
 
-Estado: propuesta de V1 con alta de cuentas y negocios implementada. Fecha: 15 de octubre de 2026. Ver [ALTA-NEGOCIOS.md](./ALTA-NEGOCIOS.md) para el estado real de esa funcionalidad; el resto de este documento describe el alcance objetivo.
+Estado al 16 de octubre de 2026: alta de cuentas/negocios, carta, configuración y publicación de tienda, checkout por WhatsApp y bandeja de pedidos implementados. Ver [Alta](./ALTA-NEGOCIOS.md) y [Carta y tienda](./CARTA-TIENDA.md) para el estado real y sus límites; este documento conserva el alcance objetivo de V1, incluida cocina, caja y stock aún pendientes.
 
 ## 1. Qué vamos a construir
 
@@ -12,16 +12,16 @@ Nombre comercial pendiente. “Gastronomía” es solamente un nombre de trabajo
 
 ### Decisiones tomadas y supuestos
 
-| Tema | Propuesta / decisión | Estado |
-| --- | --- | --- |
-| Base de datos | Postgres en Neon, proyecto `soft-tooth-38969404` | Indicado por el usuario |
-| Checkout | Guardar pedido → abrir WhatsApp con resumen → negocio confirma en panel → cocina | Confirmado por el usuario |
-| Tipo de producto | Plataforma para negocios independientes, con datos aislados | Supuesto para validar con el piloto |
-| Moneda y zona horaria | ARS; `America/Argentina/Cordoba`, configurables por negocio | Supuesto inicial |
-| Entrega | Retiro y delivery propio, con cargo por zona | Propuesta |
-| Cobro inicial | Efectivo y transferencia con verificación manual | Propuesta |
-| Uso | Web responsive; tienda en celular, gestión en PC/tablet, cocina en tablet | Propuesta |
-| Alcance actual | Plan de V1 + base Neon + cuentas, alta de negocios y panel del propietario | Los módulos operativos se construyen en próximas entregas |
+| Tema                  | Propuesta / decisión                                                             | Estado                                                    |
+| --------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Base de datos         | Postgres en Neon, proyecto `soft-tooth-38969404`                                 | Indicado por el usuario                                   |
+| Checkout              | Guardar pedido → abrir WhatsApp con resumen → negocio confirma en panel → cocina | Confirmado por el usuario                                 |
+| Tipo de producto      | Plataforma para negocios independientes, con datos aislados                      | Supuesto para validar con el piloto                       |
+| Moneda y zona horaria | ARS; `America/Argentina/Cordoba`, configurables por negocio                      | Supuesto inicial                                          |
+| Entrega               | Retiro y delivery propio, con cargo por zona                                     | Propuesta                                                 |
+| Cobro inicial         | Efectivo y transferencia con verificación manual                                 | Propuesta                                                 |
+| Uso                   | Web responsive; tienda en celular, gestión en PC/tablet, cocina en tablet        | Propuesta                                                 |
+| Alcance actual        | Plan de V1 + base Neon + cuentas, alta de negocios y panel del propietario       | Los módulos operativos se construyen en próximas entregas |
 
 ## 2. Recorrido principal
 
@@ -170,13 +170,13 @@ stateDiagram-v2
   dispatched --> cancelled: encargado resuelve incidencia
 ```
 
-| Dimensión | Estados / reglas |
-| --- | --- |
-| Pedido | Flujo anterior; rechazo, vencimiento y cancelación no cuentan como venta vigente |
-| Pago | `unpaid`, `partially_paid`, `paid`, `partially_refunded`, `refunded`; saldo calculado a partir del libro de cobros |
-| Tarea de cocina | `pending`, `in_progress`, `done`, `cancelled` |
-| Entrega | `pickup` o `delivery`; repartidor y despacho independientes del pago |
-| Stock | Reserva, consumo, liberación y devolución/merma son movimientos distintos |
+| Dimensión       | Estados / reglas                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Pedido          | Flujo anterior; rechazo, vencimiento y cancelación no cuentan como venta vigente                                   |
+| Pago            | `unpaid`, `partially_paid`, `paid`, `partially_refunded`, `refunded`; saldo calculado a partir del libro de cobros |
+| Tarea de cocina | `pending`, `in_progress`, `done`, `cancelled`                                                                      |
+| Entrega         | `pickup` o `delivery`; repartidor y despacho independientes del pago                                               |
+| Stock           | Reserva, consumo, liberación y devolución/merma son movimientos distintos                                          |
 
 - Cambios de precio conservan el precio y el nombre capturados al comprar; no alteran ventas históricas.
 - Pendiente: presupuesto con vencimiento configurable. Al aceptar se respeta el total acordado o se exige nueva aceptación del cliente.
@@ -188,19 +188,19 @@ stateDiagram-v2
 
 ## 5. Lo que dejamos para después
 
-| Próxima etapa | Motivo |
-| --- | --- |
-| WhatsApp Business API, chatbot y mensajes automáticos | El usuario eligió checkout con mensaje y confirmación manual |
-| Mercado Pago con conciliación automática | Requiere integración, credenciales por negocio y webhooks idempotentes; cobro manual cubre el piloto |
-| Facturación ARCA | Integración fiscal con un alcance y validación específicos |
-| PedidosYa/Rappi y flotas externas | Dependencias comerciales y técnicas ajenas al flujo inicial |
-| Salón, mesas, cuentas abiertas y división de mesa | Los pilotos se enfocan en retiro y delivery |
-| Múltiples sucursales operativas, franquicias | Modelo preparado; interfaz y operación posteriores |
-| Franjas programadas y capacidad por franja | Recomendable para pastas, después de validar producción y horarios del piloto |
-| Fidelización, puntos y marketing automatizado | Primero validar operación y recurrencia real |
-| Apps nativas, modo offline con cobros y sincronización | V1 web con recuperación de conexión; no prometer operación offline |
-| Contabilidad integral, nómina, cuentas corrientes y compras avanzadas | Fuera del núcleo operativo de esta V1 |
-| Suscripciones y cobro SaaS a los negocios | Alta autogestionada disponible; validar producto antes de automatizar facturación de la plataforma |
+| Próxima etapa                                                         | Motivo                                                                                               |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| WhatsApp Business API, chatbot y mensajes automáticos                 | El usuario eligió checkout con mensaje y confirmación manual                                         |
+| Mercado Pago con conciliación automática                              | Requiere integración, credenciales por negocio y webhooks idempotentes; cobro manual cubre el piloto |
+| Facturación ARCA                                                      | Integración fiscal con un alcance y validación específicos                                           |
+| PedidosYa/Rappi y flotas externas                                     | Dependencias comerciales y técnicas ajenas al flujo inicial                                          |
+| Salón, mesas, cuentas abiertas y división de mesa                     | Los pilotos se enfocan en retiro y delivery                                                          |
+| Múltiples sucursales operativas, franquicias                          | Modelo preparado; interfaz y operación posteriores                                                   |
+| Franjas programadas y capacidad por franja                            | Recomendable para pastas, después de validar producción y horarios del piloto                        |
+| Fidelización, puntos y marketing automatizado                         | Primero validar operación y recurrencia real                                                         |
+| Apps nativas, modo offline con cobros y sincronización                | V1 web con recuperación de conexión; no prometer operación offline                                   |
+| Contabilidad integral, nómina, cuentas corrientes y compras avanzadas | Fuera del núcleo operativo de esta V1                                                                |
+| Suscripciones y cobro SaaS a los negocios                             | Alta autogestionada disponible; validar producto antes de automatizar facturación de la plataforma   |
 
 ## 6. Criterios para llamar a esto V1
 
@@ -219,15 +219,15 @@ stateDiagram-v2
 
 Cada entrega debe poder demostrarse con datos del piloto. Estimación orientativa: **8–12 semanas de desarrollo y validación** para una persona con dedicación sostenida; se revisa al terminar la primera entrega. No es una fecha comprometida ni una estimación basada solo en pantallas: permisos, caja, concurrencia y stock ocupan buena parte del trabajo.
 
-| Entrega | Resultado verificable | Dependencias |
-| --- | --- | --- |
-| 0. Base y decisiones | App ejecutable, Neon conectado, alcance y arquitectura; sin operación comercial | Esta entrega |
-| 1. Negocio y carta | Login, roles, aislamiento, alta de tres negocios, variantes, opciones y horarios | 0 |
-| 2. Venta completa | Tienda móvil, carrito, POS, pedido persistido, WhatsApp, aceptación/rechazo y seguimiento | 1 |
-| 3. Cocina y despacho | KDS, tareas por estación, expedición y recuperación de conexión | 2 |
-| 4. Cobros y gestión | Libro de cobros, caja, arqueo, descuentos, reintegros e informes básicos | 2; validar junto con 3 |
-| 5. Stock y costos | Recetas, reservas concurrentes, lotes, compras, mermas y costos | 2–4; diseñar esquema desde 1 |
-| 6. Piloto y cierre | Turnos reales, corrección de problemas, recuperación y criterios de salida | 1–5 |
+| Entrega              | Resultado verificable                                                                     | Dependencias                 |
+| -------------------- | ----------------------------------------------------------------------------------------- | ---------------------------- |
+| 0. Base y decisiones | App ejecutable, Neon conectado, alcance y arquitectura; sin operación comercial           | Esta entrega                 |
+| 1. Negocio y carta   | Login, roles, aislamiento, alta de tres negocios, variantes, opciones y horarios          | 0                            |
+| 2. Venta completa    | Tienda móvil, carrito, POS, pedido persistido, WhatsApp, aceptación/rechazo y seguimiento | 1                            |
+| 3. Cocina y despacho | KDS, tareas por estación, expedición y recuperación de conexión                           | 2                            |
+| 4. Cobros y gestión  | Libro de cobros, caja, arqueo, descuentos, reintegros e informes básicos                  | 2; validar junto con 3       |
+| 5. Stock y costos    | Recetas, reservas concurrentes, lotes, compras, mermas y costos                           | 2–4; diseñar esquema desde 1 |
+| 6. Piloto y cierre   | Turnos reales, corrección de problemas, recuperación y criterios de salida                | 1–5                          |
 
 El backlog con criterios de aceptación está en [BACKLOG.md](./BACKLOG.md), y las decisiones técnicas en [ARQUITECTURA.md](./ARQUITECTURA.md).
 

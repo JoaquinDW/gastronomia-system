@@ -2,24 +2,24 @@
 
 ## Estado actual
 
-La app Next.js ya incluye registro/login/logout con Neon Auth, alta de negocios y panel privado del propietario. Se implementaron las tablas `businesses`, `locations` y `memberships`, gestionadas con Drizzle y migraciones SQL versionadas. El resto de entidades sigue siendo diseño propuesto; catálogo, pedidos, caja y cocina todavía no están implementados. Ver [ALTA-NEGOCIOS.md](./ALTA-NEGOCIOS.md).
+La app Next.js incluye registro/login/logout con Neon Auth, alta de negocios, carta manual/importada con OpenAI, configuración y publicación de tienda, carrito y pedidos pendientes con resumen de WhatsApp y aceptación en el panel. Drizzle versiona `businesses`, `locations`, `memberships`, `menu_products`, `store_settings`, `menu_imports` y `orders`. Cocina, caja, stock y otras entidades de este diseño siguen pendientes. Ver [Alta](./ALTA-NEGOCIOS.md) y [Carta y tienda](./CARTA-TIENDA.md).
 
 Neon está vinculado a la organización `org-proud-voice-23148089`, proyecto `soft-tooth-38969404`, rama `production` (`br-empty-resonance-b5ar105u`). `neon.ts` y `neon deploy` gestionan Postgres y Neon Auth. Neon no publica el frontend: el hosting de la app sigue pendiente.
 
 ## Stack y razones
 
-| Capa | Elección | Razón |
-| --- | --- | --- |
-| Aplicación | Next.js App Router + TypeScript, runtime Node.js | Tienda, panel y API en un mismo proyecto, con componentes de servidor por defecto |
-| Base | Postgres en Neon | Transacciones, restricciones y branches para probar migraciones |
-| Driver actual | `pg` con `DATABASE_URL` pooled | Soporta servidor Node persistente y transacciones interactivas para pedidos, caja y stock |
-| Ciclo de pool | Pool pequeño, reutilizado; `attachDatabasePool` en Vercel | Evitar una conexión nueva por consulta y manejar suspensión en Fluid compute |
-| Variables | `@neon/env` con validación diferida | El build no necesita conectarse a la DB; el request valida la configuración real |
-| Esquema actual | Drizzle con migraciones SQL versionadas | Esquema inicial de negocios, sucursales y membresías; SQL revisable |
-| Identidad actual | Neon Auth / Managed Better Auth | Sesiones administradas; pertenencias y propietario resueltos por la aplicación |
-| Fotos futuras | Almacenamiento de objetos, preferentemente Neon si la región lo admite | Cargas firmadas, límites de peso y tipo; Postgres solo conserva referencias |
-| Cocina V1 | Polling incremental cada 3–5 s mientras esté visible | Sencillo de operar y probar; medir carga antes de agregar SSE o Realtime |
-| Hosting propuesto | Vercel con Node/Fluid; región cercana a la DB | Alternativa: servidor Node en Render/Railway/VPS. No hay despliegue web aún |
+| Capa              | Elección                                                               | Razón                                                                                     |
+| ----------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Aplicación        | Next.js App Router + TypeScript, runtime Node.js                       | Tienda, panel y API en un mismo proyecto, con componentes de servidor por defecto         |
+| Base              | Postgres en Neon                                                       | Transacciones, restricciones y branches para probar migraciones                           |
+| Driver actual     | `pg` con `DATABASE_URL` pooled                                         | Soporta servidor Node persistente y transacciones interactivas para pedidos, caja y stock |
+| Ciclo de pool     | Pool pequeño, reutilizado; `attachDatabasePool` en Vercel              | Evitar una conexión nueva por consulta y manejar suspensión en Fluid compute              |
+| Variables         | `@neon/env` con validación diferida                                    | El build no necesita conectarse a la DB; el request valida la configuración real          |
+| Esquema actual    | Drizzle con migraciones SQL versionadas                                | Esquema inicial de negocios, sucursales y membresías; SQL revisable                       |
+| Identidad actual  | Neon Auth / Managed Better Auth                                        | Sesiones administradas; pertenencias y propietario resueltos por la aplicación            |
+| Fotos futuras     | Almacenamiento de objetos, preferentemente Neon si la región lo admite | Cargas firmadas, límites de peso y tipo; Postgres solo conserva referencias               |
+| Cocina V1         | Polling incremental cada 3–5 s mientras esté visible                   | Sencillo de operar y probar; medir carga antes de agregar SSE o Realtime                  |
+| Hosting propuesto | Vercel con Node/Fluid; región cercana a la DB                          | Alternativa: servidor Node en Render/Railway/VPS. No hay despliegue web aún               |
 
 Para esta arquitectura se siguió la recomendación actual de Neon de usar `pg` en Node y Vercel Fluid. Si se elige Workers sin Hyperdrive o Netlify, se debe revisar el driver; no desplegar este pool TCP como si fuera código Edge.
 
@@ -43,19 +43,19 @@ Al iniciar el dominio, organizar por módulos `catalog`, `orders`, `payments`, `
 
 Todas las entidades propias de un negocio incluyen `business_id`. Las entidades operativas también incluyen `location_id`. Las relaciones compuestas impiden vincular, por error, un pedido de un negocio con un producto de otro.
 
-| Área | Tablas propuestas | Datos / invariantes |
-| --- | --- | --- |
-| Acceso | `businesses`, `locations`, `memberships`, `invitations` | Slug único, zona horaria, usuario, rol; sesiones gestionadas por el proveedor |
-| Carta | `categories`, `products`, `product_variants`, `option_groups`, `options`, `product_option_groups`, `combo_components` | Precios, mínimos/máximos, disponibilidad, unidad de venta |
-| Horarios | `opening_hours`, `special_closures`, `delivery_zones` | Días, cruces de medianoche, modalidad, tarifa y mínimo |
-| Clientes | `customers`, `customer_addresses` | Identidad por teléfono dentro de un negocio; datos mínimos |
-| Pedidos | `orders`, `order_items`, `order_item_options`, `order_events`, `order_number_counters` | Totales y nombres capturados, estados, versión, referencia por negocio |
-| Pagos | `payments`, `refunds` | Libro de eventos, importes positivos, idempotencia y conciliación |
-| Cocina | `kitchen_stations`, `kitchen_tasks` | Tarea por ítem/estación, estado, fechas y tiempos prometidos |
-| Inventario | `ingredients`, `recipes`, `recipe_items`, `stock_balances`, `stock_reservations`, `stock_movements`, `production_batches` | Unidades exactas, reserva, consumo y movimientos inmutables |
-| Caja | `cash_registers`, `cash_sessions`, `cash_movements` | Turno, fondo, movimientos, esperado, declarado y diferencia |
-| Gestión | `suppliers`, `expenses`, `discounts` | Proveedores y gastos simples, descuentos con reglas claras |
-| Fiabilidad | `idempotency_keys`, `outbox_events`, `audit_events` | Unicidad de comandos, efectos posteriores, trazabilidad |
+| Área       | Tablas propuestas                                                                                                         | Datos / invariantes                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Acceso     | `businesses`, `locations`, `memberships`, `invitations`                                                                   | Slug único, zona horaria, usuario, rol; sesiones gestionadas por el proveedor |
+| Carta      | `categories`, `products`, `product_variants`, `option_groups`, `options`, `product_option_groups`, `combo_components`     | Precios, mínimos/máximos, disponibilidad, unidad de venta                     |
+| Horarios   | `opening_hours`, `special_closures`, `delivery_zones`                                                                     | Días, cruces de medianoche, modalidad, tarifa y mínimo                        |
+| Clientes   | `customers`, `customer_addresses`                                                                                         | Identidad por teléfono dentro de un negocio; datos mínimos                    |
+| Pedidos    | `orders`, `order_items`, `order_item_options`, `order_events`, `order_number_counters`                                    | Totales y nombres capturados, estados, versión, referencia por negocio        |
+| Pagos      | `payments`, `refunds`                                                                                                     | Libro de eventos, importes positivos, idempotencia y conciliación             |
+| Cocina     | `kitchen_stations`, `kitchen_tasks`                                                                                       | Tarea por ítem/estación, estado, fechas y tiempos prometidos                  |
+| Inventario | `ingredients`, `recipes`, `recipe_items`, `stock_balances`, `stock_reservations`, `stock_movements`, `production_batches` | Unidades exactas, reserva, consumo y movimientos inmutables                   |
+| Caja       | `cash_registers`, `cash_sessions`, `cash_movements`                                                                       | Turno, fondo, movimientos, esperado, declarado y diferencia                   |
+| Gestión    | `suppliers`, `expenses`, `discounts`                                                                                      | Proveedores y gastos simples, descuentos con reglas claras                    |
+| Fiabilidad | `idempotency_keys`, `outbox_events`, `audit_events`                                                                       | Unicidad de comandos, efectos posteriores, trazabilidad                       |
 
 ```mermaid
 erDiagram
@@ -116,14 +116,14 @@ El alta y el panel ya validan sesión y pertenencia en el servidor. El cliente n
 
 ## API propuesta
 
-| Superficie | Rutas orientativas | Controles |
-| --- | --- | --- |
-| Carta pública | `GET /api/storefront/:slug` | Campos públicos, disponibilidad y caché invalidable |
-| Checkout | `POST /api/storefront/:slug/orders` | Validación, límites, idempotencia; total en servidor |
-| Seguimiento | `GET /api/tracking/:token` | Token opaco y respuesta reducida; sin enumeración |
-| Pedidos internos | `GET /api/businesses/:id/orders`, `POST .../:orderId/accept`, `.../cancel` | Sesión, rol, pertenencia, versión |
-| Cocina | `GET .../kitchen/tasks`, `POST .../tasks/:id/start`, `.../finish` | Rol cocina, cursor de cambios y versión |
-| Caja y stock | Comandos específicos de apertura, cobro, cierre, merma y recepción | Permisos, motivo y transacción |
+| Superficie       | Rutas orientativas                                                         | Controles                                            |
+| ---------------- | -------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Carta pública    | `GET /api/storefront/:slug`                                                | Campos públicos, disponibilidad y caché invalidable  |
+| Checkout         | `POST /api/storefront/:slug/orders`                                        | Validación, límites, idempotencia; total en servidor |
+| Seguimiento      | `GET /api/tracking/:token`                                                 | Token opaco y respuesta reducida; sin enumeración    |
+| Pedidos internos | `GET /api/businesses/:id/orders`, `POST .../:orderId/accept`, `.../cancel` | Sesión, rol, pertenencia, versión                    |
+| Cocina           | `GET .../kitchen/tasks`, `POST .../tasks/:id/start`, `.../finish`          | Rol cocina, cursor de cambios y versión              |
+| Caja y stock     | Comandos específicos de apertura, cobro, cierre, merma y recepción         | Permisos, motivo y transacción                       |
 
 Además del diagnóstico `GET /api/health/db`, están implementados el proxy de Auth y `GET/POST /api/businesses`, `GET /api/businesses/:id`. Los endpoints de negocios exigen sesión, validan campos en servidor, acotan consultas al usuario y no tienen caché. El POST exige mismo origen, limita el cuerpo a 8 KiB y crea negocio, sucursal y propietario en una transacción. Los errores no exponen SQL ni credenciales. El diagnóstico ejecuta `SELECT 1`; antes de exponerlo públicamente con tráfico real, limitar su frecuencia.
 

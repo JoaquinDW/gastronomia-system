@@ -1,6 +1,6 @@
 # Gastronomía — planificación y base técnica
 
-Plataforma para hamburgueserías, rotiserías y casas de pastas independientes. **Ya están implementados el registro de cuentas, el alta de negocios y el acceso privado del propietario, con Neon Auth y Postgres.** Catálogo, pedidos, cocina, caja y stock siguen en el plan de V1.
+Plataforma para hamburgueserías, rotiserías y casas de pastas independientes. Incluye cuentas y alta de negocios con Neon Auth, **carta manual o importada con OpenAI, horarios, retiro/delivery, activación de tienda, carrito y pedidos pendientes con checkout por WhatsApp**. Cocina, caja y stock siguen en el plan de V1.
 
 ## Documentos
 
@@ -9,6 +9,7 @@ Plataforma para hamburgueserías, rotiserías y casas de pastas independientes. 
 - [Backlog](docs/BACKLOG.md): historias priorizadas y criterios de aceptación.
 - [Verificación](docs/VERIFICACION.md): comandos ejecutados, resultados y límites.
 - [Alta de negocios](docs/ALTA-NEGOCIOS.md): funcionamiento y verificación de la entrega actual.
+- [Carta y tienda](docs/CARTA-TIENDA.md): configuración, importación con IA, checkout y pruebas.
 
 Flujo acordado: **guardar pedido pendiente → abrir WhatsApp → el negocio confirma en el panel → cocina**. Abrir WhatsApp no acredita pago ni aceptación.
 
@@ -21,9 +22,11 @@ npm ci
 npm run dev
 ```
 
-App: http://127.0.0.1:3000. Desde “Registrar mi negocio” se crea una cuenta y luego el negocio. Rutas: `/registro`, `/ingresar`, `/alta`, `/panel` y `/panel/negocios/:id`.
+App: http://127.0.0.1:3000. Desde “Registrar mi negocio” se crea una cuenta y luego el negocio. En `/panel/negocios/:id` aparecen las secciones Carta, Tienda y Pedidos. La tienda pública usa `/t/:slug`.
 
-El alta guarda nombre, rubro, WhatsApp con código de país, ciudad y dirección opcional. Crea negocio, sucursal “Casa central” y membresía de propietario en una sola transacción. El identificador es único; los reintentos de la misma solicitud no duplican el negocio. El panel muestra solo los negocios asociados a la cuenta autenticada. La tienda comercial todavía no se publica.
+El alta guarda nombre, rubro, WhatsApp con código de país, ciudad y dirección opcional. Crea negocio, sucursal “Casa central” y membresía de propietario en una sola transacción. El identificador es único; los reintentos de la misma solicitud no duplican el negocio. El panel muestra solo los negocios asociados a la cuenta autenticada. Cada propietario configura su carta, horarios y entregas antes de activar la tienda explícitamente.
+
+Para importar cartas, agregar `OPENAI_API_KEY` en `.env.local` y reiniciar el servidor. `OPENAI_MENU_MODEL` es opcional; usa `gpt-5.4-mini` por defecto. Acepta imágenes PNG/JPG/WEBP, PDF y texto. La respuesta se presenta como borrador editable: hay que revisar y seleccionar los productos antes de guardarlos. La clave se usa exclusivamente en el servidor. No hace falta configurarla para la carga manual.
 
 Para producción local:
 
@@ -70,6 +73,7 @@ Con `.env.local` configurado:
 npm run build
 npm run typecheck
 npm run test:db
+npm run test:menu
 ```
 
 `test:db` usa la misma conexión pooled que la app para leer y la conexión directa para hacer INSERT, SELECT, UPDATE y DELETE en una tabla temporal dentro de una transacción. Después ejecuta rollback y comprueba que la tabla desapareció. No añade datos comerciales.
@@ -93,6 +97,14 @@ APP_URL=http://127.0.0.1:3001 TEST_ONBOARDING=1 npm run test:onboarding
 
 Comprueba registro, sesión restaurada, alta, propietario, reintentos, validación, colisión de identificadores, aislamiento entre cuentas, logout y login. Los datos sintéticos quedan en la rama aislada hasta su vencimiento; no ejecutar contra una base con datos reales. No hay contraseñas de prueba fijas en el repositorio.
 
+Para probar carta y checkout en esa misma instalación aislada:
+
+```sh
+APP_URL=http://127.0.0.1:3001 TEST_STOREFRONT=1 npm run test:storefront
+```
+
+Con OpenAI configurado, `MENU_TEST_IMAGE=/ruta/carta.png npm run test:ai-menu` evalúa la imagen de hamburguesas de referencia y ejemplos de pastas y rotisería. Agregar `AI_E2E=1 MENU_TEST_IMAGE=/ruta/carta.png` al comando de navegador prueba también la importación real y su confirmación en la UI. Estos comandos hacen solicitudes facturables al proveedor.
+
 ## Próxima entrega
 
-Catálogo con variantes/opciones, horarios, checkout idempotente y bandeja de pendientes. El alta ya asigna el rol de propietario; invitaciones de equipo y edición de permisos están pendientes. Cocina, caja y stock completan las entregas siguientes.
+Cocina, caja, stock, invitaciones de equipo y edición de permisos. La aceptación de pedidos actual no descuenta existencias ni crea comandas de cocina. Las transferencias se verifican manualmente; elegir ese medio de pago no acredita el pedido.

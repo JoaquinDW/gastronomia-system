@@ -4,6 +4,8 @@ import { z } from "zod";
 import { businessKinds } from "@/lib/business-input";
 import { findBusiness } from "@/server/businesses";
 import { requireUser } from "@/server/auth";
+import { getProducts, getSettings } from "@/server/menu";
+import { BusinessNav } from "@/components/business-nav";
 
 export const metadata = { title: "Mi negocio — Gastronomía" };
 
@@ -17,11 +19,16 @@ export default async function BusinessPage({
   if (!z.uuid().safeParse(id).success) notFound();
   const business = await findBusiness(user.id, id);
   if (!business) notFound();
+  const [products, settings] = await Promise.all([
+    getProducts(id),
+    getSettings(id),
+  ]);
   return (
     <>
       <Link href="/panel" className="back-link">
         ← Mis negocios
       </Link>
+      <BusinessNav id={id} active="home" />
       <div className="business-welcome">
         <span className="welcome-check" aria-hidden="true">
           ✓
@@ -90,23 +97,47 @@ export default async function BusinessPage({
                 <small>Datos guardados y propietario asignado.</small>
               </div>
             </li>
-            <li>
-              <span aria-hidden="true">03</span>
+            <li className={products.length ? "done" : ""}>
+              <span aria-hidden="true">{products.length ? "✓" : "03"}</span>
               <div>
-                Cargar tu carta<small>Disponible en la próxima entrega.</small>
+                <Link href={`/panel/negocios/${id}/carta`}>
+                  {products.length ? "Administrar tu carta" : "Cargar tu carta"}{" "}
+                  →
+                </Link>
+                <small>
+                  {products.length
+                    ? `${products.length} productos cargados. Podés editarlos o importar más.`
+                    : "Carga manual, desde una foto, PDF o texto con IA."}
+                </small>
               </div>
             </li>
-            <li>
-              <span aria-hidden="true">04</span>
+            <li className={settings.isPublished ? "done" : ""}>
+              <span aria-hidden="true">
+                {settings.isPublished ? "✓" : "04"}
+              </span>
               <div>
-                Activar tu tienda
-                <small>Después de configurar carta, horarios y entregas.</small>
+                <Link href={`/panel/negocios/${id}/tienda`}>
+                  {settings.isPublished
+                    ? "Administrar tu tienda"
+                    : "Activar tu tienda"}{" "}
+                  →
+                </Link>
+                <small>
+                  {settings.isPublished
+                    ? "Tu enlace está activo para recibir pedidos."
+                    : "Configurá horarios, retiro y delivery para publicar tu enlace."}
+                </small>
               </div>
             </li>
           </ol>
           <p className="form-footnote">
-            Tu tienda todavía no está publicada. El alta no habilita pedidos
-            automáticamente.
+            {settings.isPublished ? (
+              <Link href={`/t/${business.slug}`} target="_blank">
+                Ver mi tienda pública ↗
+              </Link>
+            ) : (
+              "La tienda se activa cuando revisás y confirmás su configuración."
+            )}
           </p>
         </section>
       </div>

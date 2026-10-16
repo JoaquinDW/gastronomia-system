@@ -12,6 +12,9 @@
     "test:e2e": "node scripts/test-e2e.mjs",
     "test:browser": "node scripts/test-browser.mjs",
     "test:onboarding": "node scripts/test-onboarding.mjs",
+    "test:menu": "node --import tsx --test tests/menu.test.ts",
+    "test:storefront": "node scripts/test-storefront.mjs",
+    "test:ai-menu": "node --conditions=react-server --import tsx scripts/test-ai-menu.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   },
@@ -30,10 +33,12 @@
     "@vercel/functions": "^3.10.1",
     "drizzle-orm": "^0.45.4",
     "next": "^16.4.2",
+    "openai": "^7.34.0",
     "pg": "^8.23.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "server-only": "^0.0.1",
+    "sharp": "^0.35.5",
     "zod": "^4.6.7"
   },
   "devDependencies": {
