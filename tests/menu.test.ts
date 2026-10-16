@@ -133,3 +133,27 @@ test("product photos accept uploaded media or HTTPS links only", () => {
     large: "https://example.com/a.jpg",
   });
 });
+test("store cover accepts uploaded or HTTPS photos and a focus point", () => {
+  const { isPublished, version, coverImageUrl, ...settings } = emptySettings;
+  void isPublished;
+  void version;
+  void coverImageUrl;
+  const parsed = settingsInput.parse(settings);
+  assert.equal(parsed.coverImageUrl, "");
+  assert.equal(parsed.coverFocusX, 50);
+  for (const [url, ok] of [
+    [`/api/media/${randomUUID()}`, true],
+    ["https://example.com/portada.jpg", true],
+    ["http://example.com/portada.jpg", false],
+    ["javascript:alert(1)", false],
+  ] as const)
+    assert.equal(
+      settingsInput.safeParse({ ...settings, coverImageUrl: url }).success,
+      ok,
+      url,
+    );
+  assert.equal(
+    settingsInput.safeParse({ ...settings, coverFocusY: 101 }).success,
+    false,
+  );
+});
