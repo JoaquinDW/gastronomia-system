@@ -1,0 +1,49 @@
+{
+  "name": "gastronomia-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Base técnica y planificación de un sistema gastronómico para negocios independientes",
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test:db": "node --conditions=react-server --import tsx scripts/test-db.ts",
+    "test:e2e": "node scripts/test-e2e.mjs",
+    "test:browser": "node scripts/test-browser.mjs",
+    "test:onboarding": "node scripts/test-onboarding.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": "^0.25.0"
+    }
+  },
+  "engines": {
+    "node": ">=22.20.0"
+  },
+  "dependencies": {
+    "@neon/config": "^1.9.2",
+    "@neon/env": "^1.6.3",
+    "@neondatabase/auth": "^0.6.0-beta",
+    "@vercel/functions": "^3.10.1",
+    "drizzle-orm": "^0.45.4",
+    "next": "^16.4.2",
+    "pg": "^8.23.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
