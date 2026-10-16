@@ -55,6 +55,27 @@ Si la CLI necesita autenticación, ejecutar `neon login` y completar el inicio d
 
 `neon deploy` también descarga `NEON_AUTH_BASE_URL` y `NEON_AUTH_JWKS_URL`. Agregar `NEON_AUTH_COOKIE_SECRET` a `.env.local`: un secreto aleatorio privado de al menos 32 caracteres, distinto por entorno. En este equipo ya está generado. Usar un gestor de secretos en el hosting; no copiarlo al repositorio.
 
+## Fotos (Neon Object Storage)
+
+Las fotos de productos y portadas se guardan en el bucket público `pedipue-media` de Neon Object Storage, declarado en `neon.ts`; Postgres guarda solo sus datos y la ruta del archivo (`menu_images.storage_key`). Las URLs que usa la app siguen siendo `/api/media/<id>` y redirigen al archivo público del bucket.
+
+Configuración:
+
+1. `neon deploy` crea el bucket en la rama.
+2. `neon env pull --file .env.local` escribe `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL_S3` y `AWS_REGION`.
+3. Cargar esas cuatro variables en Vercel (Production). Para no reusar la credencial local: `neon credentials create --scope storage:read --scope storage:write --name vercel`.
+
+Sin esas variables las fotos nuevas se guardan en Postgres, así el desarrollo local funciona sin storage.
+
+Para copiar al bucket las fotos que ya estaban en Postgres, con las variables de producción en `.env.local`:
+
+```sh
+npm run images:to-storage              # copia y deja los bytes en Postgres como respaldo
+npm run images:to-storage -- --liberar # además borra de Postgres los bytes de las fotos ya copiadas
+```
+
+Se puede correr más de una vez y con el sitio funcionando.
+
 ## Dominios
 
 Con `NEXT_PUBLIC_ROOT_DOMAIN=pedipue.com`, `src/proxy.ts` rutea por host:
