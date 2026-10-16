@@ -1,5 +1,8 @@
 "use client";
 import { useRef, useState } from "react";
+
+type Focus = { x: number; y: number };
+const clamp = (n: number) => Math.round(Math.min(100, Math.max(0, n)));
 import { productImage } from "@/lib/menu";
 
 // Phone photos can weigh 5–10 MB. We shrink them in the browser so uploads stay
@@ -26,12 +29,16 @@ export function ProductPhotoField({
   businessId,
   value,
   onChange,
+  focus,
+  onFocusChange,
   onBusyChange,
   disabled,
 }: {
   businessId: string;
   value: string;
   onChange: (url: string) => void;
+  focus: Focus;
+  onFocusChange: (focus: Focus) => void;
   onBusyChange: (busy: boolean) => void;
   disabled: boolean;
 }) {
@@ -40,6 +47,62 @@ export function ProductPhotoField({
   const [error, setError] = useState("");
   const [dragging, setDragging] = useState(false);
   const [link, setLink] = useState("");
+  const [moving, setMoving] = useState(false);
+  const drag = useRef<{
+    x: number;
+    y: number;
+    start: Focus;
+    spanX: number;
+    spanY: number;
+  } | null>(null);
+  // Dragging moves the photo inside the frame, like positioning a print behind a mat:
+  // the focus point shifts by how far the pointer moved over the part that gets cropped.
+  function startDrag(e: React.PointerEvent<HTMLImageElement>) {
+    if (locked) return;
+    const img = e.currentTarget;
+    const frame = img.getBoundingClientRect();
+    const scale = Math.max(
+      frame.width / img.naturalWidth,
+      frame.height / img.naturalHeight,
+    );
+    const spanX = img.naturalWidth * scale - frame.width;
+    const spanY = img.naturalHeight * scale - frame.height;
+    if (spanX < 1 && spanY < 1) return;
+    img.setPointerCapture(e.pointerId);
+    drag.current = { x: e.clientX, y: e.clientY, start: focus, spanX, spanY };
+    setMoving(true);
+  }
+  function moveDrag(e: React.PointerEvent<HTMLImageElement>) {
+    const d = drag.current;
+    if (!d) return;
+    onFocusChange({
+      x:
+        d.spanX < 1
+          ? d.start.x
+          : clamp(d.start.x - ((e.clientX - d.x) / d.spanX) * 100),
+      y:
+        d.spanY < 1
+          ? d.start.y
+          : clamp(d.start.y - ((e.clientY - d.y) / d.spanY) * 100),
+    });
+  }
+  function endDrag() {
+    drag.current = null;
+    setMoving(false);
+  }
+  function nudge(e: React.KeyboardEvent) {
+    const step = e.shiftKey ? 10 : 2;
+    const moves: Record<string, [number, number]> = {
+      ArrowLeft: [-step, 0],
+      ArrowRight: [step, 0],
+      ArrowUp: [0, -step],
+      ArrowDown: [0, step],
+    };
+    const m = moves[e.key];
+    if (!m || locked) return;
+    e.preventDefault();
+    onFocusChange({ x: clamp(focus.x + m[0]), y: clamp(focus.y + m[1]) });
+  }
   async function upload(file: File | undefined) {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -59,6 +122,7 @@ export function ProductPhotoField({
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error ?? "No pudimos subir la foto.");
       onChange(d.url);
+      onFocusChange({ x: 50, y: 50 });
     } catch (e) {
       setError(e instanceof Error ? e.message : "No pudimos subir la foto.");
     } finally {
@@ -93,8 +157,17 @@ export function ProductPhotoField({
             src={image.src}
             srcSet={image.srcSet}
             sizes="(max-width: 600px) 100vw, 660px"
-            alt="Vista previa de la foto del producto"
+            alt="Vista previa de la foto del producto. Arrastrala o usá las flechas para acomodarla."
             referrerPolicy="no-referrer"
+            draggable={false}
+            tabIndex={locked ? -1 : 0}
+            className={moving ? "is-moving" : ""}
+            style={{ objectPosition: `${focus.x}% ${focus.y}%` }}
+            onPointerDown={startDrag}
+            onPointerMove={moveDrag}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            onKeyDown={nudge}
           />
         ) : (
           <button
@@ -111,6 +184,11 @@ export function ProductPhotoField({
             <span>Arrastrala acá o tocá para elegirla</span>
           </button>
         )}
+        {image && !uploading ? (
+          <span className="photo-drag-hint" aria-hidden="true">
+            Arrastrá para acomodar
+          </span>
+        ) : null}
         {uploading ? (
           <div className="photo-uploading" role="status">
             Subiendo foto…
@@ -138,6 +216,14 @@ export function ProductPhotoField({
           </button>
           <button
             type="button"
+            className="quiet-button"
+            disabled={locked || (focus.x === 50 && focus.y === 50)}
+            onClick={() => onFocusChange({ x: 50, y: 50 })}
+          >
+            Centrar
+          </button>
+          <button
+            type="button"
             className="quiet-button muted-action"
             disabled={locked}
             onClick={() => onChange("")}
@@ -147,8 +233,9 @@ export function ProductPhotoField({
         </div>
       ) : null}
       <p className="field-hint standalone-hint">
-        Mejor horizontal, con buena luz y el plato centrado. En la tienda se
-        muestra grande y recortada al centro. Mínimo 600 px por lado.
+        {image
+          ? "Lo que ves en el recuadro es lo que se ve en la tienda. Arrastrá la foto para que el producto quede bien encuadrado."
+          : "Mejor horizontal, con buena luz y el plato centrado. En la tienda se muestra grande. Mínimo 600 px por lado."}
       </p>
       {error ? (
         <p className="form-error" role="alert">

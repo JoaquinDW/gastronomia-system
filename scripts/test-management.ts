@@ -139,6 +139,8 @@ async function main() {
     variants: [{ id: variant, name: "Simple", priceCents: 500000 }],
     addOns: [{ id: addon, name: "Extra cheddar", priceCents: 50000 }],
     imageUrl: "",
+    imageFocusX: 50,
+    imageFocusY: 50,
     isAvailable: true,
     sortOrder: 0,
   });
@@ -607,6 +609,8 @@ async function main() {
     variants: [{ id: historicalVariant, name: "Actual", priceCents: 10000 }],
     addOns: [{ id: historicalAddon, name: "Extra", priceCents: 1000 }],
     imageUrl: "",
+    imageFocusX: 50,
+    imageFocusY: 50,
     isAvailable: true,
     sortOrder: 0,
   });
@@ -809,6 +813,8 @@ async function main() {
     variants: [{ id: promoBaseVariant, name: "Única", priceCents: 100000 }],
     addOns: [],
     imageUrl: "",
+    imageFocusX: 50,
+    imageFocusY: 50,
     isAvailable: true,
     sortOrder: 0,
   });
@@ -820,6 +826,8 @@ async function main() {
     variants: [{ id: promoVariant, name: "Única", priceCents: 200000 }],
     addOns: [{ id: promoAddon, name: "Extra", priceCents: 1000 }],
     imageUrl: "",
+    imageFocusX: 50,
+    imageFocusY: 50,
     isAvailable: true,
     sortOrder: 1,
   });

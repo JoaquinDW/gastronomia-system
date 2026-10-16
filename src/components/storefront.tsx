@@ -64,6 +64,9 @@ function ProductChoice({
               loading="lazy"
               decoding="async"
               referrerPolicy="no-referrer"
+              style={{
+                objectPosition: `${product.imageFocusX}% ${product.imageFocusY}%`,
+              }}
             />
             {product.kind === "combo" ? (
               <span className="small-badge">Promo</span>

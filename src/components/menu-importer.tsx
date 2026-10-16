@@ -142,6 +142,8 @@ export function MenuImporter({
         variants: variants as ProductInput["variants"],
         addOns: addOns as ProductInput["addOns"],
         imageUrl: "",
+        imageFocusX: 50,
+        imageFocusY: 50,
         isAvailable: true,
         sortOrder: i,
       });

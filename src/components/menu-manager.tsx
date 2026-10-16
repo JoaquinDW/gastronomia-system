@@ -180,6 +180,9 @@ export function MenuManager({
                           alt=""
                           loading="lazy"
                           referrerPolicy="no-referrer"
+                          style={{
+                            objectPosition: `${p.imageFocusX}% ${p.imageFocusY}%`,
+                          }}
                         />
                       ) : (
                         <button

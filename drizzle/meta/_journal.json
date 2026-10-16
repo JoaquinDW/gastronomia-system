@@ -29,6 +29,13 @@
       "when": 1792175383612,
       "tag": "0003_menu_images",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792182486835,
+      "tag": "0004_menu_image_focus",
+      "breakpoints": true
     }
   ]
 }

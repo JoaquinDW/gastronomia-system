@@ -25,6 +25,10 @@ export function ProductEditor({
   const [error, setError] = useState("");
   const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? "");
   const [uploading, setUploading] = useState(false);
+  const [imageFocus, setImageFocus] = useState({
+    x: product?.imageFocusX ?? 50,
+    y: product?.imageFocusY ?? 50,
+  });
   const [variants, setVariants] = useState<
     { id: string; name: string; price: string }[]
   >(
@@ -81,6 +85,8 @@ export function ProductEditor({
         variants: prices as ProductInput["variants"],
         addOns: extras as ProductInput["addOns"],
         imageUrl,
+        imageFocusX: imageFocus.x,
+        imageFocusY: imageFocus.y,
         isAvailable: form.get("isAvailable") === "on",
         sortOrder: product?.sortOrder ?? 0,
       });
@@ -165,6 +171,8 @@ export function ProductEditor({
             businessId={businessId}
             value={imageUrl}
             onChange={setImageUrl}
+            focus={imageFocus}
+            onFocusChange={setImageFocus}
             onBusyChange={setUploading}
             disabled={busy}
           />
