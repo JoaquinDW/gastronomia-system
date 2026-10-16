@@ -1660,6 +1660,28 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.photo-drop > img.is-moving {
+  cursor: grabbing;
+}
+.photo-drop > img:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: -3px;
+}
+.photo-drag-hint {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font: 700 11px var(--mono);
+  text-transform: uppercase;
+  pointer-events: none;
 }
 .photo-empty {
   width: 100%;

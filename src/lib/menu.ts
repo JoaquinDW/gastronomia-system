@@ -52,6 +52,9 @@ export const productInput = z
           ),
       ])
       .default(""),
+    // Which part of the photo stays visible when cards crop it (CSS object-position, in %).
+    imageFocusX: z.number().int().min(0).max(100).default(50),
+    imageFocusY: z.number().int().min(0).max(100).default(50),
     isAvailable: z.boolean().default(true),
     sortOrder: z.number().int().min(0).max(9999).default(0),
   })

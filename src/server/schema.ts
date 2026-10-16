@@ -16,6 +16,7 @@ import {
   numeric,
   foreignKey,
   customType,
+  smallint,
 } from "drizzle-orm/pg-core";
 import type { Variant, AddOn, Hours, DeliveryZone } from "../lib/menu";
 
@@ -117,6 +118,8 @@ export const menuProducts = pgTable(
     variants: jsonb("variants").$type<Variant[]>().notNull(),
     addOns: jsonb("add_ons").$type<AddOn[]>().notNull().default([]),
     imageUrl: text("image_url"),
+    imageFocusX: smallint("image_focus_x").notNull().default(50),
+    imageFocusY: smallint("image_focus_y").notNull().default(50),
     isAvailable: boolean("is_available").notNull().default(true),
     sortOrder: integer("sort_order").notNull().default(0),
     version: integer("version").notNull().default(1),
