@@ -25,6 +25,7 @@ import type {
   Hours,
   DeliveryZone,
 } from "../lib/menu";
+import type { DeliveryConfig, Coordinates } from "../lib/delivery";
 
 export const businessKind = pgEnum("business_kind", [
   "hamburgueseria",
@@ -189,6 +190,7 @@ export const storeSettings = pgTable("store_settings", {
   pickupEnabled: boolean("pickup_enabled").notNull().default(true),
   pickupInstructions: text("pickup_instructions").notNull().default(""),
   deliveryEnabled: boolean("delivery_enabled").notNull().default(false),
+  deliveryConfig: jsonb("delivery_config").$type<DeliveryConfig>().notNull().default({ mode: "manual" }),
   deliveryZones: jsonb("delivery_zones")
     .$type<DeliveryZone[]>()
     .notNull()
@@ -251,6 +253,7 @@ export const orders = pgTable(
     fulfillment: varchar("fulfillment", { length: 20 }).notNull(),
     address: varchar("address", { length: 250 }),
     zoneName: varchar("zone_name", { length: 100 }),
+    deliveryLocation: jsonb("delivery_location").$type<Coordinates>(),
     paymentMethod: varchar("payment_method", { length: 20 }).notNull(),
     note: varchar("note", { length: 500 }).notNull().default(""),
     items: jsonb("items").notNull(),

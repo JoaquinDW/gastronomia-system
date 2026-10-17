@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { coordinatesSchema, type Coordinates } from "./delivery";
 export const checkoutInput = z
   .object({
     requestKey: z.uuid(),
@@ -12,6 +13,8 @@ export const checkoutInput = z
     fulfillment: z.enum(["pickup", "delivery"]),
     address: z.string().trim().max(250).default(""),
     zoneId: z.uuid().nullable(),
+    deliveryLocation: coordinatesSchema.nullable().optional(),
+    quotedDeliveryCents: z.number().int().min(0).max(99_999_999).optional(),
     paymentMethod: z.enum(["cash", "transfer"]),
     note: z.string().trim().max(500).default(""),
     items: z
@@ -33,6 +36,10 @@ export const checkoutInput = z
   })
   .strict();
 export type CheckoutInput = z.infer<typeof checkoutInput>;
+/** Read a saved order snapshot; never infer an unknown fee from a zero price. */
+export function isDeliveryFeePending(order: { fulfillment: string; zoneName: string | null }) {
+  return order.fulfillment === "delivery" && order.zoneName === null;
+}
 export type OrderItem = {
   productId?: string;
   variantId?: string;
@@ -56,6 +63,7 @@ export type Order = {
   fulfillment: string;
   address: string | null;
   zoneName: string | null;
+  deliveryLocation?: Coordinates | null;
   paymentMethod: string;
   note: string;
   items: OrderItem[];

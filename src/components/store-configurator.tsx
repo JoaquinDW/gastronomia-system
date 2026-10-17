@@ -12,6 +12,9 @@ import {
   type StoreSettings,
 } from "@/lib/menu";
 import { ProductPhotoField } from "./product-photo-field";
+import { LocationPicker } from "./location-picker";
+import { mapsEnabled } from "@/lib/maps-client";
+import type { Coordinates } from "@/lib/delivery";
 export function StoreConfigurator({
   businessId,
   slug,
@@ -27,12 +30,16 @@ export function StoreConfigurator({
 }) {
   const router = useRouter();
   const [s, setS] = useState(initialSettings);
+  const [deliveryMode, setDeliveryMode] = useState(s.deliveryConfig?.mode ?? "manual");
+  const [origin, setOrigin] = useState<Coordinates | null>(s.deliveryConfig?.mode === "radius" ? s.deliveryConfig.origin : null);
+  const [originAddress, setOriginAddress] = useState(s.deliveryConfig?.mode === "radius" ? s.deliveryConfig.address : "");
   const [zones, setZones] = useState(() =>
     s.deliveryZones.map((z) => ({
       id: z.id,
       name: z.name,
       fee: priceInputValue(z.feeCents),
       minimum: priceInputValue(z.minimumCents),
+      radius: z.radiusMeters ? String(z.radiusMeters / 1000) : "",
     })),
   );
   const [busy, setBusy] = useState(false);
@@ -44,11 +51,14 @@ export function StoreConfigurator({
   async function save() {
     const { isPublished, version, ...rest } = s;
     void isPublished;
+    if (deliveryMode === "radius" && !origin)
+      throw new Error("Ubicá el local en el mapa antes de guardar la cobertura automática.");
     const deliveryZones = zones.map((z) => ({
       id: z.id,
       name: z.name,
       feeCents: moneyToCents(z.fee),
       minimumCents: moneyToCents(z.minimum),
+      ...(deliveryMode === "radius" ? { radiusMeters: Math.round(Number(z.radius.replace(",", ".")) * 1000) } : {}),
     }));
     if (
       deliveryZones.some((z) => z.feeCents === null || z.minimumCents === null)
@@ -56,7 +66,8 @@ export function StoreConfigurator({
       throw new Error(
         "Revisá los precios de envío y los mínimos. Deben ser importes válidos en pesos.",
       );
-    const parsed = settingsInput.safeParse({ ...rest, deliveryZones });
+    const deliveryConfig = deliveryMode === "radius" ? { mode: deliveryMode, origin, address: originAddress } : { mode: deliveryMode };
+    const parsed = settingsInput.safeParse({ ...rest, deliveryZones, deliveryConfig });
     if (!parsed.success)
       throw new Error(parsed.error.issues.map((i) => i.message).join(" · "));
     const r = await fetch(base, {
@@ -333,9 +344,24 @@ export function StoreConfigurator({
             </label>
             {s.deliveryEnabled ? (
               <div className="delivery-zones">
+                <label>
+                  ¿Cómo calculás el envío?
+                  <select value={deliveryMode} onChange={e => setDeliveryMode(e.target.value as "manual" | "radius")}>
+                    <option value="manual">Por barrio, con verificación del local</option>
+                    <option value="radius" disabled={!mapsEnabled && deliveryMode !== "radius"}>Automático, por distancia al local</option>
+                  </select>
+                </label>
+                {!mapsEnabled ? <p className="field-hint standalone-hint">El mapa todavía no está habilitado. Podés seguir trabajando con tarifas por barrio.</p> : null}
+                {deliveryMode === "radius" ? <>
+                  <label>
+                    Dirección del local para calcular envíos
+                    <input value={originAddress} maxLength={250} required minLength={5} placeholder="Calle, número y ciudad" onChange={e => { setOriginAddress(e.target.value); setOrigin(null); }} />
+                  </label>
+                  <LocationPicker value={origin} address={originAddress} origin={origin ?? undefined} radii={zones.map(z => Number(z.radius.replace(",", ".")) * 1000).filter(n => n > 0 && n <= 30_000)} onChange={setOrigin} />
+                  <p className="section-description">Cada radio se mide en línea recta desde el local. Se aplica la tarifa del radio más chico que cubra la dirección. Fuera del radio mayor, no se aceptan envíos. Revisá barreras como ríos o autopistas al definir tu cobertura.</p>
+                </> : null}
                 <p className="section-description">
-                  El cliente elige su barrio. El local verifica la dirección
-                  antes de confirmar el pedido.
+                  {deliveryMode === "manual" ? "El cliente elige su barrio. El local verifica la dirección antes de confirmar el pedido." : "Definí cuánto cobrás y la compra mínima para cada tramo de distancia."}
                 </p>
                 {zones.map((z, i) => (
                   <div className="zone-editor" key={z.id}>
@@ -356,6 +382,10 @@ export function StoreConfigurator({
                       />
                     </label>
                     <div className="form-grid">
+                      {deliveryMode === "radius" ? <label>
+                        Hasta (km desde el local)
+                        <input inputMode="decimal" type="number" min="0.1" max="30" step="0.1" required value={z.radius} onChange={e => setZones(zones.map((v, j) => j === i ? { ...v, radius: e.target.value } : v))} />
+                      </label> : null}
                       <label>
                         Envío ($)
                         <input
@@ -408,6 +438,7 @@ export function StoreConfigurator({
                         name: "",
                         fee: "0",
                         minimum: "0",
+                        radius: "",
                       },
                     ])
                   }

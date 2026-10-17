@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { deliveryConfigSchema } from "./delivery";
 
 const price = z.number().int().min(0).max(99_999_999);
 // Photos uploaded from the panel are served by /api/media/<id>.
@@ -215,6 +216,7 @@ export const zoneSchema = z
     name: z.string().trim().min(2).max(100),
     feeCents: price,
     minimumCents: price,
+    radiusMeters: z.number().int().min(100).max(30_000).optional(),
   })
   .strict();
 export type DeliveryZone = z.infer<typeof zoneSchema>;
@@ -230,6 +232,7 @@ export const settingsInput = z
     pickupInstructions: z.string().trim().max(500),
     deliveryEnabled: z.boolean(),
     deliveryZones: z.array(zoneSchema).max(30),
+    deliveryConfig: deliveryConfigSchema.default({ mode: "manual" }),
     paymentMethods: z
       .array(z.enum(["cash", "transfer"]))
       .min(1)
@@ -238,6 +241,12 @@ export const settingsInput = z
   })
   .strict()
   .superRefine((s, ctx) => {
+    if (s.deliveryConfig.mode === "radius" && s.deliveryEnabled) {
+      if (!s.deliveryZones.length || s.deliveryZones.some(z => !z.radiusMeters))
+        ctx.addIssue({ code: "custom", path: ["deliveryZones"], message: "Agregá un radio de cobertura a cada zona de delivery." });
+      if (new Set(s.deliveryZones.map(z => z.radiusMeters)).size !== s.deliveryZones.length)
+        ctx.addIssue({ code: "custom", path: ["deliveryZones"], message: "Cada zona debe tener un radio diferente." });
+    }
     if (s.hours.some((h) => h.opens === h.closes))
       ctx.addIssue({
         code: "custom",
@@ -284,6 +293,7 @@ export const emptySettings: StoreSettings = {
   pickupInstructions: "",
   deliveryEnabled: false,
   deliveryZones: [],
+  deliveryConfig: { mode: "manual" },
   paymentMethods: ["cash"],
   transferAlias: "",
   isPublished: false,

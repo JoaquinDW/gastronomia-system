@@ -11,6 +11,7 @@ import {
   type StoreSettings,
 } from "@/lib/menu";
 import {
+  isDeliveryFeePending,
   nextStage,
   trackingTokenPattern,
   type CheckoutInput,
@@ -18,10 +19,11 @@ import {
   type OrderItem,
   type OrderStage,
 } from "@/lib/checkout";
+import { deliveryQuote } from "@/lib/delivery";
 import { storeUrl } from "@/lib/hosts";
 import { recordStoreSale } from "./management";
 
-const fields = `id,number,status,customer_name AS "customerName",customer_phone AS "customerPhone",fulfillment,address,zone_name AS "zoneName",payment_method AS "paymentMethod",note,items,subtotal_cents AS "subtotalCents",delivery_cents AS "deliveryCents",total_cents AS "totalCents",version,created_at AS "createdAt",accepted_at AS "acceptedAt",stage,stage_changed_at AS "stageChangedAt",tracking_token AS "trackingToken"`;
+const fields = `id,number,status,customer_name AS "customerName",customer_phone AS "customerPhone",fulfillment,address,zone_name AS "zoneName",delivery_location AS "deliveryLocation",payment_method AS "paymentMethod",note,items,subtotal_cents AS "subtotalCents",delivery_cents AS "deliveryCents",total_cents AS "totalCents",version,created_at AS "createdAt",accepted_at AS "acceptedAt",stage,stage_changed_at AS "stageChangedAt",tracking_token AS "trackingToken"`;
 // Absolute link for the customer; without a root domain the store lives under
 // /t/<slug> on the request's own origin.
 export function trackingUrl(slug: string, token: string, origin: string) {
@@ -33,6 +35,7 @@ function orderResult(
   businessName: string,
   tracking: string,
 ) {
+  const deliveryFeePending = isDeliveryFeePending(order);
   const message = [
     `Hola ${businessName}, quiero confirmar el pedido #${order.number}.`,
     "",
@@ -43,10 +46,11 @@ function orderResult(
     "",
     `Modalidad: ${order.fulfillment === "pickup" ? "Retiro en el local" : "Delivery"}`,
     ...(order.address
-      ? [`Dirección: ${order.address}`, `Zona: ${order.zoneName}`]
+      ? [`Dirección: ${order.address}`, ...(order.zoneName ? [`Zona: ${order.zoneName}`] : [])]
       : []),
-    `Envío: ${formatMoney(order.deliveryCents)}`,
-    `Total: ${formatMoney(order.totalCents)}`,
+    ...(order.deliveryLocation ? [`Ubicación: https://www.google.com/maps/search/?api=1&query=${order.deliveryLocation.lat},${order.deliveryLocation.lng}`] : []),
+    deliveryFeePending ? "Envío: el local confirmará el costo" : `Envío: ${formatMoney(order.deliveryCents)}`,
+    `${deliveryFeePending ? "Total sin envío" : "Total"}: ${formatMoney(order.totalCents)}`,
     `Pago: ${order.paymentMethod === "cash" ? "Efectivo" : "Transferencia a confirmar"}`,
     `Nombre: ${order.customerName}`,
     `Teléfono: ${order.customerPhone}`,
@@ -59,6 +63,7 @@ function orderResult(
     number: order.number,
     totalCents: order.totalCents,
     trackingUrl: tracking,
+    deliveryFeePending,
     whatsappUrl: `https://wa.me/${whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`,
   };
 }
@@ -101,7 +106,7 @@ export async function checkout(
       );
     }
     const { rows } = await client.query<StoreSettings>(
-      `SELECT is_published AS "isPublished",hours,pickup_enabled AS "pickupEnabled",delivery_enabled AS "deliveryEnabled",delivery_zones AS "deliveryZones",payment_methods AS "paymentMethods" FROM store_settings WHERE business_id=$1 FOR UPDATE`,
+      `SELECT is_published AS "isPublished",hours,pickup_enabled AS "pickupEnabled",delivery_enabled AS "deliveryEnabled",delivery_zones AS "deliveryZones",delivery_config AS "deliveryConfig",payment_methods AS "paymentMethods" FROM store_settings WHERE business_id=$1 FOR UPDATE`,
       [b.id],
     );
     const s = rows[0];
@@ -178,11 +183,23 @@ export async function checkout(
     let fee = 0,
       zoneName: string | null = null;
     if (input.fulfillment === "delivery") {
-      const zone = s.deliveryZones.find((z) => z.id === input.zoneId);
-      if (!s.deliveryEnabled || !zone)
-        throw new HttpError(422, "Seleccioná una zona de delivery disponible.");
+      if (!s.deliveryEnabled)
+        throw new HttpError(422, "El delivery no está disponible.");
       if (input.address.length < 5)
         throw new HttpError(422, "Completá la dirección de entrega.");
+      let zone = s.deliveryZones.find((z) => z.id === input.zoneId);
+      if (s.deliveryConfig?.mode === "radius") {
+        if (!input.deliveryLocation)
+          throw new HttpError(422, "Confirmá la ubicación de entrega en el mapa.");
+        const quote = deliveryQuote(s.deliveryConfig, s.deliveryZones, input.deliveryLocation);
+        if (!quote)
+          throw new HttpError(422, "La dirección está fuera de la cobertura de delivery. Podés elegir retiro si está disponible.");
+        zone = quote.zone;
+        if (input.quotedDeliveryCents !== quote.feeCents || input.zoneId !== zone.id)
+          throw new HttpError(409, "Cambió la tarifa de envío. Actualizá la tienda y revisá el total antes de confirmar.");
+      }
+      if (!zone)
+        throw new HttpError(422, "Seleccioná una zona de delivery disponible.");
       if (subtotal < zone.minimumCents)
         throw new HttpError(
           422,
@@ -202,7 +219,7 @@ export async function checkout(
       [b.id],
     );
     const saved = await client.query<Order>(
-      `INSERT INTO orders(business_id,number,request_key,payload_hash,customer_name,customer_phone,fulfillment,address,zone_name,payment_method,note,items,subtotal_cents,delivery_cents,total_cents) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING ${fields}`,
+      `INSERT INTO orders(business_id,number,request_key,payload_hash,customer_name,customer_phone,fulfillment,address,zone_name,payment_method,note,items,subtotal_cents,delivery_cents,total_cents,delivery_location) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING ${fields}`,
       [
         b.id,
         counter.rows[0].number,
@@ -219,6 +236,7 @@ export async function checkout(
         subtotal,
         fee,
         subtotal + fee,
+        input.fulfillment === "delivery" && s.deliveryConfig?.mode === "radius" ? JSON.stringify(input.deliveryLocation) : null,
       ],
     );
     await client.query("COMMIT");

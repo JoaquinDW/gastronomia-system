@@ -13,7 +13,7 @@ import { HttpError } from "./errors";
 import type { PoolClient } from "pg";
 
 const productFields = `id, name, description, category, kind, variants, add_ons AS "addOns", option_groups AS "optionGroups", COALESCE(image_url,'') AS "imageUrl", image_focus_x AS "imageFocusX", image_focus_y AS "imageFocusY", is_available AS "isAvailable", sort_order AS "sortOrder", version`;
-const settingsFields = `description, menu_note AS "menuNote", cover_image_url AS "coverImageUrl", cover_focus_x AS "coverFocusX", cover_focus_y AS "coverFocusY", hours, pickup_enabled AS "pickupEnabled", pickup_instructions AS "pickupInstructions", delivery_enabled AS "deliveryEnabled", delivery_zones AS "deliveryZones", payment_methods AS "paymentMethods", transfer_alias AS "transferAlias", is_published AS "isPublished", version`;
+const settingsFields = `description, menu_note AS "menuNote", cover_image_url AS "coverImageUrl", cover_focus_x AS "coverFocusX", cover_focus_y AS "coverFocusY", hours, pickup_enabled AS "pickupEnabled", pickup_instructions AS "pickupInstructions", delivery_enabled AS "deliveryEnabled", delivery_zones AS "deliveryZones", delivery_config AS "deliveryConfig", payment_methods AS "paymentMethods", transfer_alias AS "transferAlias", is_published AS "isPublished", version`;
 
 function requireStoreConfiguration(s: StoreSettingsInput) {
   if (!s.hours.length)
@@ -185,7 +185,7 @@ export async function saveSettings(
       );
     if (existing.rows[0].isPublished) requireStoreConfiguration(s);
     await client.query(
-      `UPDATE store_settings SET description=$2,menu_note=$3,hours=$4,pickup_enabled=$5,pickup_instructions=$6,delivery_enabled=$7,delivery_zones=$8,payment_methods=$9,transfer_alias=$10,cover_image_url=$11,cover_focus_x=$12,cover_focus_y=$13,version=version+1,updated_at=now() WHERE business_id=$1`,
+      `UPDATE store_settings SET description=$2,menu_note=$3,hours=$4,pickup_enabled=$5,pickup_instructions=$6,delivery_enabled=$7,delivery_zones=$8,payment_methods=$9,transfer_alias=$10,cover_image_url=$11,cover_focus_x=$12,cover_focus_y=$13,delivery_config=$14,version=version+1,updated_at=now() WHERE business_id=$1`,
       [
         businessId,
         s.description,
@@ -200,6 +200,7 @@ export async function saveSettings(
         s.coverImageUrl,
         s.coverFocusX,
         s.coverFocusY,
+        JSON.stringify(s.deliveryConfig),
       ],
     );
     await client.query("COMMIT");
