@@ -31,6 +31,41 @@
 .business-nav a:hover {
   color: var(--accent-ink);
 }
+.store-link-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 18px 20px;
+  margin-bottom: 32px;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-card);
+}
+.store-link-bar.active {
+  box-shadow: var(--shadow-hard);
+}
+.store-link-bar .eyebrow {
+  margin-bottom: 6px;
+}
+.store-link-bar.active .eyebrow {
+  color: var(--open-text);
+}
+.store-link-bar p:not(.eyebrow) {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.store-link-bar a:not([class]) {
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.store-link-url {
+  font: 700 15px var(--mono);
+  color: var(--ink) !important;
+  overflow-wrap: anywhere;
+}
 .workspace-heading {
   display: flex;
   justify-content: space-between;
@@ -1462,6 +1497,13 @@
   }
   .workspace-heading {
     margin-bottom: 25px;
+  }
+  .store-link-bar {
+    padding: 16px;
+    margin-bottom: 25px;
+  }
+  .store-link-bar > a {
+    width: 100%;
   }
   .workspace-number {
     font-size: 74px;

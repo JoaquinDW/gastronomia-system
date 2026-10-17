@@ -2,11 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { businessKinds } from "@/lib/business-input";
-import { appUrl, panelBase, storeUrl } from "@/lib/hosts";
+import { appUrl, panelBase } from "@/lib/hosts";
 import { findBusiness } from "@/server/businesses";
 import { requireUser } from "@/server/auth";
 import { getProducts, getSettings } from "@/server/menu";
 import { BusinessNav } from "@/components/business-nav";
+import { StoreLinkBar } from "@/components/store-link-bar";
 
 export const metadata = { title: "Mi negocio — Pedipue" };
 
@@ -31,6 +32,11 @@ export default async function BusinessPage({
         ← Mis negocios
       </Link>
       <BusinessNav base={base} active="home" />
+      <StoreLinkBar
+        slug={business.slug}
+        base={base}
+        isPublished={settings.isPublished}
+      />
       {["owner", "manager"].includes(business.role) ? (
         <section className="business-data" style={{ marginBottom: 24 }}>
           <h2>Los números de tu negocio</h2>
@@ -144,15 +150,6 @@ export default async function BusinessPage({
               </div>
             </li>
           </ol>
-          <p className="form-footnote">
-            {settings.isPublished ? (
-              <Link href={storeUrl(business.slug)} target="_blank">
-                Ver mi tienda pública ↗
-              </Link>
-            ) : (
-              "La tienda se activa cuando revisás y confirmás su configuración."
-            )}
-          </p>
         </section>
       </div>
     </>
