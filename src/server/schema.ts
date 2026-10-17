@@ -143,7 +143,8 @@ export const menuProducts = pgTable(
 
 const bytea = customType<{ data: Buffer }>({ dataType: () => "bytea" });
 
-// Product photos live in Postgres so the store works without extra storage credentials.
+// Photo metadata lives here; the WebP files live in Neon Object Storage under storage_key.
+// Without storage credentials (local dev, rows not yet copied) the bytes stay in large/small.
 // Rows are immutable: replacing a photo uploads a new row, so URLs can be cached forever.
 export const menuImages = pgTable(
   "menu_images",
@@ -154,8 +155,9 @@ export const menuImages = pgTable(
       .references(() => businesses.id),
     width: integer("width").notNull(),
     height: integer("height").notNull(),
-    large: bytea("large").notNull(),
-    small: bytea("small").notNull(),
+    large: bytea("large"),
+    small: bytea("small"),
+    storageKey: text("storage_key"),
     createdBy: text("created_by").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

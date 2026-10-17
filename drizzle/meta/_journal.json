@@ -43,6 +43,13 @@
       "when": 1792189134960,
       "tag": "0005_store_cover",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792192709833,
+      "tag": "0006_menu_images_storage",
+      "breakpoints": true
     }
   ]
 }

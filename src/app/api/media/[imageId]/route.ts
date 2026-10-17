@@ -11,9 +11,19 @@ export async function GET(request: Request, { params }: Context) {
       ? "small"
       : "large";
   try {
-    const data = await readMenuImage(imageId, size);
-    if (!data) return new Response(null, { status: 404 });
-    return new Response(new Uint8Array(data), {
+    const image = await readMenuImage(imageId, size);
+    if (!image) return new Response(null, { status: 404 });
+    // Photos in Object Storage: send the browser to the public file. The CDN keeps the redirect.
+    if ("url" in image)
+      return new Response(null, {
+        status: 308,
+        headers: {
+          Location: image.url,
+          "Cache-Control":
+            "public, max-age=31536000, s-maxage=31536000, immutable",
+        },
+      });
+    return new Response(new Uint8Array(image.data), {
       headers: {
         "Content-Type": "image/webp",
         // Each upload gets a new id, so the bytes behind a URL never change.
