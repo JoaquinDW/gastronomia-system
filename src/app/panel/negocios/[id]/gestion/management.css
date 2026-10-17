@@ -15,7 +15,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  margin: 38px 0 30px;
+  margin: 0 0 30px;
 }
 .mg-heading .panel-title {
   font-size: clamp(32px, 4vw, 52px);
@@ -28,31 +28,6 @@
   color: var(--muted);
   margin: 0;
   max-width: 65ch;
-}
-.mg-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 22px;
-  border-bottom: 1.5px solid var(--line-strong);
-  padding-bottom: 14px;
-  margin-bottom: 28px;
-}
-.mg-nav a {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 0;
-  font-weight: 600;
-  font-size: 14px;
-  text-decoration: none;
-  text-underline-offset: 8px;
-}
-.mg-nav a:hover {
-  text-decoration: underline;
-}
-.mg-nav a[aria-current] {
-  text-decoration: underline;
-  text-decoration-thickness: 3px;
 }
 .mg-period,
 .mg-date-form,
@@ -675,10 +650,6 @@
   .mg-heading {
     align-items: start;
     flex-direction: column;
-    margin-top: 28px;
-  }
-  .mg-nav {
-    gap: 4px 18px;
   }
   .mg-period {
     align-items: stretch;

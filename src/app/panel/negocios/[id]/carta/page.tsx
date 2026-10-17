@@ -1,11 +1,7 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { authorizeBusiness } from "@/server/http";
-import { getProducts, getSettings } from "@/server/menu";
-import { BusinessNav } from "@/components/business-nav";
+import { getProducts } from "@/server/menu";
 import { MenuManager } from "@/components/menu-manager";
-import { StoreLinkBar } from "@/components/store-link-bar";
-import { panelBase } from "@/lib/hosts";
 export const metadata = { title: "Tu carta — Pedipue" };
 export default async function MenuPage({
   params,
@@ -15,22 +11,9 @@ export default async function MenuPage({
   const { id } = await params;
   const access = await authorizeBusiness(id, true).catch(() => null);
   if (!access) notFound();
-  const base = panelBase(id, access.business.slug);
-  const [products, settings] = await Promise.all([
-    getProducts(id),
-    getSettings(id),
-  ]);
+  const products = await getProducts(id);
   return (
     <>
-      <Link href={base} className="back-link">
-        ← {access.business.name}
-      </Link>
-      <BusinessNav base={base} active="menu" />
-      <StoreLinkBar
-        slug={access.business.slug}
-        base={base}
-        isPublished={settings.isPublished}
-      />
       <div className="workspace-heading">
         <div>
           <p className="eyebrow">LO QUE SALE DE TU COCINA</p>

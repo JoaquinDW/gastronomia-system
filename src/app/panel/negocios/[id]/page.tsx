@@ -2,11 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { businessKinds } from "@/lib/business-input";
-import { appUrl, panelBase } from "@/lib/hosts";
+import { panelBase } from "@/lib/hosts";
 import { findBusiness } from "@/server/businesses";
 import { requireUser } from "@/server/auth";
 import { getProducts, getSettings } from "@/server/menu";
-import { BusinessNav } from "@/components/business-nav";
 import { StoreLinkBar } from "@/components/store-link-bar";
 
 export const metadata = { title: "Mi negocio — Pedipue" };
@@ -28,10 +27,6 @@ export default async function BusinessPage({
   ]);
   return (
     <>
-      <Link href={appUrl("/panel")} className="back-link">
-        ← Mis negocios
-      </Link>
-      <BusinessNav base={base} active="home" />
       <StoreLinkBar
         slug={business.slug}
         base={base}
