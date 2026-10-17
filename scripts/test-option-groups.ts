@@ -5,10 +5,7 @@ import { createBusiness } from "../src/server/businesses";
 import { publishStore, saveProduct, saveSettings } from "../src/server/menu";
 import { getPool } from "../src/server/postgres";
 import { checkout, decideOrder, listOrders } from "../src/server/orders";
-import {
-  executeManagement,
-  getManagementData,
-} from "../src/server/management";
+import { executeManagement, getManagementData } from "../src/server/management";
 import { commandSchema } from "../src/lib/management";
 import { checkoutInput } from "../src/lib/checkout";
 import { productInput, settingsInput } from "../src/lib/menu";
@@ -171,10 +168,7 @@ async function main() {
     checkout(slug, order([...six, picante, picante], 640000)),
     /no se puede repetir/,
   );
-  await assert.rejects(
-    checkout(slug, order(six, 600000)),
-    /Cambió un precio/,
-  );
+  await assert.rejects(checkout(slug, order(six, 600000)), /Cambió un precio/);
   const saved = await checkout(slug, order([...six, picante], 640000));
   assert.equal(saved.totalCents, 1280000);
   const message = decodeURIComponent(saved.whatsappUrl.split("text=")[1]);
