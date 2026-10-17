@@ -990,15 +990,6 @@ footer {
   max-width: 430px;
   margin-bottom: 25px;
 }
-.back-link {
-  font-size: 12px;
-  text-decoration: none;
-  display: inline-block;
-  margin-bottom: 38px;
-}
-.back-link:hover {
-  color: var(--accent-ink);
-}
 .business-welcome {
   display: flex;
   gap: 23px;

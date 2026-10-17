@@ -5,7 +5,6 @@ import { findBusiness } from "@/server/businesses";
 import { getProducts } from "@/server/menu";
 import { getManagementData } from "@/server/management";
 import { getManagementReport } from "@/server/management-reports";
-import { BusinessNav } from "@/components/business-nav";
 import { ManagementReport } from "@/components/management-report";
 import { ManagementWorkspace } from "@/components/management-workspace";
 import { HttpError } from "@/server/errors";
@@ -66,10 +65,6 @@ export default async function ManagementPage({
   }
   return (
     <>
-      <Link className="back-link" href={base}>
-        ← {business.name}
-      </Link>
-      <BusinessNav base={base} active="management" />
       <div className="mg-heading">
         <div>
           <h1 className="panel-title">
@@ -102,19 +97,6 @@ export default async function ManagementPage({
           </Link>
         ) : null}
       </div>
-      <nav className="mg-nav" aria-label="Secciones de Gestión">
-        {Object.entries(sections)
-          .filter(([key]) => owner || !["resultados", "gastos"].includes(key))
-          .map(([key, label]) => (
-            <Link
-              key={key}
-              href={key === "resultados" ? root : `${root}/${key}`}
-              aria-current={section === key ? "page" : undefined}
-            >
-              {label}
-            </Link>
-          ))}
-      </nav>
       {reportError ? (
         <section className="mg-notice">
           <h2>Revisá el período</h2>

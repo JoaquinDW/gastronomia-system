@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { storePreviewUrl, storeUrl } from "@/lib/hosts";
 import {
@@ -24,6 +25,7 @@ export function StoreConfigurator({
   productCount: number;
   suggestedHours: Hours;
 }) {
+  const router = useRouter();
   const [s, setS] = useState(initialSettings);
   const [zones, setZones] = useState(() =>
     s.deliveryZones.map((z) => ({
@@ -99,6 +101,8 @@ export function StoreConfigurator({
         isPublished: d.settings.isPublished,
         version: d.settings.version,
       }));
+      // El acceso a la tienda de la navegación cambia con la publicación.
+      router.refresh();
       setNotice(
         d.settings.isPublished
           ? "Tu tienda está activa. Ya podés compartir su enlace."

@@ -1,6 +1,17 @@
-import { panelBase, rootDomain } from "@/lib/hosts";
+import { z } from "zod";
+import {
+  appUrl,
+  panelBase,
+  rootDomain,
+  storePreviewUrl,
+  storeUrl,
+} from "@/lib/hosts";
+import { BusinessNav } from "@/components/business-nav";
 import { PanelBaseProvider } from "@/components/panel-base";
+import { requireUser } from "@/server/auth";
 import { businessSlugForId } from "@/server/business-hosts";
+import { findBusiness } from "@/server/businesses";
+import { getSettings } from "@/server/menu";
 
 export default async function BusinessLayout({
   children,
@@ -11,7 +22,33 @@ export default async function BusinessLayout({
 }) {
   const { id } = await params;
   const slug = rootDomain() ? ((await businessSlugForId(id)) ?? "") : "";
+  const base = panelBase(id, slug);
+  const user = await requireUser();
+  const business = z.uuid().safeParse(id).success
+    ? await findBusiness(user.id, id)
+    : null;
+  // Sin acceso al negocio, la página responde su propio 404 sin navegación.
+  if (!business)
+    return <PanelBaseProvider base={base}>{children}</PanelBaseProvider>;
+  const settings = await getSettings(id);
   return (
-    <PanelBaseProvider base={panelBase(id, slug)}>{children}</PanelBaseProvider>
+    <PanelBaseProvider base={base}>
+      <div className="biz-shell">
+        <BusinessNav
+          id={id}
+          base={base}
+          name={business.name}
+          role={business.role}
+          isPublished={settings.isPublished}
+          storeHref={
+            settings.isPublished
+              ? storeUrl(business.slug)
+              : storePreviewUrl(business.slug)
+          }
+          businessesHref={appUrl("/panel")}
+        />
+        <div className="biz-content">{children}</div>
+      </div>
+    </PanelBaseProvider>
   );
 }
