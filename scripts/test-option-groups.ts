@@ -4,7 +4,13 @@ import { randomUUID } from "node:crypto";
 import { createBusiness } from "../src/server/businesses";
 import { publishStore, saveProduct, saveSettings } from "../src/server/menu";
 import { getPool } from "../src/server/postgres";
-import { checkout, decideOrder, listOrders } from "../src/server/orders";
+import {
+  advanceOrder,
+  checkout,
+  decideOrder,
+  listOrders,
+  trackOrder,
+} from "../src/server/orders";
 import { executeManagement, getManagementData } from "../src/server/management";
 import { commandSchema } from "../src/lib/management";
 import { checkoutInput } from "../src/lib/checkout";
@@ -28,6 +34,7 @@ assert.match(
   "Use a named test/development branch",
 );
 const actor = `options-test-${randomUUID()}`;
+const origin = "http://localhost:3000";
 const slug = `opciones-${randomUUID().slice(0, 8)}`;
 const run = (id: string, command: Record<string, unknown>) =>
   executeManagement(
@@ -161,20 +168,27 @@ async function main() {
     });
   const six = [carne, carne, carne, carne, pollo, pollo];
   await assert.rejects(
-    checkout(slug, order(six.slice(1), 640000)),
+    checkout(slug, order(six.slice(1), 640000), origin),
     /Elegí 6 en «Gustos»/,
   );
   await assert.rejects(
-    checkout(slug, order([...six, picante, picante], 640000)),
+    checkout(slug, order([...six, picante, picante], 640000), origin),
     /no se puede repetir/,
   );
-  await assert.rejects(checkout(slug, order(six, 600000)), /Cambió un precio/);
-  const saved = await checkout(slug, order([...six, picante], 640000));
+  await assert.rejects(
+    checkout(slug, order(six, 600000), origin),
+    /Cambió un precio/,
+  );
+  const saved = await checkout(slug, order([...six, picante], 640000), origin);
   assert.equal(saved.totalCents, 1280000);
   const message = decodeURIComponent(saved.whatsappUrl.split("text=")[1]);
   assert.match(message, /2 × Empanadas \(Media docena\): \$\s?12\.800/);
   assert.match(message, /Gustos: 4 Carne, 2 Pollo/);
   assert.match(message, /Salsa picante: Sí/);
+  assert.match(
+    message,
+    new RegExp(`Seguimiento: ${origin}/t/${slug}/pedido/[0-9a-f]{32}`),
+  );
   const [stored] = await listOrders(businessId);
   assert.deepEqual(stored.items[0].choices, [
     "Gustos: 4 Carne, 2 Pollo",
@@ -196,6 +210,34 @@ async function main() {
   assert.equal(storeSale?.costCents, "1400");
   console.log(
     "PASS: accepting the order consumes each chosen flavor once per unit, with complete cost",
+  );
+
+  const token = saved.trackingUrl.split("/pedido/")[1];
+  let [live] = await listOrders(businessId);
+  assert.equal(live.stage, "preparing");
+  assert.equal((await trackOrder(slug, token))?.stage, "preparing");
+  assert.equal(await trackOrder(slug, "0".repeat(32)), null);
+  assert.equal(await trackOrder("otra-tienda", token), null);
+  await assert.rejects(
+    advanceOrder(businessId, live.id, live.version, "on_the_way"),
+    /no puede pasar/,
+  );
+  live = await advanceOrder(businessId, live.id, live.version, "ready");
+  await assert.rejects(
+    advanceOrder(businessId, live.id, live.version - 1, "delivered"),
+    /otra pantalla/,
+  );
+  // Pickup orders skip "en camino".
+  await assert.rejects(
+    advanceOrder(businessId, live.id, live.version, "on_the_way"),
+    /no puede pasar/,
+  );
+  live = await advanceOrder(businessId, live.id, live.version, "delivered");
+  const tracked = await trackOrder(slug, token);
+  assert.equal(tracked?.stage, "delivered");
+  assert.equal("customerPhone" in tracked!, false);
+  console.log(
+    "PASS: accepted orders advance one step at a time and the tracking link shows the stage",
   );
 
   await assert.rejects(

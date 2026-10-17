@@ -65,5 +65,47 @@ export type Order = {
   version: number;
   createdAt: string;
   acceptedAt?: string | null;
+  /** Kitchen progress once accepted; null while pending or after rejecting. */
+  stage?: OrderStage | null;
+  stageChangedAt?: string | null;
+  trackingToken?: string;
   saleId?: string | null;
 };
+
+// Accepted orders move forward one step at a time. Pickup skips "en camino".
+export const orderStages = [
+  "preparing",
+  "ready",
+  "on_the_way",
+  "delivered",
+] as const;
+export type OrderStage = (typeof orderStages)[number];
+export const stageLabels: Record<OrderStage, string> = {
+  preparing: "En preparación",
+  ready: "Listo",
+  on_the_way: "En camino",
+  delivered: "Entregado",
+};
+export function stagesFor(fulfillment: string): OrderStage[] {
+  return fulfillment === "delivery"
+    ? [...orderStages]
+    : orderStages.filter((s) => s !== "on_the_way");
+}
+export function nextStage(
+  fulfillment: string,
+  stage: OrderStage | null | undefined,
+): OrderStage | null {
+  if (!stage) return null;
+  const steps = stagesFor(fulfillment);
+  const at = steps.indexOf(stage);
+  return at >= 0 && at < steps.length - 1 ? steps[at + 1] : null;
+}
+export function nextStageAction(fulfillment: string, stage: OrderStage) {
+  const next = nextStage(fulfillment, stage);
+  if (next === "ready") return "Marcar listo";
+  if (next === "on_the_way") return "Salió en camino";
+  if (next === "delivered")
+    return fulfillment === "delivery" ? "Marcar entregado" : "Ya lo retiró";
+  return null;
+}
+export const trackingTokenPattern = /^[0-9a-f]{32}$/;

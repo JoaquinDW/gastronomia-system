@@ -7,7 +7,8 @@ import {
   readJson,
   sameOrigin,
 } from "@/server/http";
-import { decideOrder, listOrders } from "@/server/orders";
+import { orderStages } from "@/lib/checkout";
+import { advanceOrder, decideOrder, listOrders } from "@/server/orders";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
@@ -25,14 +26,22 @@ export async function POST(r: NextRequest, { params }: Context) {
     sameOrigin(r);
     const { id } = await params;
     const { user } = await authorizeBusiness(id, true);
+    const target = {
+      orderId: z.uuid(),
+      version: z.number().int().positive(),
+    };
     const body = z
-      .object({
-        orderId: z.uuid(),
-        version: z.number().int().positive(),
-        status: z.enum(["accepted", "rejected"]),
-      })
-      .strict()
+      .union([
+        z
+          .object({ ...target, status: z.enum(["accepted", "rejected"]) })
+          .strict(),
+        z.object({ ...target, stage: z.enum(orderStages) }).strict(),
+      ])
       .parse(await readJson(r));
+    if ("stage" in body)
+      return json({
+        order: await advanceOrder(id, body.orderId, body.version, body.stage),
+      });
     return json({
       order: await decideOrder(
         id,

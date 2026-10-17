@@ -20,14 +20,18 @@ export async function authorizeBusiness(id: string, edit = false) {
     );
   return { user, business };
 }
-export function sameOrigin(request: NextRequest) {
+export function requestOrigin(request: NextRequest) {
   const host =
     request.headers.get("x-forwarded-host")?.split(",")[0].trim() ??
     request.headers.get("host");
   const protocol =
     request.headers.get("x-forwarded-proto")?.split(",")[0].trim() ??
     request.nextUrl.protocol.replace(":", "");
-  if (!host || request.headers.get("origin") !== `${protocol}://${host}`)
+  return host ? `${protocol}://${host}` : null;
+}
+export function sameOrigin(request: NextRequest) {
+  const origin = requestOrigin(request);
+  if (!origin || request.headers.get("origin") !== origin)
     throw new HttpError(403, "Origen de solicitud no permitido.");
 }
 export async function readBody(

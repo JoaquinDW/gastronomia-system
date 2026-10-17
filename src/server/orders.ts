@@ -10,11 +10,29 @@ import {
   type Product,
   type StoreSettings,
 } from "@/lib/menu";
-import type { CheckoutInput, Order, OrderItem } from "@/lib/checkout";
+import {
+  nextStage,
+  trackingTokenPattern,
+  type CheckoutInput,
+  type Order,
+  type OrderItem,
+  type OrderStage,
+} from "@/lib/checkout";
+import { storeUrl } from "@/lib/hosts";
 import { recordStoreSale } from "./management";
 
-const fields = `id,number,status,customer_name AS "customerName",customer_phone AS "customerPhone",fulfillment,address,zone_name AS "zoneName",payment_method AS "paymentMethod",note,items,subtotal_cents AS "subtotalCents",delivery_cents AS "deliveryCents",total_cents AS "totalCents",version,created_at AS "createdAt",accepted_at AS "acceptedAt"`;
-function orderResult(order: Order, whatsapp: string, businessName: string) {
+const fields = `id,number,status,customer_name AS "customerName",customer_phone AS "customerPhone",fulfillment,address,zone_name AS "zoneName",payment_method AS "paymentMethod",note,items,subtotal_cents AS "subtotalCents",delivery_cents AS "deliveryCents",total_cents AS "totalCents",version,created_at AS "createdAt",accepted_at AS "acceptedAt",stage,stage_changed_at AS "stageChangedAt",tracking_token AS "trackingToken"`;
+// Absolute link for the customer; without a root domain the store lives under
+// /t/<slug> on the request's own origin.
+export function trackingUrl(slug: string, token: string, origin: string) {
+  return new URL(`${storeUrl(slug)}/pedido/${token}`, origin).toString();
+}
+function orderResult(
+  order: Order,
+  whatsapp: string,
+  businessName: string,
+  tracking: string,
+) {
   const message = [
     `Hola ${businessName}, quiero confirmar el pedido #${order.number}.`,
     "",
@@ -34,15 +52,21 @@ function orderResult(order: Order, whatsapp: string, businessName: string) {
     `Teléfono: ${order.customerPhone}`,
     ...(order.note ? [`Nota: ${order.note}`] : []),
     "Pendiente de confirmación del local.",
+    `Seguimiento: ${tracking}`,
   ].join("\n");
   return {
     id: order.id,
     number: order.number,
     totalCents: order.totalCents,
+    trackingUrl: tracking,
     whatsappUrl: `https://wa.me/${whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`,
   };
 }
-export async function checkout(slug: string, input: CheckoutInput) {
+export async function checkout(
+  slug: string,
+  input: CheckoutInput,
+  origin: string,
+) {
   const pool = getPool();
   const businessResult = await pool.query<{
     id: string;
@@ -68,7 +92,13 @@ export async function checkout(slug: string, input: CheckoutInput) {
           "Esta solicitud ya se usó con otros datos. Revisá tu carrito antes de continuar.",
         );
       await client.query("COMMIT");
-      return orderResult(existing.rows[0], b.whatsapp, b.name);
+      const order = existing.rows[0];
+      return orderResult(
+        order,
+        b.whatsapp,
+        b.name,
+        trackingUrl(slug, order.trackingToken!, origin),
+      );
     }
     const { rows } = await client.query<StoreSettings>(
       `SELECT is_published AS "isPublished",hours,pickup_enabled AS "pickupEnabled",delivery_enabled AS "deliveryEnabled",delivery_zones AS "deliveryZones",payment_methods AS "paymentMethods" FROM store_settings WHERE business_id=$1 FOR UPDATE`,
@@ -192,7 +222,13 @@ export async function checkout(slug: string, input: CheckoutInput) {
       ],
     );
     await client.query("COMMIT");
-    return orderResult(saved.rows[0], b.whatsapp, b.name);
+    const order = saved.rows[0];
+    return orderResult(
+      order,
+      b.whatsapp,
+      b.name,
+      trackingUrl(slug, order.trackingToken!, origin),
+    );
   } catch (e) {
     await client.query("ROLLBACK");
     throw e;
@@ -219,7 +255,7 @@ export async function decideOrder(
     await client.query("BEGIN");
     await lockBusiness(client, businessId);
     const { rows } = await client.query<Order>(
-      `UPDATE orders SET status=$4::varchar,version=version+1,accepted_at=CASE WHEN $4::varchar='accepted' THEN now() ELSE accepted_at END WHERE business_id=$1 AND id=$2 AND version=$3 AND status='pending_confirmation' RETURNING ${fields}`,
+      `UPDATE orders SET status=$4::varchar,version=version+1,accepted_at=CASE WHEN $4::varchar='accepted' THEN now() ELSE accepted_at END,stage=CASE WHEN $4::varchar='accepted' THEN 'preparing' END,stage_changed_at=CASE WHEN $4::varchar='accepted' THEN now() END WHERE business_id=$1 AND id=$2 AND version=$3 AND status='pending_confirmation' RETURNING ${fields}`,
       [businessId, id, version, status],
     );
     if (!rows[0])
@@ -239,4 +275,63 @@ export async function decideOrder(
   } finally {
     client.release();
   }
+}
+export async function advanceOrder(
+  businessId: string,
+  id: string,
+  version: number,
+  stage: OrderStage,
+) {
+  const pool = getPool();
+  const current = await pool.query<Order>(
+    `SELECT ${fields} FROM orders WHERE business_id=$1 AND id=$2`,
+    [businessId, id],
+  );
+  const order = current.rows[0];
+  if (!order) throw new HttpError(404, "No encontramos el pedido.");
+  if (order.status !== "accepted" || order.version !== version)
+    throw new HttpError(
+      409,
+      "El pedido cambió en otra pantalla. Actualizá la lista.",
+    );
+  if (nextStage(order.fulfillment, order.stage) !== stage)
+    throw new HttpError(422, "Ese pedido no puede pasar a ese estado.");
+  // The version check makes a concurrent change lose instead of skipping steps.
+  const { rows } = await pool.query<Order>(
+    `UPDATE orders SET stage=$4,stage_changed_at=now(),version=version+1 WHERE business_id=$1 AND id=$2 AND version=$3 AND status='accepted' RETURNING ${fields}`,
+    [businessId, id, version, stage],
+  );
+  if (!rows[0])
+    throw new HttpError(
+      409,
+      "El pedido cambió en otra pantalla. Actualizá la lista.",
+    );
+  return rows[0];
+}
+export type TrackedOrder = Pick<
+  Order,
+  | "number"
+  | "status"
+  | "fulfillment"
+  | "zoneName"
+  | "paymentMethod"
+  | "items"
+  | "deliveryCents"
+  | "totalCents"
+  | "createdAt"
+  | "stage"
+  | "stageChangedAt"
+> & { businessName: string; whatsapp: string };
+// Public view for the customer: no phone, address or note, only what the
+// tracking link needs to show.
+export async function trackOrder(
+  slug: string,
+  token: string,
+): Promise<TrackedOrder | null> {
+  if (!trackingTokenPattern.test(token)) return null;
+  const { rows } = await getPool().query<TrackedOrder>(
+    `SELECT o.number,o.status,o.fulfillment,o.zone_name AS "zoneName",o.payment_method AS "paymentMethod",o.items,o.delivery_cents AS "deliveryCents",o.total_cents AS "totalCents",o.created_at AS "createdAt",o.stage,o.stage_changed_at AS "stageChangedAt",b.name AS "businessName",b.whatsapp FROM orders o JOIN businesses b ON b.id=o.business_id WHERE b.slug=$1 AND o.tracking_token=$2`,
+    [slug, token],
+  );
+  return rows[0] ?? null;
 }

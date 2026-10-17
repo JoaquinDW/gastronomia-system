@@ -258,6 +258,12 @@ export const orders = pgTable(
     deliveryCents: integer("delivery_cents").notNull(),
     totalCents: integer("total_cents").notNull(),
     acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    stage: varchar("stage", { length: 20 }),
+    stageChangedAt: timestamp("stage_changed_at", { withTimezone: true }),
+    // Secret for the customer's tracking link; 128 random bits as hex.
+    trackingToken: varchar("tracking_token", { length: 32 })
+      .notNull()
+      .default(sql`replace(gen_random_uuid()::text, '-', '')`),
     version: integer("version").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -265,6 +271,11 @@ export const orders = pgTable(
   },
   (t) => [
     unique("orders_request_unique").on(t.businessId, t.requestKey),
+    unique("orders_tracking_unique").on(t.trackingToken),
+    check(
+      "orders_stage_valid",
+      sql`${t.stage} IS NULL OR ${t.stage} IN ('preparing', 'ready', 'on_the_way', 'delivered')`,
+    ),
     unique("orders_tenant_unique").on(t.businessId, t.id),
     unique("orders_number_unique").on(t.businessId, t.number),
     index("orders_business_date_idx").on(t.businessId, t.createdAt),

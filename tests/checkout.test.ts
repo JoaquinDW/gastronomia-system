@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { checkoutInput } from "../src/lib/checkout";
+import { checkoutInput, nextStage, stagesFor } from "../src/lib/checkout";
 
 const order = {
   requestKey: randomUUID(),
@@ -65,4 +65,13 @@ test("older carts without choices are read as no choices", () => {
     }).items[0].choiceIds,
     [pick, pick],
   );
+});
+
+test("orders move forward one stage at a time and pickup skips en camino", () => {
+  assert.deepEqual(stagesFor("pickup"), ["preparing", "ready", "delivered"]);
+  assert.equal(nextStage("delivery", "preparing"), "ready");
+  assert.equal(nextStage("delivery", "ready"), "on_the_way");
+  assert.equal(nextStage("pickup", "ready"), "delivered");
+  assert.equal(nextStage("delivery", "delivered"), null);
+  assert.equal(nextStage("pickup", null), null);
 });
