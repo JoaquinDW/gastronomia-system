@@ -142,6 +142,9 @@ export function OrderInbox({
                     {i.addOns.length ? (
                       <span>+ {i.addOns.join(", ")}</span>
                     ) : null}
+                    {i.choices?.map((c) => (
+                      <span key={c}>{c}</span>
+                    ))}
                   </li>
                 ))}
               </ul>

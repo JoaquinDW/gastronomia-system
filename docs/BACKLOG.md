@@ -1,6 +1,6 @@
 # Backlog de V1
 
-La base, el alta, la carta manual/con IA, la configuración y publicación de tienda, el checkout por WhatsApp y la bandeja de pedidos ya están implementados; ver `VERIFICACION.md`, `ALTA-NEGOCIOS.md` y `CARTA-TIENDA.md`. TEN-01 y TEN-02 cubren las rutas implementadas. Siguen pendientes invitaciones, permisos editables, cocina, caja y stock. La carta admite variantes y adicionales opcionales; todavía no grupos de selección obligatoria. “P0” significa requisito para el piloto; “P1” mejora incluida antes de cerrar la V1.
+La base, el alta, la carta manual/con IA, la configuración y publicación de tienda, el checkout por WhatsApp y la bandeja de pedidos ya están implementados; ver `VERIFICACION.md`, `ALTA-NEGOCIOS.md` y `CARTA-TIENDA.md`. TEN-01 y TEN-02 cubren las rutas implementadas. Siguen pendientes invitaciones, permisos editables, cocina, caja y stock. La carta admite variantes, adicionales opcionales y grupos de opciones con mínimo y máximo (CAT-02), con repetición para casos como los gustos de una docena. “P0” significa requisito para el piloto; “P1” mejora incluida antes de cerrar la V1.
 
 | ID      | Prioridad | Entrega | Historia                        | Aceptación mínima                                                                                       |
 | ------- | --------- | ------- | ------------------------------- | ------------------------------------------------------------------------------------------------------- |

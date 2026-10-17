@@ -5,18 +5,51 @@ import {
   formatMoney,
   isStoreOpen,
   productImage,
+  resolveChoices,
   type Product,
   type StoreSettings,
 } from "@/lib/menu";
+import { ChoiceGroup, choiceIdsOf } from "./choice-group";
 type CartLine = {
   key: string;
   productId: string;
   variantId: string;
   addOnIds: string[];
+  choiceIds: string[];
   quantity: number;
   quotedUnitCents: number;
   label: string;
+  choices: string[];
 };
+/** A cart line for one unit, or null when the picks no longer fit the carta. */
+function cartLine(
+  p: Product,
+  variantId: string,
+  addOnIds: string[],
+  choiceIds: string[],
+  quantity: number,
+): CartLine | null {
+  const v = p.variants.find((v) => v.id === variantId);
+  const extras = p.addOns.filter((a) => addOnIds.includes(a.id));
+  const choices = resolveChoices(p, choiceIds);
+  if (!v || extras.length !== addOnIds.length || !choices.ok) return null;
+  const ids = extras.map((a) => a.id).sort();
+  const picks = [...choiceIds].sort();
+  return {
+    key: JSON.stringify([p.id, v.id, ids, picks]),
+    productId: p.id,
+    variantId: v.id,
+    addOnIds: ids,
+    choiceIds: picks,
+    quantity,
+    quotedUnitCents:
+      v.priceCents +
+      extras.reduce((n, a) => n + a.priceCents, 0) +
+      choices.value.cents,
+    label: `${p.name}${v.name !== "Única" ? ` · ${v.name}` : ""}${extras.length ? ` + ${extras.map((a) => a.name).join(", ")}` : ""}`,
+    choices: choices.value.labels,
+  };
+}
 type Business = {
   name: string;
   slug: string;
@@ -31,12 +64,18 @@ function ProductChoice({
   disabled,
 }: {
   product: Product;
-  onAdd: (p: Product, v: string, a: string[]) => void;
+  onAdd: (p: Product, v: string, a: string[], c: string[]) => void;
   disabled: boolean;
 }) {
   const [variant, setVariant] = useState(product.variants[0].id);
   const [extras, setExtras] = useState<string[]>([]);
+  const [picks, setPicks] = useState<Record<string, number>>({});
+  const [choicesOpen, setChoicesOpen] = useState(false);
+  const [choiceError, setChoiceError] = useState("");
   const [selected, setSelected] = useState(false);
+  const groups = product.optionGroups ?? [];
+  const choiceIds = choiceIdsOf(groups, picks);
+  const choices = resolveChoices(product, choiceIds);
   const zoom = useRef<HTMLDialogElement>(null);
   const image = product.imageUrl ? productImage(product.imageUrl) : null;
   const v =
@@ -45,7 +84,10 @@ function ProductChoice({
     v.priceCents +
     product.addOns
       .filter((a) => extras.includes(a.id))
-      .reduce((n, a) => n + a.priceCents, 0);
+      .reduce((n, a) => n + a.priceCents, 0) +
+    groups
+      .flatMap((g) => g.options)
+      .reduce((n, o) => n + o.priceCents * (picks[o.id] ?? 0), 0);
   return (
     <article className={`shop-product ${image ? "has-photo" : ""}`}>
       {image ? (
@@ -145,13 +187,50 @@ function ProductChoice({
             ))}
           </details>
         ) : null}
+        {groups.length ? (
+          <details
+            className="shop-extras shop-choices"
+            open={choicesOpen}
+            onToggle={(e) => setChoicesOpen(e.currentTarget.open)}
+          >
+            <summary>
+              {groups.some((g) => g.min)
+                ? "Elegí tus opciones"
+                : "Elegir opciones (opcional)"}
+              {choices.ok && choiceIds.length ? " ✓" : ""}
+            </summary>
+            {groups.map((g) => (
+              <ChoiceGroup
+                key={g.id}
+                group={g}
+                picks={picks}
+                inputName={`${product.id}-${g.id}`}
+                onChange={(next) => {
+                  setPicks(next);
+                  setSelected(false);
+                  setChoiceError("");
+                }}
+              />
+            ))}
+          </details>
+        ) : null}
+        {choiceError ? (
+          <p className="shop-choice-error" role="alert">
+            {choiceError}
+          </p>
+        ) : null}
         <div className="shop-product-footer">
           <strong>{formatMoney(total)}</strong>
           <button
             className="add-to-cart"
             disabled={disabled}
             onClick={() => {
-              onAdd(product, v.id, extras);
+              if (!choices.ok) {
+                setChoiceError(choices.message);
+                setChoicesOpen(true);
+                return;
+              }
+              onAdd(product, v.id, extras, choiceIds);
               setSelected(true);
             }}
             aria-label={`Agregar ${product.name}`}
@@ -204,31 +283,28 @@ export function Storefront({
         const valid: CartLine[] = [];
         for (const line of raw.slice(0, 30)) {
           const p = products.find((p) => p.id === line.productId);
-          const v = p?.variants.find((v) => v.id === line.variantId);
+          const choiceIds = line.choiceIds ?? [];
           if (
-            p &&
-            v &&
-            Number.isInteger(line.quantity) &&
-            line.quantity > 0 &&
-            line.quantity <= 20 &&
-            Array.isArray(line.addOnIds) &&
-            line.addOnIds.every(
-              (id: unknown) =>
-                typeof id === "string" && p.addOns.some((a) => a.id === id),
+            !p ||
+            !Number.isInteger(line.quantity) ||
+            line.quantity < 1 ||
+            line.quantity > 20 ||
+            !Array.isArray(line.addOnIds) ||
+            !Array.isArray(choiceIds) ||
+            [...line.addOnIds, ...choiceIds].some(
+              (id: unknown) => typeof id !== "string",
             )
-          ) {
-            const extras = p.addOns.filter((a) => line.addOnIds.includes(a.id));
-            valid.push({
-              key: JSON.stringify([p.id, v.id, extras.map((a) => a.id).sort()]),
-              productId: p.id,
-              variantId: v.id,
-              addOnIds: extras.map((a) => a.id),
-              quantity: line.quantity,
-              quotedUnitCents:
-                v.priceCents + extras.reduce((n, a) => n + a.priceCents, 0),
-              label: `${p.name}${v.name !== "Única" ? ` · ${v.name}` : ""}${extras.length ? ` + ${extras.map((a) => a.name).join(", ")}` : ""}`,
-            });
-          }
+          )
+            continue;
+          const restored = cartLine(
+            p,
+            line.variantId,
+            line.addOnIds,
+            choiceIds,
+            line.quantity,
+          );
+          if (restored && !valid.some((l) => l.key === restored.key))
+            valid.push(restored);
         }
         setCart(valid);
       }
@@ -247,31 +323,23 @@ export function Storefront({
       } catch {}
     }
   }, [cart, ready, cartStorage]);
-  function add(p: Product, variantId: string, addOnIds: string[]) {
-    const ids = [...addOnIds].sort();
-    const key = JSON.stringify([p.id, variantId, ids]);
-    const v = p.variants.find((v) => v.id === variantId)!;
-    const extras = p.addOns.filter((a) => ids.includes(a.id));
-    setCart((current) => {
-      const existing = current.find((l) => l.key === key);
-      if (existing)
-        return current.map((l) =>
-          l.key === key ? { ...l, quantity: Math.min(20, l.quantity + 1) } : l,
-        );
-      return [
-        ...current,
-        {
-          key,
-          productId: p.id,
-          variantId,
-          addOnIds: ids,
-          quantity: 1,
-          quotedUnitCents:
-            v.priceCents + extras.reduce((n, a) => n + a.priceCents, 0),
-          label: `${p.name}${v.name !== "Única" ? ` · ${v.name}` : ""}${extras.length ? ` + ${extras.map((a) => a.name).join(", ")}` : ""}`,
-        },
-      ];
-    });
+  function add(
+    p: Product,
+    variantId: string,
+    addOnIds: string[],
+    choiceIds: string[],
+  ) {
+    const line = cartLine(p, variantId, addOnIds, choiceIds, 1);
+    if (!line) return;
+    setCart((current) =>
+      current.some((l) => l.key === line.key)
+        ? current.map((l) =>
+            l.key === line.key
+              ? { ...l, quantity: Math.min(20, l.quantity + 1) }
+              : l,
+          )
+        : [...current, line],
+    );
     requestKey.current = null;
     setResult(null);
   }
@@ -308,12 +376,14 @@ export function Storefront({
               productId,
               variantId,
               addOnIds,
+              choiceIds,
               quantity,
               quotedUnitCents,
             }) => ({
               productId,
               variantId,
               addOnIds,
+              choiceIds,
               quantity,
               quotedUnitCents,
             }),
@@ -529,7 +599,12 @@ export function Storefront({
                   {cart.map((l) => (
                     <li key={l.key}>
                       <div>
-                        <strong>{l.label}</strong>
+                        <strong>
+                          {l.label}
+                          {l.choices.map((c) => (
+                            <small key={c}>{c}</small>
+                          ))}
+                        </strong>
                         <span>
                           {formatMoney(l.quotedUnitCents * l.quantity)}
                         </span>

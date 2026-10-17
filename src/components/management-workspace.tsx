@@ -245,6 +245,7 @@ export function ManagementWorkspace({
                 productId,
                 variantId,
                 addOnIds: f.getAll(`addons-${k}`).map(String),
+                choiceIds: f.getAll(`choices-${k}`).map(String),
                 quantity: Number(text(f, `quantity-${k}`)),
                 unitCents: pesosToCents(text(f, `price-${k}`)),
               };

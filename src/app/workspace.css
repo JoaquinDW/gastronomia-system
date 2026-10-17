@@ -649,6 +649,28 @@
 .extras-editor[open] summary {
   margin-bottom: 20px;
 }
+.option-group-editor {
+  background: var(--surface);
+  border: 1.5px solid var(--line) !important;
+  border-radius: var(--radius-card);
+  padding: 16px 16px 12px !important;
+  margin: 0 0 16px !important;
+}
+.option-group-heading {
+  display: grid;
+  grid-template-columns: 1fr 35px;
+  gap: 12px;
+  align-items: center;
+}
+.option-group-rules {
+  display: grid;
+  grid-template-columns: 90px 90px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 6px;
+  margin-bottom: 14px;
+  border-bottom: 1px dashed var(--line-strong);
+}
 .editor-dialog {
   border: 0;
   background: var(--paper);
@@ -1417,6 +1439,76 @@
   margin-left: auto;
   white-space: nowrap;
 }
+.shop-choice-group {
+  border: 0;
+  padding: 0;
+  margin: 12px 0 4px;
+  min-width: 0;
+}
+.shop-choice-group legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 10px;
+  width: 100%;
+  font-size: 12px;
+  font-weight: 650;
+  padding: 0;
+}
+.shop-choice-group legend small {
+  font: 700 10px var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.shop-choice-group .checkbox-label {
+  margin: 8px 0 !important;
+}
+.shop-choice-group input[type="radio"] {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  margin: 2px 0 0;
+  accent-color: var(--accent-ink);
+}
+.shop-choice-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  padding: 2px 0;
+}
+.shop-choice-row > span {
+  display: flex;
+  flex-direction: column;
+}
+.shop-choice-row small {
+  color: var(--muted);
+}
+.shop-choice-row .quantity-control {
+  margin: 0;
+  gap: 8px;
+}
+.shop-choice-row .quantity-control button {
+  width: 32px;
+  height: 32px;
+}
+.shop-choice-row .quantity-control button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.shop-choice-error {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--danger);
+  margin: 0 0 10px;
+}
+.cart-lines strong small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 400;
+}
 .shop-cart {
   padding: 27px;
   background: var(--surface);
@@ -1790,6 +1882,13 @@
   .option-editor {
     grid-template-columns: 1.15fr 1fr 24px;
     gap: 9px;
+  }
+  .option-group-rules {
+    grid-template-columns: 1fr 1fr;
+    gap: 0 9px;
+  }
+  .option-group-rules .checkbox-label {
+    grid-column: 1 / -1;
   }
   .option-editor label {
     font-size: 10px;

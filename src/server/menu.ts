@@ -12,7 +12,7 @@ import {
 import { HttpError } from "./errors";
 import type { PoolClient } from "pg";
 
-const productFields = `id, name, description, category, kind, variants, add_ons AS "addOns", COALESCE(image_url,'') AS "imageUrl", image_focus_x AS "imageFocusX", image_focus_y AS "imageFocusY", is_available AS "isAvailable", sort_order AS "sortOrder", version`;
+const productFields = `id, name, description, category, kind, variants, add_ons AS "addOns", option_groups AS "optionGroups", COALESCE(image_url,'') AS "imageUrl", image_focus_x AS "imageFocusX", image_focus_y AS "imageFocusY", is_available AS "isAvailable", sort_order AS "sortOrder", version`;
 const settingsFields = `description, menu_note AS "menuNote", cover_image_url AS "coverImageUrl", cover_focus_x AS "coverFocusX", cover_focus_y AS "coverFocusY", hours, pickup_enabled AS "pickupEnabled", pickup_instructions AS "pickupInstructions", delivery_enabled AS "deliveryEnabled", delivery_zones AS "deliveryZones", payment_methods AS "paymentMethods", transfer_alias AS "transferAlias", is_published AS "isPublished", version`;
 
 function requireStoreConfiguration(s: StoreSettingsInput) {
@@ -52,7 +52,7 @@ export async function insertProduct(
   p: ProductInput,
 ): Promise<Product> {
   const { rows } = await client.query<Product>(
-    `INSERT INTO menu_products(business_id,name,description,category,kind,variants,add_ons,image_url,is_available,sort_order,image_focus_x,image_focus_y) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING ${productFields}`,
+    `INSERT INTO menu_products(business_id,name,description,category,kind,variants,add_ons,image_url,is_available,sort_order,image_focus_x,image_focus_y,option_groups) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING ${productFields}`,
     [
       businessId,
       p.name,
@@ -66,6 +66,7 @@ export async function insertProduct(
       p.sortOrder,
       p.imageFocusX,
       p.imageFocusY,
+      JSON.stringify(p.optionGroups),
     ],
   );
   return rows[0];
@@ -96,7 +97,7 @@ export async function saveProduct(
     let product: Product;
     if (id) {
       const { rows } = await client.query<Product>(
-        `UPDATE menu_products SET name=$3,description=$4,category=$5,kind=$6,variants=$7,add_ons=$8,image_url=$9,is_available=$10,sort_order=$11,image_focus_x=$13,image_focus_y=$14,version=version+1,updated_at=now() WHERE business_id=$1 AND id=$2 AND version=$12 AND archived_at IS NULL RETURNING ${productFields}`,
+        `UPDATE menu_products SET name=$3,description=$4,category=$5,kind=$6,variants=$7,add_ons=$8,image_url=$9,is_available=$10,sort_order=$11,image_focus_x=$13,image_focus_y=$14,option_groups=$15,version=version+1,updated_at=now() WHERE business_id=$1 AND id=$2 AND version=$12 AND archived_at IS NULL RETURNING ${productFields}`,
         [
           businessId,
           id,
@@ -112,6 +113,7 @@ export async function saveProduct(
           version,
           p.imageFocusX,
           p.imageFocusY,
+          JSON.stringify(p.optionGroups),
         ],
       );
       if (!rows[0])

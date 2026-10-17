@@ -7,7 +7,8 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import type { Product } from "@/lib/menu";
+import { groupOptions, type Product } from "@/lib/menu";
+import { ChoiceGroup, choiceIdsOf, type ChoicePicks } from "./choice-group";
 import type { StockItem, Supplier, Recipe } from "@/lib/management";
 export const units = { g: "g", ml: "ml", unit: "un." };
 export function Field({
@@ -134,6 +135,10 @@ export function RecipeEditor({
     ...p.addOns.map((a) => ({
       value: `${p.id}:addon:${a.id}`,
       label: `${p.name} · Adicional: ${a.name}`,
+    })),
+    ...groupOptions(p).map((o) => ({
+      value: `${p.id}:addon:${o.id}`,
+      label: `${p.name} · ${o.groupName}: ${o.name}`,
     })),
   ]);
   const [selected, setSelected] = useState(
@@ -473,15 +478,21 @@ function SaleRow({
   const [selected, setSelected] = useState(
       `${products[0]?.id}:${products[0]?.variants[0]?.id}`,
     ),
-    [addOns, setAddOns] = useState<string[]>([]);
+    [addOns, setAddOns] = useState<string[]>([]),
+    [picks, setPicks] = useState<ChoicePicks>({});
   const [pId, vId] = selected.split(":"),
     product = products.find((p) => p.id === pId),
-    variant = product?.variants.find((v) => v.id === vId);
+    variant = product?.variants.find((v) => v.id === vId),
+    groups = product?.optionGroups ?? [],
+    choiceIds = choiceIdsOf(groups, picks);
   const suggested =
     (variant?.priceCents ?? 0) +
     (product?.addOns
       .filter((a) => addOns.includes(a.id))
-      .reduce((n, a) => n + a.priceCents, 0) ?? 0);
+      .reduce((n, a) => n + a.priceCents, 0) ?? 0) +
+    groups
+      .flatMap((g) => g.options)
+      .reduce((n, o) => n + o.priceCents * (picks[o.id] ?? 0), 0);
   return (
     <div className="mg-line mg-sale-line">
       <input type="hidden" name="saleRow" value={rowKey} />
@@ -493,6 +504,7 @@ function SaleRow({
           onChange={(e) => {
             setSelected(e.target.value);
             setAddOns([]);
+            setPicks({});
           }}
         >
           {products.flatMap((p) =>
@@ -516,7 +528,7 @@ function SaleRow({
       </Field>
       <Field label="Precio por unidad vendido ($)">
         <input
-          key={`${selected}-${addOns.join(",")}`}
+          key={`${selected}-${addOns.join(",")}-${choiceIds.join(",")}`}
           name={`price-${rowKey}`}
           inputMode="decimal"
           required
@@ -542,6 +554,27 @@ function SaleRow({
               />
               {a.name}
             </label>
+          ))}
+        </div>
+      ) : null}
+      {groups.length ? (
+        <div className="mg-sale-choices">
+          {groups.map((g) => (
+            <ChoiceGroup
+              key={g.id}
+              group={g}
+              picks={picks}
+              onChange={setPicks}
+              inputName={`choice-${rowKey}-${g.id}`}
+            />
+          ))}
+          {choiceIds.map((id, i) => (
+            <input
+              type="hidden"
+              name={`choices-${rowKey}`}
+              value={id}
+              key={i}
+            />
           ))}
         </div>
       ) : null}

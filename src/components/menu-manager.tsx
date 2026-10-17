@@ -217,6 +217,12 @@ export function MenuManager({
                             {p.addOns.length} adicionales opcionales
                           </small>
                         ) : null}
+                        {p.optionGroups?.length ? (
+                          <small>
+                            Para elegir:{" "}
+                            {p.optionGroups.map((g) => g.name).join(", ")}
+                          </small>
+                        ) : null}
                       </div>
                       <div className="product-actions">
                         <button

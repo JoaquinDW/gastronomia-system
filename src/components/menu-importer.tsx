@@ -141,6 +141,7 @@ export function MenuImporter({
         kind: r.kind,
         variants: variants as ProductInput["variants"],
         addOns: addOns as ProductInput["addOns"],
+        optionGroups: [],
         imageUrl: "",
         imageFocusX: 50,
         imageFocusY: 50,
