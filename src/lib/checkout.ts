@@ -21,6 +21,8 @@ export const checkoutInput = z
             productId: z.uuid(),
             variantId: z.uuid(),
             addOnIds: z.array(z.uuid()).max(20),
+            // One id per unit picked inside the product's option groups.
+            choiceIds: z.array(z.uuid()).max(100).default([]),
             quantity: z.number().int().min(1).max(20),
             quotedUnitCents: z.number().int().min(0),
           })
@@ -35,9 +37,12 @@ export type OrderItem = {
   productId?: string;
   variantId?: string;
   addOnIds?: string[];
+  choiceIds?: string[];
   name: string;
   variant: string;
   addOns: string[];
+  /** One line per option group, like "Gustos: 3 Carne, 3 Pollo". */
+  choices?: string[];
   quantity: number;
   unitCents: number;
   lineCents: number;

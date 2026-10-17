@@ -31,6 +31,18 @@ export const addOnSchema = z
     priceCents: price,
   })
   .strict();
+// A group the customer chooses from, like "Elegí la salsa" or "Elegí 12 gustos".
+// With repeat, the same option counts once per unit chosen (3 de carne, 3 de pollo…).
+export const optionGroupSchema = z
+  .object({
+    id: z.uuid(),
+    name: z.string().trim().min(1).max(80),
+    min: z.number().int().min(0).max(50),
+    max: z.number().int().min(1).max(50),
+    repeat: z.boolean().default(false),
+    options: z.array(addOnSchema).min(1).max(30),
+  })
+  .strict();
 // An uploaded photo, an external HTTPS link, or empty for no photo.
 const imageUrlSchema = z.union([
   z.literal(""),
@@ -51,6 +63,7 @@ export const productInput = z
     kind: z.enum(["product", "combo"]).default("product"),
     variants: z.array(variantSchema).min(1).max(20),
     addOns: z.array(addOnSchema).max(20).default([]),
+    optionGroups: z.array(optionGroupSchema).max(10).default([]),
     imageUrl: imageUrlSchema.default(""),
     // Which part of the photo stays visible when cards crop it (CSS object-position, in %).
     imageFocusX: focusSchema,
@@ -77,12 +90,117 @@ export const productInput = z
           message: "Cada opción debe tener un nombre diferente.",
         });
     }
+    // Choices share recipes with add-ons, so their ids must not collide.
+    const ids = [
+      ...p.variants,
+      ...p.addOns,
+      ...p.optionGroups.flatMap((g) => [g, ...g.options]),
+    ].map((o) => o.id);
+    if (new Set(ids).size !== ids.length)
+      ctx.addIssue({
+        code: "custom",
+        path: ["optionGroups"],
+        message: "Hay opciones repetidas.",
+      });
+    if (
+      new Set(p.optionGroups.map((g) => normalizeName(g.name))).size !==
+      p.optionGroups.length
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: ["optionGroups"],
+        message: "Cada grupo de opciones debe tener un nombre diferente.",
+      });
+    p.optionGroups.forEach((g, i) => {
+      const issue = (message: string) =>
+        ctx.addIssue({ code: "custom", path: ["optionGroups", i], message });
+      if (
+        new Set(g.options.map((o) => normalizeName(o.name))).size !==
+        g.options.length
+      )
+        issue(`En «${g.name}» cada opción debe tener un nombre diferente.`);
+      if (g.min > g.max)
+        issue(`En «${g.name}» el mínimo no puede superar al máximo.`);
+      else if (!g.repeat && g.max > g.options.length)
+        issue(
+          `En «${g.name}» se pueden elegir hasta ${g.options.length} opciones distintas. Bajá el máximo o permití repetir.`,
+        );
+    });
   });
+export type OptionGroup = z.infer<typeof optionGroupSchema>;
 export type Variant = z.infer<typeof variantSchema>;
 export type AddOn = z.infer<typeof addOnSchema>;
 export type ProductInput = z.infer<typeof productInput>;
 export type Product = ProductInput & { id: string; version: number };
 
+/** "Elegí 1", "Elegí hasta 3", "Elegí 12" or "Elegí entre 2 y 4". */
+export function groupRule(g: Pick<OptionGroup, "min" | "max">) {
+  if (g.min === g.max) return `Elegí ${g.max}`;
+  if (!g.min) return `Elegí hasta ${g.max}`;
+  return `Elegí entre ${g.min} y ${g.max}`;
+}
+export type ChoiceSelection = {
+  cents: number;
+  /** One line per group with picks, like "Gustos: 3 Carne, 3 Pollo". */
+  labels: string[];
+};
+/**
+ * Checks the picks for one unit of a product against its option groups.
+ * choiceIds lists one id per unit picked, so repeated options appear repeatedly.
+ */
+export function resolveChoices(
+  product: Pick<Product, "optionGroups">,
+  choiceIds: string[],
+):
+  | { ok: true; value: ChoiceSelection }
+  | { ok: false; message: string; stale: boolean } {
+  const groups = product.optionGroups ?? [];
+  const counts = new Map<string, number>();
+  for (const id of choiceIds) counts.set(id, (counts.get(id) ?? 0) + 1);
+  const known = new Set(groups.flatMap((g) => g.options.map((o) => o.id)));
+  if ([...counts.keys()].some((id) => !known.has(id)))
+    return {
+      ok: false,
+      stale: true,
+      message: "Las opciones de un producto cambiaron. Actualizá la carta.",
+    };
+  let cents = 0;
+  const labels: string[] = [];
+  for (const g of groups) {
+    const picked = g.options.filter((o) => counts.has(o.id));
+    const total = picked.reduce((n, o) => n + counts.get(o.id)!, 0);
+    if (!g.repeat && picked.some((o) => counts.get(o.id)! > 1))
+      return {
+        ok: false,
+        stale: false,
+        message: `En «${g.name}» no se puede repetir la misma opción.`,
+      };
+    if (total < g.min || total > g.max)
+      return {
+        ok: false,
+        stale: false,
+        message: `${groupRule(g)} en «${g.name}».`,
+      };
+    cents += picked.reduce((n, o) => n + o.priceCents * counts.get(o.id)!, 0);
+    if (picked.length)
+      labels.push(
+        `${g.name}: ${picked
+          .map((o) =>
+            g.repeat && counts.get(o.id)! > 1
+              ? `${counts.get(o.id)} ${o.name}`
+              : o.name,
+          )
+          .join(", ")}`,
+      );
+  }
+  return { ok: true, value: { cents, labels } };
+}
+/** Every option inside the product's groups, for recipes and pickers. */
+export function groupOptions(product: Pick<Product, "optionGroups">) {
+  return (product.optionGroups ?? []).flatMap((g) =>
+    g.options.map((o) => ({ ...o, groupName: g.name })),
+  );
+}
 export const hourSchema = z
   .object({
     day: z.number().int().min(0).max(6),

@@ -6,6 +6,7 @@ import { lockBusiness } from "./menu";
 import {
   isStoreOpen,
   formatMoney,
+  resolveChoices,
   type Product,
   type StoreSettings,
 } from "@/lib/menu";
@@ -17,10 +18,10 @@ function orderResult(order: Order, whatsapp: string, businessName: string) {
   const message = [
     `Hola ${businessName}, quiero confirmar el pedido #${order.number}.`,
     "",
-    ...order.items.map(
-      (i) =>
-        `${i.quantity} × ${i.name}${i.variant !== "Única" ? ` (${i.variant})` : ""}${i.addOns.length ? ` + ${i.addOns.join(", ")}` : ""}: ${formatMoney(i.lineCents)}`,
-    ),
+    ...order.items.flatMap((i) => [
+      `${i.quantity} × ${i.name}${i.variant !== "Única" ? ` (${i.variant})` : ""}${i.addOns.length ? ` + ${i.addOns.join(", ")}` : ""}: ${formatMoney(i.lineCents)}`,
+      ...(i.choices ?? []).map((c) => `   ${c}`),
+    ]),
     "",
     `Modalidad: ${order.fulfillment === "pickup" ? "Retiro en el local" : "Delivery"}`,
     ...(order.address
@@ -89,7 +90,7 @@ export async function checkout(slug: string, input: CheckoutInput) {
         "El pedido supera las 100 unidades. Consultá al local para pedidos grandes.",
       );
     const productRows = await client.query<Product>(
-      `SELECT id,name,variants,add_ons AS "addOns",is_available AS "isAvailable" FROM menu_products WHERE business_id=$1 AND archived_at IS NULL AND id=ANY($2::uuid[])`,
+      `SELECT id,name,variants,add_ons AS "addOns",option_groups AS "optionGroups",is_available AS "isAvailable" FROM menu_products WHERE business_id=$1 AND archived_at IS NULL AND id=ANY($2::uuid[])`,
       [b.id, input.items.map((i) => i.productId)],
     );
     const products = new Map(productRows.rows.map((p) => [p.id, p]));
@@ -112,8 +113,18 @@ export async function checkout(slug: string, input: CheckoutInput) {
       );
       if (addOns.some((a) => !a))
         throw new HttpError(409, "Un adicional cambió. Actualizá la carta.");
+      const choices = resolveChoices(product, line.choiceIds);
+      if (!choices.ok)
+        throw new HttpError(
+          choices.stale ? 409 : 422,
+          choices.stale
+            ? choices.message
+            : `${product.name}: ${choices.message}`,
+        );
       const unitCents =
-        variant.priceCents + addOns.reduce((n, a) => n + a!.priceCents, 0);
+        variant.priceCents +
+        addOns.reduce((n, a) => n + a!.priceCents, 0) +
+        choices.value.cents;
       if (unitCents !== line.quotedUnitCents)
         throw new HttpError(
           409,
@@ -123,9 +134,11 @@ export async function checkout(slug: string, input: CheckoutInput) {
         productId: line.productId,
         variantId: line.variantId,
         addOnIds: line.addOnIds,
+        choiceIds: line.choiceIds,
         name: product.name,
         variant: variant.name,
         addOns: addOns.map((a) => a!.name),
+        choices: choices.value.labels,
         quantity: line.quantity,
         unitCents,
         lineCents: unitCents * line.quantity,

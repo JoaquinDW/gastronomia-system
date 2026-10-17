@@ -177,6 +177,7 @@ export const commandSchema = z.discriminatedUnion("type", [
               productId: z.uuid(),
               variantId: z.uuid(),
               addOnIds: z.array(z.uuid()).max(20),
+              choiceIds: z.array(z.uuid()).max(100).default([]),
               quantity: z.number().int().min(1).max(1000),
               unitCents: cents,
             })
@@ -271,9 +272,11 @@ export type SaleLine = {
   productId?: string;
   variantId?: string;
   addOnIds?: string[];
+  choiceIds?: string[];
   name: string;
   variant: string;
   addOns: string[];
+  choices?: string[];
   quantity: number;
   unitCents: string;
   lineCents: string;

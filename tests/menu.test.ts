@@ -9,6 +9,8 @@ import {
   emptySettings,
   productInput,
   productImage,
+  resolveChoices,
+  groupRule,
 } from "../src/lib/menu";
 
 test("Argentine and decimal prices preserve the exact cent amount", () => {
@@ -156,4 +158,121 @@ test("store cover accepts uploaded or HTTPS photos and a focus point", () => {
     settingsInput.safeParse({ ...settings, coverFocusY: 101 }).success,
     false,
   );
+});
+
+test("option groups validate their rules before saving the product", () => {
+  const option = (name: string, priceCents = 0) => ({
+    id: randomUUID(),
+    name,
+    priceCents,
+  });
+  const base = {
+    name: "Ravioles",
+    category: "Pastas",
+    variants: [{ id: randomUUID(), name: "Única", priceCents: 900000 }],
+  };
+  const group = {
+    id: randomUUID(),
+    name: "Elegí la salsa",
+    min: 1,
+    max: 1,
+    options: [option("Fileto"), option("Bolognesa", 150000)],
+  };
+  const parsed = productInput.parse({ ...base, optionGroups: [group] });
+  assert.equal(parsed.optionGroups[0].repeat, false);
+  assert.deepEqual(productInput.parse(base).optionGroups, []);
+  for (const bad of [
+    { ...group, min: 2, max: 1 },
+    { ...group, max: 3 },
+    { ...group, options: [] },
+    {
+      ...group,
+      options: [group.options[0], { ...group.options[1], name: "fileto" }],
+    },
+  ])
+    assert.equal(
+      productInput.safeParse({ ...base, optionGroups: [bad] }).success,
+      false,
+    );
+  assert.equal(
+    productInput.safeParse({
+      ...base,
+      optionGroups: [{ ...group, max: 3, repeat: true }],
+    }).success,
+    true,
+  );
+  // Choice ids share recipes with add-ons, so they cannot collide.
+  assert.equal(
+    productInput.safeParse({
+      ...base,
+      addOns: [group.options[0]],
+      optionGroups: [group],
+    }).success,
+    false,
+  );
+  assert.equal(groupRule({ min: 1, max: 1 }), "Elegí 1");
+  assert.equal(groupRule({ min: 0, max: 3 }), "Elegí hasta 3");
+  assert.equal(groupRule({ min: 2, max: 4 }), "Elegí entre 2 y 4");
+});
+
+test("choices respect minimum, maximum and repetition and add their price", () => {
+  const [carne, pollo, verdura] = ["Carne", "Pollo", "Verdura"].map((name) => ({
+    id: randomUUID(),
+    name,
+    priceCents: name === "Carne" ? 10000 : 0,
+  }));
+  const [fileto, crema] = ["Fileto", "Crema"].map((name) => ({
+    id: randomUUID(),
+    name,
+    priceCents: 0,
+  }));
+  const product = {
+    optionGroups: [
+      {
+        id: randomUUID(),
+        name: "Gustos",
+        min: 6,
+        max: 6,
+        repeat: true,
+        options: [carne, pollo, verdura],
+      },
+      {
+        id: randomUUID(),
+        name: "Salsa",
+        min: 0,
+        max: 1,
+        repeat: false,
+        options: [fileto, crema],
+      },
+    ],
+  };
+  const picks = [carne.id, carne.id, carne.id, pollo.id, pollo.id, verdura.id];
+  const ok = resolveChoices(product, picks);
+  assert.deepEqual(ok, {
+    ok: true,
+    value: { cents: 30000, labels: ["Gustos: 3 Carne, 2 Pollo, Verdura"] },
+  });
+  const withSauce = resolveChoices(product, [...picks, fileto.id]);
+  assert.equal(withSauce.ok && withSauce.value.labels[1], "Salsa: Fileto");
+  const missing = resolveChoices(product, picks.slice(1));
+  assert.equal(missing.ok, false);
+  assert.equal(!missing.ok && missing.message, "Elegí 6 en «Gustos».");
+  assert.equal(resolveChoices(product, [...picks, carne.id]).ok, false);
+  assert.equal(
+    resolveChoices(product, [...picks, fileto.id, crema.id]).ok,
+    false,
+  );
+  const stale = resolveChoices(product, [...picks.slice(1), randomUUID()]);
+  assert.equal(!stale.ok && stale.stale, true);
+  // Without repeat the same option cannot be picked twice.
+  const twice = resolveChoices(
+    { optionGroups: [{ ...product.optionGroups[1], max: 2 }] },
+    [fileto.id, fileto.id],
+  );
+  assert.equal(twice.ok, false);
+  // Products without groups accept no choices at all.
+  assert.deepEqual(resolveChoices({ optionGroups: [] }, []), {
+    ok: true,
+    value: { cents: 0, labels: [] },
+  });
 });

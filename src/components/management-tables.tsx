@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import type { Product } from "@/lib/menu";
+import { groupOptions, type Product } from "@/lib/menu";
 import {
   channels,
   type ManagementData,
@@ -279,7 +279,16 @@ export function ManagementTables({
                 {products.flatMap((p) =>
                   [
                     ...p.variants.map((v) => ({ ...v, optionKind: "variant" })),
-                    ...p.addOns.map((a) => ({ ...a, optionKind: "addon" })),
+                    ...p.addOns.map((a) => ({
+                      ...a,
+                      optionKind: "addon",
+                      group: "Adicional",
+                    })),
+                    ...groupOptions(p).map((o) => ({
+                      ...o,
+                      optionKind: "addon",
+                      group: o.groupName,
+                    })),
                   ].map((option) => {
                     const recipe = data.recipes.find(
                         (r) =>
@@ -309,9 +318,7 @@ export function ManagementTables({
                         <th>
                           {p.name}
                           <small>
-                            {option.optionKind === "addon"
-                              ? "Adicional · "
-                              : ""}
+                            {"group" in option ? `${option.group} · ` : ""}
                             {option.name}
                           </small>
                         </th>
@@ -425,7 +432,7 @@ export function ManagementTables({
                       {s.lines
                         .map(
                           (l) =>
-                            `${l.quantity} × ${l.name} (${l.variant})${l.addOns.length ? ` + ${l.addOns.join(", ")}` : ""}`,
+                            `${l.quantity} × ${l.name} (${l.variant})${l.addOns.length ? ` + ${l.addOns.join(", ")}` : ""}${l.choices?.length ? ` · ${l.choices.join(" · ")}` : ""}`,
                         )
                         .join(" · ")}
                     </small>

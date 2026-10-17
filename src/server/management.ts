@@ -4,7 +4,7 @@ import type { PoolClient } from "pg";
 import { getPool } from "./postgres";
 import { lockBusiness } from "./menu";
 import { HttpError } from "./errors";
-import type { Product } from "@/lib/menu";
+import { groupOptions, resolveChoices, type Product } from "@/lib/menu";
 import type { Order } from "@/lib/checkout";
 import type {
   ManagementCommand,
@@ -272,7 +272,8 @@ export async function createSale(
       known = 0n;
     const options = [
       lookup.get(`${line.productId}/variant/${line.variantId}`),
-      ...(line.addOnIds ?? []).map((id) =>
+      // Choices use add-on recipes, once per unit picked.
+      ...[...(line.addOnIds ?? []), ...(line.choiceIds ?? [])].map((id) =>
         lookup.get(`${line.productId}/addon/${id}`),
       ),
     ];
@@ -579,13 +580,15 @@ export async function executeManagement(
       }
       case "recipe": {
         const { rows } = await client.query<Product>(
-          `SELECT variants,add_ons AS "addOns" FROM menu_products WHERE business_id=$1 AND id=$2 AND archived_at IS NULL`,
+          `SELECT variants,add_ons AS "addOns",option_groups AS "optionGroups" FROM menu_products WHERE business_id=$1 AND id=$2 AND archived_at IS NULL`,
           [businessId, input.productId],
         );
         if (
           !rows[0] ||
           !(
-            input.optionKind === "variant" ? rows[0].variants : rows[0].addOns
+            input.optionKind === "variant"
+              ? rows[0].variants
+              : [...rows[0].addOns, ...groupOptions(rows[0])]
           ).some((o) => o.id === input.optionId)
         )
           throw new HttpError(
@@ -857,7 +860,7 @@ export async function executeManagement(
       }
       case "sale": {
         const { rows } = await client.query<Product>(
-          `SELECT id,name,variants,add_ons AS "addOns",is_available AS "isAvailable" FROM menu_products WHERE business_id=$1 AND archived_at IS NULL AND id=ANY($2::uuid[])`,
+          `SELECT id,name,variants,add_ons AS "addOns",option_groups AS "optionGroups",is_available AS "isAvailable" FROM menu_products WHERE business_id=$1 AND archived_at IS NULL AND id=ANY($2::uuid[])`,
           [businessId, input.lines.map((l) => l.productId)],
         );
         const products = new Map(rows.map((p) => [p.id, p]));
@@ -877,11 +880,15 @@ export async function executeManagement(
           );
           if (addOns.some((a) => !a))
             throw new HttpError(422, "Un adicional ya no existe en la carta.");
+          const choices = resolveChoices(p, line.choiceIds);
+          if (!choices.ok)
+            throw new HttpError(422, `${p.name}: ${choices.message}`);
           lines.push({
             ...line,
             name: p.name,
             variant: variant.name,
             addOns: addOns.map((a) => a!.name),
+            choices: choices.value.labels,
             lineCents: (
               BigInt(line.unitCents) * BigInt(line.quantity)
             ).toString(),

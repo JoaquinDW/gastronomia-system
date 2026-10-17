@@ -18,7 +18,13 @@ import {
   customType,
   smallint,
 } from "drizzle-orm/pg-core";
-import type { Variant, AddOn, Hours, DeliveryZone } from "../lib/menu";
+import type {
+  Variant,
+  AddOn,
+  OptionGroup,
+  Hours,
+  DeliveryZone,
+} from "../lib/menu";
 
 export const businessKind = pgEnum("business_kind", [
   "hamburgueseria",
@@ -117,6 +123,10 @@ export const menuProducts = pgTable(
     kind: varchar("kind", { length: 20 }).notNull().default("product"),
     variants: jsonb("variants").$type<Variant[]>().notNull(),
     addOns: jsonb("add_ons").$type<AddOn[]>().notNull().default([]),
+    optionGroups: jsonb("option_groups")
+      .$type<OptionGroup[]>()
+      .notNull()
+      .default([]),
     imageUrl: text("image_url"),
     imageFocusX: smallint("image_focus_x").notNull().default(50),
     imageFocusY: smallint("image_focus_y").notNull().default(50),

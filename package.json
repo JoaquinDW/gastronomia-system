@@ -15,6 +15,7 @@
     "test:hosts": "node --import tsx --test tests/hosts.test.ts",
     "test:menu": "node --import tsx --test tests/menu.test.ts",
     "test:management": "node --import tsx --test tests/management.test.ts",
+    "test:options:db": "node --conditions=react-server --import tsx scripts/test-option-groups.ts",
     "test:management:db": "node --conditions=react-server --import tsx scripts/test-management.ts",
     "test:management:browser": "node scripts/test-management-browser.mjs",
     "test:storefront": "node scripts/test-storefront.mjs",

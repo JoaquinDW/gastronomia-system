@@ -49,3 +49,20 @@ test("older checkout clients can still send a validated, normalized phone", () =
     false,
   );
 });
+
+test("older carts without choices are read as no choices", () => {
+  const parsed = checkoutInput.parse({
+    ...order,
+    customerPhone: "+5493511234567",
+  });
+  assert.deepEqual(parsed.items[0].choiceIds, []);
+  const pick = randomUUID();
+  assert.deepEqual(
+    checkoutInput.parse({
+      ...order,
+      customerPhone: "+5493511234567",
+      items: [{ ...order.items[0], choiceIds: [pick, pick] }],
+    }).items[0].choiceIds,
+    [pick, pick],
+  );
+});

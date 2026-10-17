@@ -7,6 +7,20 @@ import {
   type ProductInput,
 } from "@/lib/menu";
 import { ProductPhotoField } from "./product-photo-field";
+type OptionRow = { id: string; name: string; price: string };
+type GroupRow = {
+  id: string;
+  name: string;
+  min: string;
+  max: string;
+  repeat: boolean;
+  options: OptionRow[];
+};
+const newOption = (): OptionRow => ({
+  id: crypto.randomUUID(),
+  name: "",
+  price: "0",
+});
 export function ProductEditor({
   businessId,
   product,
@@ -49,6 +63,23 @@ export function ProductEditor({
         price: priceInputValue(a.priceCents),
       })) ?? [],
   );
+  const [groups, setGroups] = useState<GroupRow[]>(
+    () =>
+      product?.optionGroups?.map((g) => ({
+        id: g.id,
+        name: g.name,
+        min: String(g.min),
+        max: String(g.max),
+        repeat: g.repeat,
+        options: g.options.map((o) => ({
+          id: o.id,
+          name: o.name,
+          price: priceInputValue(o.priceCents),
+        })),
+      })) ?? [],
+  );
+  const updateGroup = (i: number, change: Partial<GroupRow>) =>
+    setGroups(groups.map((g, j) => (j === i ? { ...g, ...change } : g)));
   useEffect(() => {
     dialog.current?.showModal();
   }, []);
@@ -66,12 +97,47 @@ export function ProductEditor({
       name: a.name,
       priceCents: moneyToCents(a.price),
     }));
+    const optionGroups = groups.map((g) => ({
+      id: g.id,
+      name: g.name.trim(),
+      min: Number(g.min),
+      max: Number(g.max),
+      repeat: g.repeat,
+      options: g.options.map((o) => ({
+        id: o.id,
+        name: o.name,
+        priceCents: moneyToCents(o.price),
+      })),
+    }));
     if (
       prices.some((v) => v.priceCents === null || !v.name.trim()) ||
-      extras.some((v) => v.priceCents === null || !v.name.trim())
+      extras.some((v) => v.priceCents === null || !v.name.trim()) ||
+      optionGroups.some((g) =>
+        g.options.some((o) => o.priceCents === null || !o.name.trim()),
+      )
     ) {
       setError(
-        "Cada variante y adicional necesita un nombre y un precio válido en pesos.",
+        "Cada variante, adicional y opción necesita un nombre y un precio válido en pesos.",
+      );
+      return;
+    }
+    const invalidGroup = optionGroups.find(
+      (g) =>
+        !g.name ||
+        !g.options.length ||
+        !Number.isInteger(g.min) ||
+        !Number.isInteger(g.max) ||
+        g.min < 0 ||
+        g.max < 1 ||
+        g.max > 50 ||
+        g.min > g.max ||
+        (!g.repeat && g.max > g.options.length),
+    );
+    if (invalidGroup) {
+      setError(
+        invalidGroup.name
+          ? `Revisá «${invalidGroup.name}»: necesita al menos una opción, y el mínimo no puede superar al máximo. Sin repetir, el máximo no puede superar la cantidad de opciones.`
+          : "Cada grupo de opciones necesita un nombre, como «Elegí la salsa».",
       );
       return;
     }
@@ -84,6 +150,7 @@ export function ProductEditor({
         kind: form.get("kind") === "combo" ? "combo" : "product",
         variants: prices as ProductInput["variants"],
         addOns: extras as ProductInput["addOns"],
+        optionGroups: optionGroups as ProductInput["optionGroups"],
         imageUrl,
         imageFocusX: imageFocus.x,
         imageFocusY: imageFocus.y,
@@ -306,6 +373,152 @@ export function ProductEditor({
               }
             >
               + Agregar adicional
+            </button>
+          </details>
+          <details className="extras-editor" open={groups.length > 0}>
+            <summary>Opciones para elegir ({groups.length})</summary>
+            <p className="field-hint standalone-hint">
+              Para lo que el cliente tiene que elegir antes de pedir: la salsa,
+              el punto de la carne, la bebida del combo o los gustos de la
+              docena. Con mínimo 0 la elección es opcional.
+            </p>
+            {groups.map((g, i) => (
+              <fieldset className="option-group-editor" key={g.id}>
+                <div className="option-group-heading">
+                  <label>
+                    Nombre del grupo
+                    <input
+                      value={g.name}
+                      required
+                      maxLength={80}
+                      placeholder="Elegí la salsa"
+                      onChange={(e) => updateGroup(i, { name: e.target.value })}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="icon-button"
+                    aria-label={`Quitar grupo ${g.name || i + 1}`}
+                    onClick={() => setGroups(groups.filter((_, j) => j !== i))}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="option-group-rules">
+                  <label>
+                    Mínimo
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      max={50}
+                      required
+                      value={g.min}
+                      onChange={(e) => updateGroup(i, { min: e.target.value })}
+                    />
+                  </label>
+                  <label>
+                    Máximo
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={50}
+                      required
+                      value={g.max}
+                      onChange={(e) => updateGroup(i, { max: e.target.value })}
+                    />
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={g.repeat}
+                      onChange={(e) =>
+                        updateGroup(i, { repeat: e.target.checked })
+                      }
+                    />
+                    Se puede repetir la misma opción
+                  </label>
+                </div>
+                {g.options.map((o, k) => (
+                  <div className="option-editor" key={o.id}>
+                    <label>
+                      Opción
+                      <input
+                        value={o.name}
+                        required
+                        maxLength={80}
+                        placeholder="Fileto"
+                        onChange={(e) =>
+                          updateGroup(i, {
+                            options: g.options.map((x, j) =>
+                              j === k ? { ...x, name: e.target.value } : x,
+                            ),
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      Precio extra ($)
+                      <input
+                        inputMode="decimal"
+                        value={o.price}
+                        required
+                        onChange={(e) =>
+                          updateGroup(i, {
+                            options: g.options.map((x, j) =>
+                              j === k ? { ...x, price: e.target.value } : x,
+                            ),
+                          })
+                        }
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label={`Quitar opción ${o.name || k + 1}`}
+                      disabled={g.options.length === 1}
+                      onClick={() =>
+                        updateGroup(i, {
+                          options: g.options.filter((_, j) => j !== k),
+                        })
+                      }
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  className="quiet-button"
+                  type="button"
+                  disabled={g.options.length >= 30}
+                  onClick={() =>
+                    updateGroup(i, { options: [...g.options, newOption()] })
+                  }
+                >
+                  + Agregar opción
+                </button>
+              </fieldset>
+            ))}
+            <button
+              className="quiet-button"
+              type="button"
+              disabled={groups.length >= 10}
+              onClick={() =>
+                setGroups([
+                  ...groups,
+                  {
+                    id: crypto.randomUUID(),
+                    name: "",
+                    min: "1",
+                    max: "1",
+                    repeat: false,
+                    options: [newOption()],
+                  },
+                ])
+              }
+            >
+              + Agregar grupo de opciones
             </button>
           </details>
           <label className="checkbox-label">

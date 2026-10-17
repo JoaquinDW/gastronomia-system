@@ -50,6 +50,13 @@
       "when": 1792192709833,
       "tag": "0006_menu_images_storage",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792266853019,
+      "tag": "0007_product_option_groups",
+      "breakpoints": true
     }
   ]
 }
