@@ -269,6 +269,7 @@ export function Storefront({
     number: number;
     totalCents: number;
     whatsappUrl: string;
+    trackingUrl: string;
   } | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const requestKey = useRef<string | null>(null);
@@ -591,6 +592,9 @@ export function Storefront({
                   Enviá el resumen en el chat y esperá la confirmación del
                   negocio. Abrir WhatsApp no acredita el pago.
                 </p>
+                <a className="text-button" href={result.trackingUrl}>
+                  Seguí tu pedido acá →
+                </a>
               </div>
             ) : null}
             {cart.length ? (
