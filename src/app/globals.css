@@ -31,6 +31,12 @@
 * {
   box-sizing: border-box;
 }
+.location-picker { display: grid; gap: 12px; min-width: 0; }
+.delivery-map { height: 280px; width: 100%; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--soft); }
+.location-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.location-results { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.location-results button { text-align: left; white-space: normal; min-height: 44px; }
+.location-picker .text-button { min-height: 44px; }
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 24px;

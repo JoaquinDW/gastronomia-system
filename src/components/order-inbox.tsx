@@ -12,13 +12,21 @@ import {
 } from "@/lib/checkout";
 import { usePanelBase } from "./panel-base";
 
+// ICU versions differ on short-date punctuation and year width. Keep the
+// initial server render identical to the browser while using local time.
+function orderDate(value: string) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Argentina/Cordoba",
+    day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(new Date(value));
+  const part = (type: string) => parts.find(p => p.type === type)?.value ?? "";
+  return `${part("day")}/${part("month")}/${part("year")}, ${part("hour")}:${part("minute")}`;
+}
+
 const POLL_MS = 8000;
 const SOUND_KEY = "pedipue:order-sound";
-const dateTime = new Intl.DateTimeFormat("es-AR", {
-  timeZone: "America/Argentina/Cordoba",
-  dateStyle: "short",
-  timeStyle: "short",
-});
+const dateTime = { format: (value: Date) => orderDate(value.toISOString()) };
 const clock = new Intl.DateTimeFormat("es-AR", {
   timeZone: "America/Argentina/Cordoba",
   timeStyle: "short",
@@ -388,6 +396,7 @@ export function OrderInbox({
                     {o.zoneName} · {o.address}
                   </p>
                 ) : null}
+                {o.deliveryLocation ? <a className="text-button" href={`https://www.google.com/maps/dir/?api=1&destination=${o.deliveryLocation.lat},${o.deliveryLocation.lng}`} target="_blank" rel="noopener noreferrer">Abrir ubicación de entrega en Maps</a> : null}
                 <ul>
                   {o.items.map((i, j) => (
                     <li key={j}>

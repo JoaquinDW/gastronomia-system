@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { deliveryQuote, type Coordinates } from "@/lib/delivery";
+import { LocationPicker } from "./location-picker";
 import {
   dayNames,
   formatMoney,
@@ -263,6 +265,8 @@ export function Storefront({
     settings.pickupEnabled ? "pickup" : "delivery",
   );
   const [zoneId, setZoneId] = useState(settings.deliveryZones[0]?.id ?? "");
+  const [deliveryLocation, setDeliveryLocation] = useState<Coordinates | null>(null);
+  const [deliveryAddress, setDeliveryAddress] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<{
@@ -345,7 +349,10 @@ export function Storefront({
     setResult(null);
   }
   const subtotal = cart.reduce((n, l) => n + l.quotedUnitCents * l.quantity, 0);
-  const zone = settings.deliveryZones.find((z) => z.id === zoneId);
+  const automaticDelivery = settings.deliveryConfig?.mode === "radius";
+  const quote = automaticDelivery ? deliveryQuote(settings.deliveryConfig, settings.deliveryZones, deliveryLocation) : null;
+  const zone = automaticDelivery ? quote?.zone : settings.deliveryZones.find((z) => z.id === zoneId);
+  const needsLocation = fulfillment === "delivery" && automaticDelivery && !quote;
   const fee = fulfillment === "delivery" ? (zone?.feeCents ?? 0) : 0;
   const total = subtotal + fee;
   const categories = [...new Set(products.map((p) => p.category))];
@@ -369,7 +376,8 @@ export function Storefront({
           fulfillment,
           address:
             fulfillment === "delivery" ? String(form.get("address") ?? "") : "",
-          zoneId: fulfillment === "delivery" ? zoneId : null,
+          zoneId: fulfillment === "delivery" ? (zone?.id ?? null) : null,
+          ...(fulfillment === "delivery" && automaticDelivery ? { deliveryLocation, quotedDeliveryCents: fee } : {}),
           paymentMethod: form.get("paymentMethod"),
           note: form.get("note"),
           items: cart.map(
@@ -660,11 +668,11 @@ export function Storefront({
                 {fulfillment === "delivery" ? (
                   <div className="cart-total">
                     <span>Envío</span>
-                    <strong>{formatMoney(fee)}</strong>
+                    <strong>{needsLocation ? "A calcular" : formatMoney(fee)}</strong>
                   </div>
                 ) : null}
                 <div className="cart-total final-total">
-                  <span>Total</span>
+                  <span>{needsLocation ? "Total sin envío" : "Total"}</span>
                   <strong>{formatMoney(total)}</strong>
                 </div>
                 {!showCheckout ? (
@@ -727,7 +735,7 @@ export function Storefront({
                   </label>
                   {fulfillment === "delivery" ? (
                     <>
-                      <label>
+                      {!automaticDelivery ? <label>
                         Zona de entrega
                         <select
                           value={zoneId}
@@ -742,7 +750,7 @@ export function Storefront({
                             </option>
                           ))}
                         </select>
-                      </label>
+                      </label> : null}
                       <label>
                         Dirección y referencias
                         <input
@@ -751,8 +759,16 @@ export function Storefront({
                           required
                           minLength={5}
                           maxLength={250}
+                          value={deliveryAddress}
+                          onChange={e => { setDeliveryAddress(e.target.value); setDeliveryLocation(null); requestKey.current = null; }}
                         />
                       </label>
+                      {automaticDelivery && settings.deliveryConfig.mode === "radius" ? <>
+                        <LocationPicker value={deliveryLocation} address={`${deliveryAddress}, ${business.city}`} origin={settings.deliveryConfig.origin} onChange={location => { setDeliveryLocation(location); requestKey.current = null; }} />
+                        <p className={deliveryLocation && !quote ? "form-error" : "field-hint standalone-hint"} role="status">
+                          {quote ? `Envío: ${formatMoney(quote.feeCents)} · ${quote.zone.name}` : deliveryLocation ? "Esta dirección está fuera de la cobertura de delivery. Podés elegir retiro si está disponible." : "Marcá tu dirección en el mapa para conocer el costo de envío."}
+                        </p>
+                      </> : null}
                       {zone?.minimumCents ? (
                         <p className="field-hint standalone-hint">
                           Mínimo para esta zona:{" "}
@@ -799,7 +815,7 @@ export function Storefront({
                 </p>
                 <button
                   className="primary-button"
-                  disabled={busy || !open || preview}
+                  disabled={busy || !open || preview || needsLocation || (fulfillment === "delivery" && Boolean(zone) && subtotal < zone!.minimumCents)}
                   type="submit"
                 >
                   {busy ? "Guardando pedido…" : "Confirmar pedido"}
