@@ -294,6 +294,7 @@ export function EditorFields({
             <Field label="Dónde vendiste">
               <select name="channel">
                 <option value="counter">Mostrador</option>
+                <option value="phone">Teléfono</option>
                 <option value="whatsapp">WhatsApp</option>
                 <option value="other">Otros</option>
               </select>
@@ -313,7 +314,9 @@ export function EditorFields({
           <p className="mg-disclosure">
             Registrá el precio por unidad efectivamente vendido, con sus
             adicionales incluidos. No vuelvas a cargar pedidos que ya aceptaste
-            desde la tienda. El cobro se verifica por separado.
+            desde la tienda ni los que cargaste en Pedidos. Si querés que pase
+            por la cocina con comanda, cargalo desde Pedidos. El cobro se
+            verifica por separado.
           </p>
         </>
       );

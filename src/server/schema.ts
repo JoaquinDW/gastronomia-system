@@ -260,6 +260,8 @@ export const orders = pgTable(
     zoneName: varchar("zone_name", { length: 100 }),
     deliveryLocation: jsonb("delivery_location").$type<Coordinates>(),
     paymentMethod: varchar("payment_method", { length: 20 }).notNull(),
+    // store: the public checkout; the rest are loaded from the orders panel.
+    channel: varchar("channel", { length: 20 }).notNull().default("store"),
     note: varchar("note", { length: 500 }).notNull().default(""),
     items: jsonb("items").notNull(),
     subtotalCents: integer("subtotal_cents").notNull(),
@@ -290,6 +292,10 @@ export const orders = pgTable(
     unique("orders_number_unique").on(t.businessId, t.number),
     index("orders_business_date_idx").on(t.businessId, t.createdAt),
     check("orders_rating_valid", sql`${t.rating} BETWEEN 1 AND 5`),
+    check(
+      "orders_channel_valid",
+      sql`${t.channel} IN ('store', 'counter', 'phone', 'whatsapp')`,
+    ),
     check(
       "orders_total_valid",
       sql`${t.totalCents} = ${t.subtotalCents} + ${t.deliveryCents} AND ${t.totalCents} >= 0`,
@@ -518,7 +524,7 @@ export const managementSales = pgTable(
     }),
     check(
       "management_sale_valid",
-      sql`${t.channel} IN ('store','counter','whatsapp','other') AND ${t.totalCents} >= 0 AND ${t.deliveryCents} >= 0 AND ${t.totalCents} >= ${t.deliveryCents}`,
+      sql`${t.channel} IN ('store','counter','phone','whatsapp','other') AND ${t.totalCents} >= 0 AND ${t.deliveryCents} >= 0 AND ${t.totalCents} >= ${t.deliveryCents}`,
     ),
   ],
 );

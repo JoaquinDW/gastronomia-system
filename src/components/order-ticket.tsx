@@ -41,7 +41,7 @@ export function CustomerTicket({
       <p>Creado a las {time.format(created)}</p>
       <div className="ticket-print-block">
         <p className="ticket-print-strong">{o.customerName}</p>
-        <p>{o.customerPhone}</p>
+        {o.customerPhone ? <p>{o.customerPhone}</p> : null}
       </div>
       {o.address ? (
         <div className="ticket-print-block">

@@ -1,0 +1,4 @@
+ALTER TABLE "management_sales" DROP CONSTRAINT "management_sale_valid";--> statement-breakpoint
+ALTER TABLE "orders" ADD COLUMN "channel" varchar(20) DEFAULT 'store' NOT NULL;--> statement-breakpoint
+ALTER TABLE "management_sales" ADD CONSTRAINT "management_sale_valid" CHECK ("management_sales"."channel" IN ('store','counter','phone','whatsapp','other') AND "management_sales"."total_cents" >= 0 AND "management_sales"."delivery_cents" >= 0 AND "management_sales"."total_cents" >= "management_sales"."delivery_cents");--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_channel_valid" CHECK ("orders"."channel" IN ('store', 'counter', 'phone', 'whatsapp'));

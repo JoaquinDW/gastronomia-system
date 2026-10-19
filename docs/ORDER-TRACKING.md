@@ -22,6 +22,17 @@ El seguimiento consulta cada 10 segundos mientras la pestaña es visible. Pausa 
 
 Después de entregar, el cliente puede guardar o cambiar una calificación de 1 a 5 estrellas. La calificación aparece también en Pedidos.
 
+## Pedidos de mostrador, teléfono y WhatsApp
+
+**Nuevo pedido**, en la barra de Pedidos, carga lo que no entra por la tienda. Se elige la carta (presentación, adicionales y opciones obligatorias igual que en la tienda), el canal (Mostrador, Teléfono o WhatsApp), nombre y teléfono opcionales, retiro o delivery, pago, tiempo de preparación y nota para la cocina.
+
+- El servidor vuelve a calcular los precios desde la carta y rechaza productos no disponibles o precios cambiados, como en el checkout.
+- El pedido nace **aceptado y en preparación**, con la venta registrada en Gestión dentro de la misma transacción y los insumos descontados. La venta conserva el canal (`counter`, `phone`, `whatsapp`) para el reporte por canal.
+- Comparte la numeración con la tienda, aparece en la bandeja, imprime comanda y ticket con la impresión automática configurada y tiene link de seguimiento. Sin teléfono no se ofrece mandar el seguimiento por WhatsApp.
+- Delivery: una zona guardada fija nombre y tarifa; **Otro importe** permite escribir el envío. El mínimo de la zona y el horario de la tienda no se aplican: es una decisión del local.
+- No requiere la tienda publicada ni configurada. `requestKey` evita duplicados ante doble toque o reintento.
+- Endpoint privado `POST /api/businesses/:id/orders/manual`, para propietario o encargado.
+
 ## Privacidad
 
 El token aleatorio existente del pedido funciona como enlace de acceso: quien lo tenga podrá consultar el pedido. Todas las consultas también verifican el slug del local; no existe consulta pública por número consecutivo. La respuesta pública omite teléfono, coordenadas y datos internos. El mensaje de WhatsApp sí contiene los datos necesarios para que el local procese la compra. Las páginas llevan `noindex` y `no-referrer`; el endpoint no usa caché y las visitas a seguimiento se excluyen de Analytics. La calificación exige el mismo origen.
@@ -30,10 +41,13 @@ El token aleatorio existente del pedido funciona como enlace de acceso: quien lo
 
 La migración `0010_fancy_gladiator.sql` agrega `estimated_ready_at`, `rating` y un check entre 1 y 5. Ejecutar las migraciones pendientes antes de desplegar este código. Conserva el historial de migraciones anterior, incluida `0009` de delivery. La migración se validó en una rama aislada y se aplicó a producción el 19 de octubre de 2026 antes de subir el código a `main`.
 
+La migración `0012_order_channel.sql` agrega `orders.channel` (`store` por defecto para los pedidos existentes) y suma `phone` a los canales de `management_sales`.
+
 ## Validación
 
 - `npm run test:tracking`: estados, enlaces por dominio y resumen de WhatsApp.
 - `npm run test:tracking:db`: requiere `GASTRONOMIA_ENV_FILE`, `TRACKING_TEST_HOST` y una `NEON_BRANCH` de prueba. Genera pedidos sintéticos y prueba aislamiento, reintentos, ETA, cambios de estado, registro único de venta y calificación. `TRACKING_FIXTURE_FILE` guarda los identificadores para el navegador.
+- `npm run test:manual` y `npm run test:manual:db` (este con `GASTRONOMIA_ENV_FILE`, `MANUAL_TEST_HOST` y una `NEON_BRANCH` de prueba): pedidos de mostrador, teléfono y WhatsApp, venta única ante reintentos, envíos, validaciones, aislamiento entre negocios y numeración compartida con la tienda.
 - `npm run test:tracking:browser`: usa los mismos datos y variables, más `APP_URL` de localhost. Prueba compra y redirección, diálogo, copiar alias, polling, rating persistente, falta de sesión, aislamiento por tienda, CSRF y tamaños 320/390/1280 px. Guarda capturas en `/tmp/pedipue-tracking-review`. No envía mensajes de WhatsApp.
 
 La suite general contiene una prueba previa incompatible con el checkout actual: espera que el teléfono sea opcional. No se cambió esa política en esta funcionalidad.
