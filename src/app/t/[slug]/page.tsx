@@ -26,6 +26,19 @@ export async function generateMetadata({
     store.description?.trim() ||
     `${place ? `${place}. ` : ""}Mirá la carta y mandá tu pedido directo por WhatsApp.`;
   const url = storeUrl(slug);
+  const cover = store.coverImageUrl?.trim();
+  const image = cover
+    ? {
+        // Uploaded photos use /api/media/:id; resolve them against the store host.
+        url: URL.canParse(url) ? new URL(cover, url).href : cover,
+        alt: `Portada de ${store.name}`,
+      }
+    : {
+        url: `${url}/og`,
+        width: 1200,
+        height: 630,
+        alt: `${store.name}: pedí online en Pedipue`,
+      };
   return {
     title,
     description,
@@ -37,16 +50,9 @@ export async function generateMetadata({
       url,
       title,
       description,
-      images: [
-        {
-          url: `${url}/og`,
-          width: 1200,
-          height: 630,
-          alt: `${store.name}: pedí online en Pedipue`,
-        },
-      ],
+      images: [image],
     },
-    twitter: { card: "summary_large_image", title, description },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 export default async function ShopPage({

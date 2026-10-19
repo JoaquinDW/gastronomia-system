@@ -284,8 +284,9 @@ export const publishedStoreCard = cache(async (slug: string) => {
     kind: string;
     city: string | null;
     description: string | null;
+    coverImageUrl: string;
   }>(
-    `SELECT b.name,b.kind,s.description,(SELECT city FROM locations WHERE business_id=b.id ORDER BY created_at,id LIMIT 1) AS city FROM businesses b JOIN store_settings s ON s.business_id=b.id WHERE b.slug=$1 AND s.is_published`,
+    `SELECT b.name,b.kind,s.description,s.cover_image_url AS "coverImageUrl",(SELECT city FROM locations WHERE business_id=b.id ORDER BY created_at,id LIMIT 1) AS city FROM businesses b JOIN store_settings s ON s.business_id=b.id WHERE b.slug=$1 AND s.is_published`,
     [slug],
   );
   return rows[0] ?? null;
