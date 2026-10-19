@@ -1224,6 +1224,11 @@ footer {
 .panel-account {
   gap: 23px;
 }
+.panel-admin-link {
+  font-size: 12px;
+  font-weight: 700;
+  text-underline-offset: 4px;
+}
 .panel-account > span {
   font-size: 12px;
   max-width: 140px;
