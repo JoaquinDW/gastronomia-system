@@ -2184,25 +2184,6 @@
   padding: 0 !important;
   accent-color: var(--accent-ink);
 }
-.print-device details {
-  font-size: 12px;
-  line-height: 1.6;
-  margin-top: 14px;
-}
-.print-device summary {
-  cursor: pointer;
-  font-weight: 700;
-}
-.print-device ol {
-  padding-left: 18px;
-  margin: 8px 0 0;
-}
-.print-device code {
-  font-family: var(--mono);
-  background: var(--soft);
-  border-radius: 6px;
-  padding: 1px 5px;
-}
 @media (max-width: 800px) {
   .print-settings {
     grid-template-columns: 1fr;

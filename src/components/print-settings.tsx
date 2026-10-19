@@ -153,20 +153,6 @@ export function PrintSettings({
           Se guarda solo en este dispositivo, así imprime la compu del
           mostrador y no tu celular.
         </p>
-        <details>
-          <summary>¿Cómo hago para que salga sin confirmar cada vez?</summary>
-          <ol>
-            <li>Elegí la térmica como impresora predeterminada.</li>
-            <li>
-              Hacé un acceso directo de Chrome y sumale{" "}
-              <code>--kiosk-printing</code> al final del destino.
-            </li>
-            <li>
-              Abrí Pedipue desde ese acceso. Al aceptar, el pedido se imprime
-              directo, sin el cuadro de impresión.
-            </li>
-          </ol>
-        </details>
       </div>
     </section>
   );
