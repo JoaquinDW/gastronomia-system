@@ -1,5 +1,5 @@
 import { formatMoney } from "./menu";
-import { isDeliveryFeePending, type Order } from "./checkout";
+import { channelLabels, isDeliveryFeePending, type Order } from "./checkout";
 import { groupByCategory, type ProductCategory } from "./ticket";
 
 // Raw ESC/POS for thermal printers, so the print app only has to forward
@@ -130,8 +130,10 @@ export function comandaReceipt(o: Order, businessName: string, width: number) {
     o.fulfillment === "delivery" ? "DELIVERY" : "RETIRA",
     { bold: true },
   );
-  r.rule("=").line(dateTime.format(new Date(o.createdAt)));
-  r.line(`${o.customerName} - ${o.customerPhone}`, { bold: true });
+  r.rule("=").line(
+    `${dateTime.format(new Date(o.createdAt))}${o.channel && o.channel !== "store" ? ` - ${channelLabels[o.channel].toUpperCase()}` : ""}`,
+  );
+  r.line([o.customerName, o.customerPhone].filter(Boolean).join(" - "), { bold: true });
   if (o.address)
     r.line(`${o.address}${o.zoneName ? ` (${o.zoneName})` : ""}`);
   r.rule();
@@ -164,7 +166,8 @@ export function ticketReceipt(
   r.line(businessName, { bold: true });
   r.line(day.format(created).replace(",", ""));
   r.line(`Creado a las ${time.format(created)}`).line();
-  r.line(o.customerName, { bold: true }).line(o.customerPhone);
+  r.line(o.customerName, { bold: true });
+  if (o.customerPhone) r.line(o.customerPhone);
   if (o.address) {
     r.line().line(o.address);
     if (o.zoneName) r.line(o.zoneName);

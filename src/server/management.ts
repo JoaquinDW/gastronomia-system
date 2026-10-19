@@ -371,7 +371,8 @@ export async function recordStoreSale(
   const op = await beginOperation(client, businessId, actor, input);
   if (op.replay) return op.replay;
   const result = await createSale(client, businessId, op.id, {
-    channel: "store",
+    // Orders loaded from the panel keep their channel in the sales report.
+    channel: order.channel ?? "store",
     orderId: order.id,
     note: `Pedido #${order.number}`,
     deliveryCents: order.deliveryCents.toString(),

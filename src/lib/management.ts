@@ -17,6 +17,7 @@ const key = { requestKey: z.uuid() };
 export const channels = {
   store: "Tienda",
   counter: "Mostrador",
+  phone: "Teléfono",
   whatsapp: "WhatsApp",
   other: "Otros",
 } as const;
@@ -167,7 +168,7 @@ export const commandSchema = z.discriminatedUnion("type", [
     .object({
       ...key,
       type: z.literal("sale"),
-      channel: z.enum(["counter", "whatsapp", "other"]),
+      channel: z.enum(["counter", "phone", "whatsapp", "other"]),
       deliveryCents: cents.default("0"),
       note,
       lines: z

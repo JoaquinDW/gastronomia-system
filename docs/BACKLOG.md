@@ -19,7 +19,7 @@ La base, el alta, la carta manual/con IA, la configuración y publicación de ti
 | STO-04  | P0        | 2       | Evitar duplicación              | Doble toque/reintento con misma clave devuelve mismo pedido; payload distinto con esa clave se rechaza  |
 | STO-05  | P0        | 2       | Seguir el pedido                | Token no adivinable; sin datos personales; estados coherentes y reabrir WhatsApp sin nueva venta        |
 | ORD-01  | P0        | 2       | Aceptar/rechazar                | Permisos, estado previo y versión validados; un solo efecto con dos operadores simultáneos              |
-| ORD-02  | P0        | 2       | Tomar pedido de mostrador       | Precio/peso calculado, canal registrado y mismo flujo operativo que tienda                              |
+| ORD-02  | P0        | 2       | Tomar pedido de mostrador       | Precio/peso calculado, canal registrado y mismo flujo operativo que tienda. **Hecho** (ver `ORDER-TRACKING.md`) |
 | ORD-03  | P0        | 2       | Modificar/cancelar              | Motivo, historial y saldo correcto; enmiendas posteriores a aceptación visibles para cocina             |
 | ORD-04  | P1        | 2       | Alertar pendientes y vencidos   | Alerta visible; vencimiento idempotente; expirado no se prepara ni se acepta sin revalidación           |
 | KDS-01  | P0        | 3       | Preparar por estación           | Solo aceptados; cantidades, notas y opciones legibles; tareas de otras estaciones filtradas             |

@@ -36,6 +36,49 @@ export const checkoutInput = z
   })
   .strict();
 export type CheckoutInput = z.infer<typeof checkoutInput>;
+
+// Where an order came from. The store's own checkout is "store"; the rest are
+// loaded by the business from the orders panel.
+export const orderChannels = ["store", "counter", "phone", "whatsapp"] as const;
+export type OrderChannel = (typeof orderChannels)[number];
+export const channelLabels: Record<OrderChannel, string> = {
+  store: "Tienda",
+  counter: "Mostrador",
+  phone: "Teléfono",
+  whatsapp: "WhatsApp",
+};
+export const manualChannels = ["counter", "phone", "whatsapp"] as const;
+const optionalPhone = z
+  .string()
+  .trim()
+  .max(30)
+  .regex(/^\+?[\d\s().-]*$/, "Revisá el teléfono: solo números, con característica.")
+  .transform((v) => v.replace(/\D/g, ""))
+  .refine((v) => v === "" || /^[1-9]\d{7,14}$/.test(v), "Revisá el teléfono: solo números, con característica.")
+  .transform((v) => (v ? `+${v}` : ""));
+/** An order the business loads itself: already accepted, priced from the carta. */
+export const manualOrderInput = z
+  .object({
+    requestKey: z.uuid(),
+    channel: z.enum(manualChannels),
+    customerName: z.string().trim().max(100).default(""),
+    customerPhone: optionalPhone.default(""),
+    fulfillment: z.enum(["pickup", "delivery"]),
+    address: z.string().trim().max(250).default(""),
+    // A saved zone sets name and fee; without one the fee is typed by hand.
+    zoneId: z.uuid().nullable().default(null),
+    deliveryCents: z.number().int().min(0).max(99_999_999).default(0),
+    paymentMethod: z.enum(["cash", "transfer"]),
+    note: z.string().trim().max(500).default(""),
+    preparationMinutes: z.number().int().min(5).max(180).nullable().default(null),
+    items: checkoutInput.shape.items,
+  })
+  .strict();
+export type ManualOrderInput = z.infer<typeof manualOrderInput>;
+/** Name shown when the customer didn't give one, like at the counter. */
+export function defaultCustomerName(channel: OrderChannel) {
+  return channel === "counter" ? "Mostrador" : `Pedido por ${channelLabels[channel]}`;
+}
 /** Read a saved order snapshot; never infer an unknown fee from a zero price. */
 export function isDeliveryFeePending(order: { fulfillment: string; zoneName: string | null }) {
   return order.fulfillment === "delivery" && order.zoneName === null;
@@ -81,6 +124,7 @@ export type Order = {
   saleId?: string | null;
   estimatedReadyAt?: string | null;
   rating?: number | null;
+  channel?: OrderChannel;
 };
 
 // Accepted orders move forward one step at a time. Pickup skips "en camino".

@@ -4,6 +4,8 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { formatMoney } from "@/lib/menu";
 import {
+  channelLabels,
+  defaultCustomerName,
   nextStage,
   nextStageAction,
   stageLabels,
@@ -36,6 +38,7 @@ import {
 import { usePanelBase } from "./panel-base";
 import { CustomerTicket } from "./order-ticket";
 import { PrintSettings } from "./print-settings";
+import { ManualOrder, type CreatedOrder } from "./manual-order";
 
 // ICU versions differ on short-date punctuation and year width. Keep the
 // initial server render identical to the browser while using local time.
@@ -58,6 +61,17 @@ const clock = new Intl.DateTimeFormat("es-AR", {
   timeStyle: "short",
 });
 const orderNumber = (o: Order) => `#${o.number.toString().padStart(3, "0")}`;
+/** "Teléfono · Delivery"; store orders, and names that already say the
+ * channel, only say how they're delivered. */
+const orderOrigin = (o: Order) =>
+  [
+    o.channel && o.channel !== "store" && o.customerName !== defaultCustomerName(o.channel)
+      ? channelLabels[o.channel]
+      : null,
+    o.fulfillment === "delivery" ? "Delivery" : "Retiro",
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
 type Filter = "active" | "done" | "all";
 type PrintJob = { order: Order; docs: ("comanda" | "ticket")[] };
@@ -70,6 +84,15 @@ function statusLabel(o: Order) {
   if (o.status === "rejected") return "Rechazado";
   if (o.status === "cancelled") return "Anulado";
   return o.stage ? stageLabels[o.stage] : "Aceptado";
+}
+
+function saleNotice(m: { warnings?: string[]; costComplete?: boolean }) {
+  return [
+    ...(m.warnings ?? []),
+    ...(m.costComplete === false
+      ? ["Venta registrada con costos pendientes. Revisá las recetas en Gestión."]
+      : []),
+  ];
 }
 
 // Two short tones with the Web Audio API, so there is no file to load.
@@ -120,6 +143,7 @@ export function OrderInbox({
   const [ticket, setTicket] = useState(initialTicket);
   const [categories, setCategories] = useState(initialCategories);
   const [printSettings, setPrintSettings] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [autoPrint, setAutoPrint] = useState<AutoPrint>("off");
   const [printer, setPrinter] = useState<UsbPrinter | null>(null);
   const [usbSupported, setUsbSupported] = useState(false);
@@ -129,11 +153,13 @@ export function OrderInbox({
   const soundOn = useRef(false);
   const base = `/api/businesses/${businessId}/orders`;
 
+  // The server render has no window; links become absolute once mounted.
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
   const trackingLink = (o: Order) =>
-    new URL(
-      `${storeBase}/pedido/${o.trackingToken}`,
-      window.location.origin,
-    ).toString();
+    origin
+      ? new URL(`${storeBase}/pedido/${o.trackingToken}`, origin).toString()
+      : `${storeBase}/pedido/${o.trackingToken}`;
 
   const enableSound = useCallback(async () => {
     try {
@@ -303,17 +329,7 @@ export function OrderInbox({
           ? autoPrintDocs(autoPrint, ticket.enabled)
           : [];
       if (docs.length) void print(d.order, docs);
-      if (d.order.management)
-        setNotice(
-          [
-            ...(d.order.management.warnings ?? []),
-            ...(d.order.management.costComplete === false
-              ? [
-                  "Venta registrada con costos pendientes. Revisá las recetas en Gestión.",
-                ]
-              : []),
-          ].join(" · "),
-        );
+      if (d.order.management) setNotice(saleNotice(d.order.management).join(" · "));
       await refresh();
     } catch (e) {
       setError(
@@ -322,6 +338,22 @@ export function OrderInbox({
     } finally {
       setBusy("");
     }
+  }
+
+  async function created(order: CreatedOrder) {
+    seen.current.add(order.id);
+    setCreating(false);
+    setFilter((f) => (f === "done" ? "active" : f));
+    setError("");
+    setNotice(
+      [
+        `Pedido ${orderNumber(order)} cargado y en preparación.`,
+        ...(order.management ? saleNotice(order.management) : []),
+      ].join(" · "),
+    );
+    const docs = autoPrintDocs(autoPrint, ticket.enabled);
+    if (docs.length) void print(order, docs);
+    await refresh().catch(() => setOffline(true));
   }
 
   async function copyLink(o: Order) {
@@ -335,6 +367,7 @@ export function OrderInbox({
   }
 
   function whatsappTracking(o: Order) {
+    if (!o.customerPhone) return null;
     const text = `Hola ${o.customerName}, podés seguir tu pedido ${orderNumber(o)} de ${businessName} acá: ${trackingLink(o)}`;
     return `https://wa.me/${o.customerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
   }
@@ -383,6 +416,14 @@ export function OrderInbox({
           </p>
           <button
             type="button"
+            className="primary-button compact-button"
+            aria-expanded={creating}
+            onClick={() => setCreating((open) => !open)}
+          >
+            Nuevo pedido
+          </button>
+          <button
+            type="button"
             className="secondary-button"
             aria-expanded={printSettings}
             onClick={() => setPrintSettings((open) => !open)}
@@ -418,6 +459,13 @@ export function OrderInbox({
           </button>
         </div>
       </div>
+      {creating ? (
+        <ManualOrder
+          businessId={businessId}
+          onCreated={(order) => void created(order)}
+          onClose={() => setCreating(false)}
+        />
+      ) : null}
       {printSettings ? (
         <PrintSettings
           businessId={businessId}
@@ -459,7 +507,7 @@ export function OrderInbox({
           {notice}
         </p>
       ) : null}
-      {!orders.length ? (
+      {!orders.length && creating ? null : !orders.length ? (
         <section className="empty-catalog">
           <h2>
             Tu primer pedido
@@ -518,8 +566,7 @@ export function OrderInbox({
                 ) : null}
                 <h2>{o.customerName}</h2>
                 <p>
-                  {o.customerPhone} ·{" "}
-                  {o.fulfillment === "delivery" ? "Delivery" : "Retiro"}
+                  {[o.customerPhone, orderOrigin(o)].filter(Boolean).join(" · ")}
                 </p>
                 {o.address ? (
                   <p>
@@ -622,14 +669,16 @@ export function OrderInbox({
                           ? "Link copiado ✓"
                           : "Copiar link de seguimiento"}
                       </button>
-                      <a
-                        className="text-button"
-                        href={whatsappTracking(o)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Mandar seguimiento por WhatsApp ↗
-                      </a>
+                      {o.customerPhone ? (
+                        <a
+                          className="text-button"
+                          href={whatsappTracking(o)!}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Mandar seguimiento por WhatsApp ↗
+                        </a>
+                      ) : null}
                     </>
                   ) : null}
                   {o.saleId && o.status === "accepted" ? (
@@ -689,9 +738,12 @@ function Comanda({
         <strong>{orderNumber(o)}</strong>
         <span>{o.fulfillment === "delivery" ? "DELIVERY" : "RETIRA"}</span>
       </div>
-      <p>{dateTime.format(new Date(o.createdAt))}</p>
+      <p>
+        {dateTime.format(new Date(o.createdAt))}
+        {o.channel && o.channel !== "store" ? ` · ${channelLabels[o.channel].toUpperCase()}` : ""}
+      </p>
       <p className="comanda-customer">
-        {o.customerName} · {o.customerPhone}
+        {[o.customerName, o.customerPhone].filter(Boolean).join(" · ")}
       </p>
       {o.address ? (
         <p>
