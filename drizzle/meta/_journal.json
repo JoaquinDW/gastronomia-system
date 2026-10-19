@@ -78,6 +78,13 @@
       "when": 1792423553266,
       "tag": "0010_fancy_gladiator",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792439895267,
+      "tag": "0011_ticket_config",
+      "breakpoints": true
     }
   ]
 }

@@ -1988,7 +1988,7 @@
   text-decoration: none;
 }
 
-.comanda-print {
+.print-sheet {
   display: none;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1998,18 +1998,25 @@
   }
 }
 @media print {
-  body.printing-comanda > :not(.comanda-print) {
+  body.printing-comanda > :not(.print-sheet) {
     display: none !important;
   }
   body.printing-comanda {
     background: #fff;
   }
-  body.printing-comanda .comanda-print {
+  body.printing-comanda .print-sheet {
     display: block;
     page: comanda;
     width: 72mm;
     color: #000;
     font: 12px/1.35 var(--mono);
+  }
+  body.printing-comanda .print-sheet[data-paper="58"] {
+    width: 48mm;
+    font-size: 11px;
+  }
+  .print-sheet > section + section {
+    break-before: page;
   }
 }
 @page comanda {
@@ -2067,6 +2074,145 @@
   display: flex;
   justify-content: space-between;
   font-size: 14px;
+}
+/* Customer ticket: same paper, laid out like a store receipt. */
+.ticket-print {
+  font-family: var(--sans);
+}
+.ticket-print h1 {
+  font: 800 22px/1.1 var(--display);
+  margin: 0 0 6px;
+}
+.ticket-print p {
+  margin: 0 0 2px;
+}
+.ticket-print-business,
+.ticket-print-strong {
+  font-weight: 700;
+}
+.ticket-print-block {
+  margin-top: 10px !important;
+}
+.ticket-print-category {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px !important;
+}
+.ticket-print-line {
+  margin-bottom: 5px;
+}
+.ticket-print-line > p,
+.ticket-print-totals > p {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ticket-print-line > p > span:last-child,
+.ticket-print-totals > p > span:last-child {
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+.ticket-print-line > small {
+  display: block;
+  font-size: 0.9em;
+  padding-left: 10px;
+}
+.ticket-print-totals {
+  margin-top: 12px;
+}
+.ticket-print-total {
+  font-weight: 700;
+  border-top: 1.5px solid #000;
+  border-bottom: 1.5px solid #000;
+  padding: 3px 0;
+  margin-top: 4px !important;
+}
+.ticket-print-footer {
+  text-align: center;
+  margin-top: 10px !important;
+}
+/* Printing preferences, opened from the orders toolbar. */
+.print-settings {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+  padding: 22px 24px;
+  margin-bottom: 30px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 40px;
+}
+.print-settings-heading,
+.print-settings > .section-description {
+  grid-column: 1 / -1;
+}
+.print-settings-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.print-settings h2 {
+  font: 800 29px var(--display);
+  margin: 0 0 8px;
+}
+.print-settings .checkbox-label > span > small {
+  display: block;
+  margin: 2px 0 0;
+}
+.print-settings .app-form > .primary-button {
+  width: fit-content;
+  margin-top: 4px;
+}
+.print-paper {
+  display: flex;
+  gap: 22px;
+  border: 0;
+  padding: 0;
+  margin: 0 0 6px;
+}
+.print-paper legend {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0;
+}
+.print-paper input[type="radio"] {
+  width: 17px !important;
+  height: 17px !important;
+  min-height: 0 !important;
+  margin: 2px 0 0 !important;
+  padding: 0 !important;
+  accent-color: var(--accent-ink);
+}
+.print-device details {
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 14px;
+}
+.print-device summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.print-device ol {
+  padding-left: 18px;
+  margin: 8px 0 0;
+}
+.print-device code {
+  font-family: var(--mono);
+  background: var(--soft);
+  border-radius: 6px;
+  padding: 1px 5px;
+}
+@media (max-width: 800px) {
+  .print-settings {
+    grid-template-columns: 1fr;
+    padding: 20px 18px;
+  }
+  .print-device {
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+    margin-top: 20px;
+  }
 }
 .mobile-cart-link {
   display: none;

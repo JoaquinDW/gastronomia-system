@@ -1,0 +1,1 @@
+ALTER TABLE "store_settings" ADD COLUMN "ticket_config" jsonb DEFAULT '{"enabled":false,"paper":"80","footer":""}'::jsonb NOT NULL;

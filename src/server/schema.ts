@@ -26,6 +26,7 @@ import type {
   DeliveryZone,
 } from "../lib/menu";
 import type { DeliveryConfig, Coordinates } from "../lib/delivery";
+import type { TicketConfig } from "../lib/ticket";
 
 export const businessKind = pgEnum("business_kind", [
   "hamburgueseria",
@@ -202,6 +203,10 @@ export const storeSettings = pgTable("store_settings", {
   transferAlias: varchar("transfer_alias", { length: 100 })
     .notNull()
     .default(""),
+  ticketConfig: jsonb("ticket_config")
+    .$type<TicketConfig>()
+    .notNull()
+    .default({ enabled: false, paper: "80", footer: "" }),
   isPublished: boolean("is_published").notNull().default(false),
   nextOrderNumber: integer("next_order_number").notNull().default(1),
   version: integer("version").notNull().default(1),
