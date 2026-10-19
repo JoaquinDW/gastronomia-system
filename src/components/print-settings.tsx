@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { AutoPrint, TicketConfig } from "@/lib/ticket";
+import { PrinterError, type UsbPrinter } from "@/lib/usb-printer";
 
 const autoPrintLabels: Record<AutoPrint, string> = {
   off: "Nada, imprimo a mano",
@@ -16,6 +17,11 @@ export function PrintSettings({
   autoPrint,
   onAutoPrint,
   onClose,
+  usbSupported,
+  printer,
+  onConnect,
+  onForget,
+  onTest,
 }: {
   businessId: string;
   ticket: TicketConfig;
@@ -23,12 +29,39 @@ export function PrintSettings({
   autoPrint: AutoPrint;
   onAutoPrint: (choice: AutoPrint) => void;
   onClose: () => void;
+  usbSupported: boolean;
+  /** Name of the connected USB printer, if any. */
+  printer: string | null;
+  onConnect: () => Promise<UsbPrinter | null>;
+  onForget: () => Promise<void>;
+  onTest: (picked?: UsbPrinter) => Promise<void>;
 }) {
   const [form, setForm] = useState(ticket);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const changed = JSON.stringify(form) !== JSON.stringify(ticket);
+  const [usbBusy, setUsbBusy] = useState(false);
+  const [usbMessage, setUsbMessage] = useState("");
+  const [usbError, setUsbError] = useState("");
+
+  async function usbAction(action: () => Promise<string | null>) {
+    setUsbBusy(true);
+    setUsbError("");
+    setUsbMessage("");
+    try {
+      const message = await action();
+      if (message) setUsbMessage(message);
+    } catch (e) {
+      setUsbError(
+        e instanceof PrinterError
+          ? e.message
+          : "No pudimos usar la impresora. Desenchufala, volvela a enchufar y probá de nuevo.",
+      );
+    } finally {
+      setUsbBusy(false);
+    }
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -136,6 +169,79 @@ export function PrintSettings({
         </button>
       </form>
       <div className="app-form print-device">
+        <h3>Impresora de esta computadora</h3>
+        {!usbSupported ? (
+          <p className="field-hint standalone-hint">
+            Para que los pedidos salgan solos, abrí Pedipue en Chrome o Edge
+            desde la compu que tiene la impresora enchufada por USB.
+          </p>
+        ) : printer ? (
+          <>
+            <p className="printer-connected">
+              <span className="live-dot" aria-hidden="true" /> {printer}
+            </p>
+            <div className="ticket-links">
+              <button
+                type="button"
+                className="text-button"
+                disabled={usbBusy}
+                onClick={() =>
+                  usbAction(async () => {
+                    await onTest();
+                    return "Listo, mandamos una hoja de prueba.";
+                  })
+                }
+              >
+                Imprimir prueba
+              </button>
+              <button
+                type="button"
+                className="text-button"
+                disabled={usbBusy}
+                onClick={() =>
+                  usbAction(async () => {
+                    await onForget();
+                    return null;
+                  })
+                }
+              >
+                Desconectar
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={usbBusy}
+              onClick={() =>
+                usbAction(async () => {
+                  const picked = await onConnect();
+                  if (!picked) return null;
+                  await onTest(picked);
+                  return "Conectada. Si salió la hoja de prueba, ya está.";
+                })
+              }
+            >
+              Conectar impresora USB
+            </button>
+            <p className="field-hint standalone-hint">
+              Enchufá la térmica, tocá el botón y elegila de la lista. Se hace
+              una sola vez en esta compu.
+            </p>
+          </>
+        )}
+        {usbError ? (
+          <p className="form-error" role="alert">
+            {usbError}
+          </p>
+        ) : null}
+        {usbMessage ? (
+          <p className="field-hint standalone-hint" role="status">
+            {usbMessage}
+          </p>
+        ) : null}
         <label>
           En esta computadora, al aceptar un pedido imprimir
           <select
@@ -150,23 +256,11 @@ export function PrintSettings({
           </select>
         </label>
         <p className="field-hint">
-          Se guarda solo en este dispositivo, así imprime la compu del
-          mostrador y no tu celular.
+          {printer && !usbError
+            ? "Sale directo por la impresora, sin preguntar. Dejá abierta esta pantalla de Pedidos."
+            : "Sin impresora conectada, se abre el cuadro de impresión del navegador."}{" "}
+          Vale solo para esta compu, así no imprime tu celular.
         </p>
-        <details>
-          <summary>¿Cómo hago para que salga sin confirmar cada vez?</summary>
-          <ol>
-            <li>Elegí la térmica como impresora predeterminada.</li>
-            <li>
-              Hacé un acceso directo de Chrome y sumale{" "}
-              <code>--kiosk-printing</code> al final del destino.
-            </li>
-            <li>
-              Abrí Pedipue desde ese acceso. Al aceptar, el pedido se imprime
-              directo, sin el cuadro de impresión.
-            </li>
-          </ol>
-        </details>
       </div>
     </section>
   );

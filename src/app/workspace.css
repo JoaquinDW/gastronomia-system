@@ -2184,24 +2184,24 @@
   padding: 0 !important;
   accent-color: var(--accent-ink);
 }
-.print-device details {
-  font-size: 12px;
-  line-height: 1.6;
-  margin-top: 14px;
+.print-device h3 {
+  font: 700 15px var(--sans);
+  margin: 0 0 12px;
 }
-.print-device summary {
-  cursor: pointer;
+.print-device > .secondary-button {
+  width: fit-content;
+}
+.printer-connected {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 700;
+  margin: 0 0 4px;
 }
-.print-device ol {
-  padding-left: 18px;
-  margin: 8px 0 0;
-}
-.print-device code {
-  font-family: var(--mono);
-  background: var(--soft);
-  border-radius: 6px;
-  padding: 1px 5px;
+.print-device .ticket-links {
+  flex-direction: row;
+  gap: 18px;
+  margin: 4px 0 18px;
 }
 @media (max-width: 800px) {
   .print-settings {
