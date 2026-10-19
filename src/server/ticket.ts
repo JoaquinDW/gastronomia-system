@@ -5,6 +5,7 @@ import {
   type ProductCategory,
   type TicketConfig,
 } from "@/lib/ticket";
+import { defaultKitchenConfig, type KitchenConfig } from "@/lib/kitchen";
 
 export async function getTicketConfig(
   businessId: string,
@@ -27,6 +28,28 @@ export async function saveTicketConfig(
     [businessId, JSON.stringify(config)],
   );
   return getTicketConfig(businessId);
+}
+
+export async function getKitchenConfig(
+  businessId: string,
+): Promise<KitchenConfig> {
+  const { rows } = await getPool().query<{ kitchenConfig: KitchenConfig }>(
+    'SELECT kitchen_config AS "kitchenConfig" FROM store_settings WHERE business_id=$1',
+    [businessId],
+  );
+  return { ...defaultKitchenConfig, ...rows[0]?.kitchenConfig };
+}
+
+// Same as printing: no store version bump.
+export async function saveKitchenConfig(
+  businessId: string,
+  config: KitchenConfig,
+): Promise<KitchenConfig> {
+  await getPool().query(
+    "INSERT INTO store_settings(business_id,kitchen_config) VALUES($1,$2) ON CONFLICT(business_id) DO UPDATE SET kitchen_config=EXCLUDED.kitchen_config,updated_at=now()",
+    [businessId, JSON.stringify(config)],
+  );
+  return getKitchenConfig(businessId);
 }
 
 // Archived products too, so old orders still print under their category.

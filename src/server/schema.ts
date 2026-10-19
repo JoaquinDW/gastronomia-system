@@ -27,6 +27,7 @@ import type {
 } from "../lib/menu";
 import type { DeliveryConfig, Coordinates } from "../lib/delivery";
 import type { TicketConfig } from "../lib/ticket";
+import type { KitchenConfig } from "../lib/kitchen";
 
 export const businessKind = pgEnum("business_kind", [
   "hamburgueseria",
@@ -207,6 +208,10 @@ export const storeSettings = pgTable("store_settings", {
     .$type<TicketConfig>()
     .notNull()
     .default({ enabled: false, paper: "80", footer: "" }),
+  kitchenConfig: jsonb("kitchen_config")
+    .$type<KitchenConfig>()
+    .notNull()
+    .default({ defaultMinutes: 20, warnMinutes: 5 }),
   isPublished: boolean("is_published").notNull().default(false),
   nextOrderNumber: integer("next_order_number").notNull().default(1),
   version: integer("version").notNull().default(1),

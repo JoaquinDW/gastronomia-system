@@ -39,6 +39,14 @@ import { usePanelBase } from "./panel-base";
 import { CustomerTicket } from "./order-ticket";
 import { PrintSettings } from "./print-settings";
 import { ManualOrder, type CreatedOrder } from "./manual-order";
+import { KitchenMode } from "./kitchen-mode";
+import { KitchenSettings } from "./kitchen-settings";
+import {
+  minutesSince,
+  orderTiming,
+  timingLabel,
+  type KitchenConfig,
+} from "@/lib/kitchen";
 
 // ICU versions differ on short-date punctuation and year width. Keep the
 // initial server render identical to the browser while using local time.
@@ -53,6 +61,8 @@ function orderDate(value: string) {
 }
 
 const POLL_MS = 8000;
+const TICK_MS = 10000;
+const KITCHEN_PARAM = "cocina";
 const SOUND_KEY = "pedipue:order-sound";
 const AUTO_PRINT_KEY = "pedipue:auto-print";
 const dateTime = { format: (value: Date) => orderDate(value.toISOString()) };
@@ -120,6 +130,7 @@ export function OrderInbox({
   initialOrders,
   initialTicket,
   initialCategories,
+  initialKitchen,
 }: {
   businessId: string;
   businessName: string;
@@ -127,6 +138,7 @@ export function OrderInbox({
   initialOrders: Order[];
   initialTicket: TicketConfig;
   initialCategories: ProductCategory[];
+  initialKitchen: KitchenConfig;
 }) {
   const panel = usePanelBase();
   const [orders, setOrders] = useState(initialOrders);
@@ -148,6 +160,13 @@ export function OrderInbox({
   const [printer, setPrinter] = useState<UsbPrinter | null>(null);
   const [usbSupported, setUsbSupported] = useState(false);
   const [copied, setCopied] = useState("");
+  const [kitchen, setKitchen] = useState(initialKitchen);
+  const [kitchenMode, setKitchenMode] = useState(false);
+  const [timeSettings, setTimeSettings] = useState(false);
+  // Timers follow the server clock (from each poll's Date header), so a
+  // tablet with the wrong time still colors orders right.
+  const skew = useRef(0);
+  const [now, setNow] = useState<number | null>(null);
   const seen = useRef(new Set(initialOrders.map((o) => o.id)));
   const audio = useRef<AudioContext | null>(null);
   const soundOn = useRef(false);
@@ -246,6 +265,11 @@ export function OrderInbox({
     const r = await fetch(base, { cache: "no-store" });
     const d = await r.json();
     if (!r.ok) throw new Error(d.error);
+    const served = Date.parse(r.headers.get("date") ?? "");
+    if (served) {
+      skew.current = served - Date.now();
+      setNow(served);
+    }
     const next: Order[] = d.orders;
     const arrived = next.filter(
       (o) => !seen.current.has(o.id) && o.status === "pending_confirmation",
@@ -259,6 +283,7 @@ export function OrderInbox({
     }
     setOrders(next);
     if (d.categories) setCategories(d.categories);
+    if (d.kitchen) setKitchen(d.kitchen);
     setSyncedAt(new Date());
     setOffline(false);
   }, [base]);
@@ -284,6 +309,49 @@ export function OrderInbox({
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [refresh]);
+
+  // Rendered without timers on the server; they start once mounted.
+  useEffect(() => {
+    const tick = () => setNow(Date.now() + skew.current);
+    tick();
+    const timer = setInterval(tick, TICK_MS);
+    return () => clearInterval(timer);
+  }, []);
+
+  // A bookmark with ?cocina=1 opens the tablet straight in kitchen mode.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get(KITCHEN_PARAM) === "1")
+      setKitchenMode(true);
+  }, []);
+
+  function openKitchen(open: boolean) {
+    setKitchenMode(open);
+    const url = new URL(window.location.href);
+    if (open) url.searchParams.set(KITCHEN_PARAM, "1");
+    else url.searchParams.delete(KITCHEN_PARAM);
+    window.history.replaceState(window.history.state, "", url);
+    try {
+      if (open) void document.documentElement.requestFullscreen?.().catch(() => {});
+      else if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    } catch {}
+  }
+
+  async function toggleSound() {
+    if (sound === "on") {
+      soundOn.current = false;
+      setSound("off");
+      try {
+        localStorage.setItem(SOUND_KEY, "off");
+      } catch {}
+      return;
+    }
+    if (await enableSound()) {
+      chime(audio.current!);
+      try {
+        localStorage.setItem(SOUND_KEY, "on");
+      } catch {}
+    }
+  }
 
   const pending = orders.filter(
     (o) => o.status === "pending_confirmation",
@@ -425,6 +493,21 @@ export function OrderInbox({
           <button
             type="button"
             className="secondary-button"
+            onClick={() => openKitchen(true)}
+          >
+            Modo cocina
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
+            aria-expanded={timeSettings}
+            onClick={() => setTimeSettings((open) => !open)}
+          >
+            Tiempos
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
             aria-expanded={printSettings}
             onClick={() => setPrintSettings((open) => !open)}
           >
@@ -434,22 +517,7 @@ export function OrderInbox({
             type="button"
             className="secondary-button"
             aria-pressed={sound === "on"}
-            onClick={async () => {
-              if (sound === "on") {
-                soundOn.current = false;
-                setSound("off");
-                try {
-                  localStorage.setItem(SOUND_KEY, "off");
-                } catch {}
-                return;
-              }
-              if (await enableSound()) {
-                chime(audio.current!);
-                try {
-                  localStorage.setItem(SOUND_KEY, "on");
-                } catch {}
-              }
-            }}
+            onClick={() => void toggleSound()}
           >
             {sound === "on"
               ? "Sonido activado"
@@ -464,6 +532,14 @@ export function OrderInbox({
           businessId={businessId}
           onCreated={(order) => void created(order)}
           onClose={() => setCreating(false)}
+        />
+      ) : null}
+      {timeSettings ? (
+        <KitchenSettings
+          businessId={businessId}
+          config={kitchen}
+          onSaved={setKitchen}
+          onClose={() => setTimeSettings(false)}
         />
       ) : null}
       {printSettings ? (
@@ -534,11 +610,13 @@ export function OrderInbox({
               ? nextStageAction(o.fulfillment, o.stage)
               : null;
             const steps = stagesFor(o.fulfillment);
+            const timing = now === null ? null : orderTiming(o, kitchen, now);
             return (
               <article
                 className={
                   fresh.has(o.id) ? "order-ticket is-new" : "order-ticket"
                 }
+                data-light={timing?.light}
                 key={o.id}
               >
                 <div className="ticket-heading">
@@ -551,6 +629,19 @@ export function OrderInbox({
                   </span>
                 </div>
                 <p>{dateTime.format(new Date(o.createdAt))}</p>
+                {timing ? (
+                  <p className="order-timer" data-light={timing.light}>
+                    <strong>{timingLabel(timing)}</strong>
+                    <span>
+                      {timing.elapsed} min en cocina
+                      {timing.assumed ? ` · contando ${kitchen.defaultMinutes} min` : ""}
+                    </span>
+                  </p>
+                ) : o.status === "pending_confirmation" && now !== null ? (
+                  <p className="order-timer">
+                    <strong>Esperando hace {minutesSince(o.createdAt, now)} min</strong>
+                  </p>
+                ) : null}
                 {o.stage && o.status === "accepted" ? (
                   <ol className="stage-track" aria-label="Estado del pedido">
                     {steps.map((s, i) => (
@@ -695,6 +786,21 @@ export function OrderInbox({
           })}
         </div>
       )}
+      {kitchenMode && now !== null ? (
+        <KitchenMode
+          orders={orders}
+          config={kitchen}
+          now={now}
+          busy={busy}
+          clockLabel={syncedAt ? `En vivo · ${clock.format(syncedAt)}` : "En vivo"}
+          offline={offline}
+          error={error}
+          sound={sound}
+          onSound={() => void toggleSound()}
+          onReady={(o) => void send(o, { stage: "ready" })}
+          onExit={() => openKitchen(false)}
+        />
+      ) : null}
       {printing
         ? createPortal(
             <div className="print-sheet" data-paper={ticket.paper}>

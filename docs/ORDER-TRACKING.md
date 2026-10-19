@@ -33,6 +33,12 @@ Después de entregar, el cliente puede guardar o cambiar una calificación de 1 
 - No requiere la tienda publicada ni configurada. `requestKey` evita duplicados ante doble toque o reintento.
 - Endpoint privado `POST /api/businesses/:id/orders/manual`, para propietario o encargado.
 
+## Semáforo y modo cocina
+
+Cada pedido en preparación se pinta contra la demora prometida al aceptarlo (`estimated_ready_at`): verde a tiempo, amarillo cuando faltan pocos minutos y rojo cuando ya se pasó. Si se aceptó sin estimación, cuenta una demora por defecto. Las dos cifras se configuran en **Tiempos** y se guardan para todo el local en `store_settings.kitchen_config` (20 y 5 minutos de entrada). Los contadores usan la hora del servidor (encabezado `Date` de cada actualización), así una tablet con la hora mal igual pinta bien.
+
+**Modo cocina** abre la misma bandeja a pantalla completa para una tablet: solo lo que está en preparación, del más urgente al menos urgente, letra grande, botón "Listo" grande, sin precios ni teléfonos, aviso de pedidos nuevos sin aceptar y la fila de listos para entregar. Mantiene la pantalla encendida donde el navegador lo permite. Con `?cocina=1` en la dirección de Pedidos abre directo en ese modo, para dejarlo como favorito.
+
 ## Privacidad
 
 El token aleatorio existente del pedido funciona como enlace de acceso: quien lo tenga podrá consultar el pedido. Todas las consultas también verifican el slug del local; no existe consulta pública por número consecutivo. La respuesta pública omite teléfono, coordenadas y datos internos. El mensaje de WhatsApp sí contiene los datos necesarios para que el local procese la compra. Las páginas llevan `noindex` y `no-referrer`; el endpoint no usa caché y las visitas a seguimiento se excluyen de Analytics. La calificación exige el mismo origen.
@@ -43,7 +49,11 @@ La migración `0010_fancy_gladiator.sql` agrega `estimated_ready_at`, `rating` y
 
 La migración `0012_order_channel.sql` agrega `orders.channel` (`store` por defecto para los pedidos existentes) y suma `phone` a los canales de `management_sales`.
 
+La migración `0013_kitchen_config.sql` agrega `store_settings.kitchen_config` con valores por defecto, sin tocar datos existentes.
+
 ## Validación
+
+- `npm run test:kitchen`: colores del semáforo, demora por defecto, orden por urgencia y límites de la configuración.
 
 - `npm run test:tracking`: estados, enlaces por dominio y resumen de WhatsApp.
 - `npm run test:tracking:db`: requiere `GASTRONOMIA_ENV_FILE`, `TRACKING_TEST_HOST` y una `NEON_BRANCH` de prueba. Genera pedidos sintéticos y prueba aislamiento, reintentos, ETA, cambios de estado, registro único de venta y calificación. `TRACKING_FIXTURE_FILE` guarda los identificadores para el navegador.
