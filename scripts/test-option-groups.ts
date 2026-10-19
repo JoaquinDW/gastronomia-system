@@ -182,12 +182,12 @@ async function main() {
   const saved = await checkout(slug, order([...six, picante], 640000), origin);
   assert.equal(saved.totalCents, 1280000);
   const message = decodeURIComponent(saved.whatsappUrl.split("text=")[1]);
-  assert.match(message, /2 × Empanadas \(Media docena\): \$\s?12\.800/);
+  assert.match(message, /2 × Empanadas \$\s?12\.800\n• Media docena/);
   assert.match(message, /Gustos: 4 Carne, 2 Pollo/);
   assert.match(message, /Salsa picante: Sí/);
   assert.match(
     message,
-    new RegExp(`Seguimiento: ${origin}/t/${slug}/pedido/[0-9a-f]{32}`),
+    new RegExp(`${origin}/t/${slug}/pedido/[0-9a-f]{32}`),
   );
   const [stored] = await listOrders(businessId);
   assert.deepEqual(stored.items[0].choices, [

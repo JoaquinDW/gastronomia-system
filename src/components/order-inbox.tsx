@@ -78,6 +78,7 @@ export function OrderInbox({
   const [orders, setOrders] = useState(initialOrders);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [preparation, setPreparation] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState("");
   const [filter, setFilter] = useState<Filter>("active");
   const [fresh, setFresh] = useState<Set<string>>(new Set());
@@ -196,7 +197,7 @@ export function OrderInbox({
     };
   }, [printing]);
 
-  async function send(o: Order, change: Record<string, string>) {
+  async function send(o: Order, change: Record<string, string | number>) {
     setBusy(o.id);
     setError("");
     setFresh((f) => {
@@ -422,6 +423,13 @@ export function OrderInbox({
                   {o.paymentMethod === "cash" ? "Efectivo" : "Transferencia"} ·
                   cobro a verificar
                 </p>
+                {o.rating ? <p className="field-hint standalone-hint">Calificación del cliente: {o.rating}/5 ★</p> : null}
+                {o.status === "pending_confirmation" ? <label className="ticket-preparation">Tiempo estimado de preparación
+                  <select disabled={busy === o.id} value={preparation[o.id] ?? ""} onChange={e => setPreparation(current => ({ ...current, [o.id]: e.target.value }))}>
+                    <option value="">Sin estimación</option>
+                    {[10, 15, 20, 30, 45, 60, 90].map(n => <option value={n} key={n}>{n} minutos</option>)}
+                  </select>
+                </label> : null}
                 {o.status === "pending_confirmation" ? (
                   <div className="ticket-actions">
                     <button
@@ -434,7 +442,7 @@ export function OrderInbox({
                     <button
                       className="primary-button compact-button"
                       disabled={busy === o.id}
-                      onClick={() => send(o, { status: "accepted" })}
+                      onClick={() => send(o, { status: "accepted", ...(preparation[o.id] ? { preparationMinutes: Number(preparation[o.id]) } : {}) })}
                     >
                       Aceptar pedido
                     </button>

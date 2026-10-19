@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Analytics } from "@vercel/analytics/next";
+import { SiteAnalytics } from "@/components/site-analytics";
 import { hostOrigin, rootDomain } from "@/lib/hosts";
 import "./globals.css";
 import "./workspace.css";
@@ -39,7 +39,7 @@ export default function RootLayout({
     <html lang="es-AR">
       <body>
         {children}
-        <Analytics />
+        <SiteAnalytics />
       </body>
     </html>
   );

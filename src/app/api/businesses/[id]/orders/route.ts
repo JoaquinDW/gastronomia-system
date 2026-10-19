@@ -33,7 +33,7 @@ export async function POST(r: NextRequest, { params }: Context) {
     const body = z
       .union([
         z
-          .object({ ...target, status: z.enum(["accepted", "rejected"]) })
+          .object({ ...target, status: z.enum(["accepted", "rejected"]), preparationMinutes: z.number().int().min(5).max(180).optional() })
           .strict(),
         z.object({ ...target, stage: z.enum(orderStages) }).strict(),
       ])
@@ -49,6 +49,7 @@ export async function POST(r: NextRequest, { params }: Context) {
         body.version,
         body.status,
         user.id,
+        body.preparationMinutes,
       ),
     });
   } catch (e) {

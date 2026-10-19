@@ -407,6 +407,7 @@ export function Storefront({
       setResult(d);
       setCart([]);
       setShowCheckout(false);
+      window.location.assign(`${d.trackingUrl}?confirm=1`);
     } catch (e) {
       setError(
         e instanceof Error

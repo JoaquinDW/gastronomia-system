@@ -41,6 +41,7 @@ export function isDeliveryFeePending(order: { fulfillment: string; zoneName: str
   return order.fulfillment === "delivery" && order.zoneName === null;
 }
 export type OrderItem = {
+  imageUrl?: string | null;
   productId?: string;
   variantId?: string;
   addOnIds?: string[];
@@ -78,6 +79,8 @@ export type Order = {
   stageChangedAt?: string | null;
   trackingToken?: string;
   saleId?: string | null;
+  estimatedReadyAt?: string | null;
+  rating?: number | null;
 };
 
 // Accepted orders move forward one step at a time. Pickup skips "en camino".

@@ -261,6 +261,8 @@ export const orders = pgTable(
     deliveryCents: integer("delivery_cents").notNull(),
     totalCents: integer("total_cents").notNull(),
     acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    estimatedReadyAt: timestamp("estimated_ready_at", { withTimezone: true }),
+    rating: smallint("rating"),
     stage: varchar("stage", { length: 20 }),
     stageChangedAt: timestamp("stage_changed_at", { withTimezone: true }),
     // Secret for the customer's tracking link; 128 random bits as hex.
@@ -282,6 +284,7 @@ export const orders = pgTable(
     unique("orders_tenant_unique").on(t.businessId, t.id),
     unique("orders_number_unique").on(t.businessId, t.number),
     index("orders_business_date_idx").on(t.businessId, t.createdAt),
+    check("orders_rating_valid", sql`${t.rating} BETWEEN 1 AND 5`),
     check(
       "orders_total_valid",
       sql`${t.totalCents} = ${t.subtotalCents} + ${t.deliveryCents} AND ${t.totalCents} >= 0`,

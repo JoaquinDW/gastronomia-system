@@ -148,3 +148,5 @@ Con OpenAI configurado, `MENU_TEST_IMAGE=/ruta/carta.png npm run test:ai-menu` e
 ## Próxima entrega
 
 Cocina, caja completa, invitaciones de equipo y edición de permisos. Aceptar un pedido registra la venta y descuenta los consumos configurados; todavía no crea comandas. Las transferencias se verifican manualmente; elegir ese medio de pago no acredita el pedido.
+
+El seguimiento público, los estados y la migración necesaria están documentados en [docs/ORDER-TRACKING.md](docs/ORDER-TRACKING.md).

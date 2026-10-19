@@ -26,7 +26,10 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "images:to-storage": "node --conditions=react-server --import tsx scripts/migrate-images-to-storage.ts",
-    "test:delivery:browser": "node scripts/test-delivery-browser.mjs"
+    "test:delivery:browser": "node scripts/test-delivery-browser.mjs",
+    "test:tracking": "node --import tsx --test tests/order-tracking.test.ts",
+    "test:tracking:db": "node --conditions=react-server --import tsx scripts/test-order-tracking.ts",
+    "test:tracking:browser": "node scripts/test-order-tracking-browser.mjs"
   },
   "overrides": {
     "@esbuild-kit/core-utils": {

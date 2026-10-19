@@ -297,13 +297,14 @@ try {
   const payload = response.request().postDataJSON(),
     order = await response.json();
   assert.equal(order.totalCents, 1620000);
-  const link = shop.getByRole("link", { name: /Continuar por WhatsApp/ });
+  await shop.waitForURL(/\/pedido\/[a-f0-9]+\?confirm=1/);
+  const link = shop.getByRole("dialog").getByRole("link", { name: /Confirmar por WhatsApp/ });
   await link.waitFor();
   const wa = new URL(await link.getAttribute("href"));
   assert.equal(wa.hostname, "wa.me");
   assert.match(
     wa.searchParams.get("text"),
-    /Pendiente de confirmación del local/,
+    /¡Seguí el estado de tu pedido!/,
   );
   assert.match(wa.searchParams.get("text"), /16.200/);
   const repeats = await Promise.all([

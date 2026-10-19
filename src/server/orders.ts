@@ -19,11 +19,13 @@ import {
   type OrderItem,
   type OrderStage,
 } from "@/lib/checkout";
+import { z } from "zod";
+import { orderWhatsappUrl, trackingStatus, type OrderTrackingData } from "@/lib/order-tracking";
 import { deliveryQuote } from "@/lib/delivery";
 import { storeUrl } from "@/lib/hosts";
 import { recordStoreSale } from "./management";
 
-const fields = `id,number,status,customer_name AS "customerName",customer_phone AS "customerPhone",fulfillment,address,zone_name AS "zoneName",delivery_location AS "deliveryLocation",payment_method AS "paymentMethod",note,items,subtotal_cents AS "subtotalCents",delivery_cents AS "deliveryCents",total_cents AS "totalCents",version,created_at AS "createdAt",accepted_at AS "acceptedAt",stage,stage_changed_at AS "stageChangedAt",tracking_token AS "trackingToken"`;
+const fields = `id,number,status,customer_name AS "customerName",customer_phone AS "customerPhone",fulfillment,address,zone_name AS "zoneName",delivery_location AS "deliveryLocation",payment_method AS "paymentMethod",note,items,subtotal_cents AS "subtotalCents",delivery_cents AS "deliveryCents",total_cents AS "totalCents",version,created_at AS "createdAt",accepted_at AS "acceptedAt",stage,stage_changed_at AS "stageChangedAt",tracking_token AS "trackingToken",estimated_ready_at AS "estimatedReadyAt",rating`;
 // Absolute link for the customer; without a root domain the store lives under
 // /t/<slug> on the request's own origin.
 export function trackingUrl(slug: string, token: string, origin: string) {
@@ -32,39 +34,16 @@ export function trackingUrl(slug: string, token: string, origin: string) {
 function orderResult(
   order: Order,
   whatsapp: string,
-  businessName: string,
   tracking: string,
 ) {
   const deliveryFeePending = isDeliveryFeePending(order);
-  const message = [
-    `Hola ${businessName}, quiero confirmar el pedido #${order.number}.`,
-    "",
-    ...order.items.flatMap((i) => [
-      `${i.quantity} × ${i.name}${i.variant !== "Única" ? ` (${i.variant})` : ""}${i.addOns.length ? ` + ${i.addOns.join(", ")}` : ""}: ${formatMoney(i.lineCents)}`,
-      ...(i.choices ?? []).map((c) => `   ${c}`),
-    ]),
-    "",
-    `Modalidad: ${order.fulfillment === "pickup" ? "Retiro en el local" : "Delivery"}`,
-    ...(order.address
-      ? [`Dirección: ${order.address}`, ...(order.zoneName ? [`Zona: ${order.zoneName}`] : [])]
-      : []),
-    ...(order.deliveryLocation ? [`Ubicación: https://www.google.com/maps/search/?api=1&query=${order.deliveryLocation.lat},${order.deliveryLocation.lng}`] : []),
-    deliveryFeePending ? "Envío: el local confirmará el costo" : `Envío: ${formatMoney(order.deliveryCents)}`,
-    `${deliveryFeePending ? "Total sin envío" : "Total"}: ${formatMoney(order.totalCents)}`,
-    `Pago: ${order.paymentMethod === "cash" ? "Efectivo" : "Transferencia a confirmar"}`,
-    `Nombre: ${order.customerName}`,
-    `Teléfono: ${order.customerPhone}`,
-    ...(order.note ? [`Nota: ${order.note}`] : []),
-    "Pendiente de confirmación del local.",
-    `Seguimiento: ${tracking}`,
-  ].join("\n");
   return {
     id: order.id,
     number: order.number,
     totalCents: order.totalCents,
     trackingUrl: tracking,
     deliveryFeePending,
-    whatsappUrl: `https://wa.me/${whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`,
+    whatsappUrl: orderWhatsappUrl(order, whatsapp, tracking),
   };
 }
 export async function checkout(
@@ -101,7 +80,6 @@ export async function checkout(
       return orderResult(
         order,
         b.whatsapp,
-        b.name,
         trackingUrl(slug, order.trackingToken!, origin),
       );
     }
@@ -125,7 +103,7 @@ export async function checkout(
         "El pedido supera las 100 unidades. Consultá al local para pedidos grandes.",
       );
     const productRows = await client.query<Product>(
-      `SELECT id,name,variants,add_ons AS "addOns",option_groups AS "optionGroups",is_available AS "isAvailable" FROM menu_products WHERE business_id=$1 AND archived_at IS NULL AND id=ANY($2::uuid[])`,
+      `SELECT id,name,variants,add_ons AS "addOns",option_groups AS "optionGroups",is_available AS "isAvailable",image_url AS "imageUrl" FROM menu_products WHERE business_id=$1 AND archived_at IS NULL AND id=ANY($2::uuid[])`,
       [b.id, input.items.map((i) => i.productId)],
     );
     const products = new Map(productRows.rows.map((p) => [p.id, p]));
@@ -171,6 +149,7 @@ export async function checkout(
         addOnIds: line.addOnIds,
         choiceIds: line.choiceIds,
         name: product.name,
+        imageUrl: product.imageUrl,
         variant: variant.name,
         addOns: addOns.map((a) => a!.name),
         choices: choices.value.labels,
@@ -244,7 +223,6 @@ export async function checkout(
     return orderResult(
       order,
       b.whatsapp,
-      b.name,
       trackingUrl(slug, order.trackingToken!, origin),
     );
   } catch (e) {
@@ -274,14 +252,17 @@ export async function decideOrder(
   version: number,
   status: "accepted" | "rejected",
   actor = "system",
+  preparationMinutes?: number,
 ) {
+  if (preparationMinutes !== undefined && (status !== "accepted" || !Number.isInteger(preparationMinutes) || preparationMinutes < 5 || preparationMinutes > 180))
+    throw new HttpError(422, "El tiempo de preparación debe estar entre 5 y 180 minutos al aceptar.");
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
     await lockBusiness(client, businessId);
     const { rows } = await client.query<Order>(
-      `UPDATE orders SET status=$4::varchar,version=version+1,accepted_at=CASE WHEN $4::varchar='accepted' THEN now() ELSE accepted_at END,stage=CASE WHEN $4::varchar='accepted' THEN 'preparing' END,stage_changed_at=CASE WHEN $4::varchar='accepted' THEN now() END WHERE business_id=$1 AND id=$2 AND version=$3 AND status='pending_confirmation' RETURNING ${fields}`,
-      [businessId, id, version, status],
+      `UPDATE orders SET status=$4::varchar,version=version+1,accepted_at=CASE WHEN $4::varchar='accepted' THEN now() ELSE accepted_at END,stage=CASE WHEN $4::varchar='accepted' THEN 'preparing' END,stage_changed_at=CASE WHEN $4::varchar='accepted' THEN now() END,estimated_ready_at=CASE WHEN $4::varchar='accepted' AND $5::int IS NOT NULL THEN now()+make_interval(mins=>$5::int) ELSE estimated_ready_at END WHERE business_id=$1 AND id=$2 AND version=$3 AND status='pending_confirmation' RETURNING ${fields}`,
+      [businessId, id, version, status, preparationMinutes ?? null],
     );
     if (!rows[0])
       throw new HttpError(
@@ -359,4 +340,31 @@ export async function trackOrder(
     [slug, token],
   );
   return rows[0] ?? null;
+}
+
+// The existing random tracking token is a bearer link. Always scope it to its store, never expose a lookup by number.
+export async function getOrderTracking(slug: string, token: string, origin?: string): Promise<OrderTrackingData | null> {
+  if (!trackingTokenPattern.test(token)) return null;
+  const result = await getPool().query<Order & { business: OrderTrackingData["business"]; whatsapp: string }>(
+    `SELECT ${fields.split(",").map(f => "o." + f).join(",")},
+      json_build_object('name',b.name,'slug',b.slug,'timezone',b.timezone,'coverImageUrl',s.cover_image_url,'transferAlias',s.transfer_alias,'pickupInstructions',s.pickup_instructions) AS business,
+      b.whatsapp FROM orders o JOIN businesses b ON b.id=o.business_id JOIN store_settings s ON s.business_id=b.id WHERE b.slug=$1 AND o.tracking_token=$2`, [slug, token],
+  );
+  const row = result.rows[0];
+  if (!row) return null;
+  const { number, fulfillment, address, zoneName, paymentMethod, note, items, subtotalCents, deliveryCents, totalCents, createdAt, estimatedReadyAt, rating } = row;
+  return {
+    order: { token, number, status: trackingStatus(row), fulfillment, address, zoneName, paymentMethod, note, items, subtotalCents, deliveryCents, totalCents, createdAt, estimatedReadyAt, rating },
+    business: row.business,
+    whatsappUrl: orderWhatsappUrl(row, row.whatsapp, trackingUrl(slug, token, origin ?? "http://localhost:3000")),
+    contactUrl: `https://wa.me/${row.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola, quería consultar por mi pedido #${number}.`)}`,
+  };
+}
+export async function rateOrder(slug: string, token: string, rating: number) {
+  if (!trackingTokenPattern.test(token)) throw new HttpError(404, "No encontramos el pedido.");
+  const result = await getPool().query(
+    `UPDATE orders o SET rating=$3 FROM businesses b WHERE o.business_id=b.id AND b.slug=$1 AND o.tracking_token=$2 AND o.status='accepted' AND o.stage='delivered' RETURNING o.rating`, [slug, token, z.number().int().min(1).max(5).parse(rating)],
+  );
+  if (!result.rows[0]) throw new HttpError(409, "Podés calificar cuando el pedido esté entregado.");
+  return result.rows[0];
 }
