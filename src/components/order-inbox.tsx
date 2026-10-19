@@ -17,6 +17,22 @@ import {
   type ProductCategory,
   type TicketConfig,
 } from "@/lib/ticket";
+import {
+  columnsFor,
+  comandaReceipt,
+  testPage,
+  ticketReceipt,
+} from "@/lib/escpos";
+import {
+  concatBytes,
+  pickPrinter,
+  printBytes,
+  printerName,
+  PrinterError,
+  savedPrinter,
+  usb,
+  type UsbPrinter,
+} from "@/lib/usb-printer";
 import { usePanelBase } from "./panel-base";
 import { CustomerTicket } from "./order-ticket";
 import { PrintSettings } from "./print-settings";
@@ -105,6 +121,8 @@ export function OrderInbox({
   const [categories, setCategories] = useState(initialCategories);
   const [printSettings, setPrintSettings] = useState(false);
   const [autoPrint, setAutoPrint] = useState<AutoPrint>("off");
+  const [printer, setPrinter] = useState<UsbPrinter | null>(null);
+  const [usbSupported, setUsbSupported] = useState(false);
   const [copied, setCopied] = useState("");
   const seen = useRef(new Set(initialOrders.map((o) => o.id)));
   const audio = useRef<AudioContext | null>(null);
@@ -136,6 +154,46 @@ export function OrderInbox({
       if (autoPrintOptions.includes(saved)) setAutoPrint(saved);
     } catch {}
   }, []);
+
+  // Chrome keeps the printer the user picked; reconnect to it on load and
+  // when it is plugged back in.
+  useEffect(() => {
+    const api = usb();
+    if (!api) return;
+    setUsbSupported(true);
+    const sync = () => void savedPrinter().then(setPrinter);
+    sync();
+    api.addEventListener("connect", sync);
+    api.addEventListener("disconnect", sync);
+    return () => {
+      api.removeEventListener("connect", sync);
+      api.removeEventListener("disconnect", sync);
+    };
+  }, []);
+
+  // Straight to the USB printer when there is one; otherwise, or if it
+  // fails, the browser's print dialog.
+  async function print(order: Order, docs: PrintJob["docs"]) {
+    if (!printer) return setPrinting({ order, docs });
+    const width = columnsFor(ticket.paper);
+    try {
+      await printBytes(
+        printer,
+        concatBytes(
+          docs.map((doc) =>
+            doc === "comanda"
+              ? comandaReceipt(order, businessName, width)
+              : ticketReceipt(order, businessName, categories, ticket.footer, width),
+          ),
+        ),
+      );
+    } catch (e) {
+      setError(
+        `${e instanceof PrinterError ? e.message : "No pudimos imprimir por USB."} Te abrimos el cuadro de impresión.`,
+      );
+      setPrinting({ order, docs });
+    }
+  }
 
   // Browsers only allow audio after a tap, so a saved preference waits for
   // the first interaction with the page.
@@ -244,7 +302,7 @@ export function OrderInbox({
         change.status === "accepted"
           ? autoPrintDocs(autoPrint, ticket.enabled)
           : [];
-      if (docs.length) setPrinting({ order: d.order, docs });
+      if (docs.length) void print(d.order, docs);
       if (d.order.management)
         setNotice(
           [
@@ -373,6 +431,22 @@ export function OrderInbox({
             } catch {}
           }}
           onClose={() => setPrintSettings(false)}
+          usbSupported={usbSupported}
+          printer={printer ? printerName(printer) : null}
+          onConnect={async () => {
+            const picked = await pickPrinter();
+            if (picked) setPrinter(picked);
+            return picked;
+          }}
+          onForget={async () => {
+            await printer?.forget?.();
+            setPrinter(null);
+          }}
+          onTest={async (picked) => {
+            const target = picked ?? printer;
+            if (!target) return;
+            await printBytes(target, testPage(businessName, columnsFor(ticket.paper)));
+          }}
         />
       ) : null}
       {error ? (
@@ -520,7 +594,7 @@ export function OrderInbox({
                       type="button"
                       className="text-button"
                       onClick={() =>
-                        setPrinting({ order: o, docs: ["comanda"] })
+                        void print(o, ["comanda"])
                       }
                     >
                       Imprimir comanda
@@ -531,7 +605,7 @@ export function OrderInbox({
                       type="button"
                       className="text-button"
                       onClick={() =>
-                        setPrinting({ order: o, docs: ["ticket"] })
+                        void print(o, ["ticket"])
                       }
                     >
                       Imprimir ticket

@@ -2184,6 +2184,25 @@
   padding: 0 !important;
   accent-color: var(--accent-ink);
 }
+.print-device h3 {
+  font: 700 15px var(--sans);
+  margin: 0 0 12px;
+}
+.print-device > .secondary-button {
+  width: fit-content;
+}
+.printer-connected {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+.print-device .ticket-links {
+  flex-direction: row;
+  gap: 18px;
+  margin: 4px 0 18px;
+}
 @media (max-width: 800px) {
   .print-settings {
     grid-template-columns: 1fr;

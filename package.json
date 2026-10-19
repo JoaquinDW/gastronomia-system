@@ -30,7 +30,8 @@
     "test:tracking": "node --import tsx --test tests/order-tracking.test.ts",
     "test:tracking:db": "node --conditions=react-server --import tsx scripts/test-order-tracking.ts",
     "test:tracking:browser": "node scripts/test-order-tracking-browser.mjs",
-    "test:ticket": "node --import tsx --test tests/ticket.test.ts"
+    "test:ticket": "node --import tsx --test tests/ticket.test.ts",
+    "test:escpos": "node --import tsx --test tests/escpos.test.ts"
   },
   "overrides": {
     "@esbuild-kit/core-utils": {
