@@ -1,0 +1,1 @@
+ALTER TABLE "store_settings" ADD COLUMN "kitchen_config" jsonb DEFAULT '{"defaultMinutes":20,"warnMinutes":5}'::jsonb NOT NULL;

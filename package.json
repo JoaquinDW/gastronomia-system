@@ -33,7 +33,8 @@
     "test:tracking:browser": "node scripts/test-order-tracking-browser.mjs",
     "test:manual": "node --import tsx --test tests/manual-order.test.ts",
     "test:ticket": "node --import tsx --test tests/ticket.test.ts",
-    "test:escpos": "node --import tsx --test tests/escpos.test.ts"
+    "test:escpos": "node --import tsx --test tests/escpos.test.ts",
+    "test:kitchen": "node --import tsx --test tests/kitchen.test.ts"
   },
   "overrides": {
     "@esbuild-kit/core-utils": {
