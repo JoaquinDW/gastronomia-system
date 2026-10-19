@@ -1,11 +1,15 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { businessKinds } from "@/lib/business-input";
-import { panelBase } from "@/lib/hosts";
+import { panelBase, storeUrl } from "@/lib/hosts";
+import { guideCookie, setupSteps } from "@/lib/setup-guide";
 import { findBusiness } from "@/server/businesses";
 import { requireUser } from "@/server/auth";
 import { getProducts, getSettings } from "@/server/menu";
+import { hasOrders } from "@/server/orders";
+import { SetupGuide } from "@/components/setup-guide";
 import { StoreLinkBar } from "@/components/store-link-bar";
 
 export const metadata = { title: "Mi negocio — Pedipue" };
@@ -21,18 +25,54 @@ export default async function BusinessPage({
   const business = await findBusiness(user.id, id);
   if (!business) notFound();
   const base = panelBase(id, business.slug);
-  const [products, settings] = await Promise.all([
+  const editor = ["owner", "manager"].includes(business.role);
+  const [products, settings, ordered, jar] = await Promise.all([
     getProducts(id),
     getSettings(id),
+    hasOrders(id),
+    cookies(),
   ]);
+  const steps = setupSteps({
+    base,
+    products,
+    settings,
+    hasOrders: ordered,
+    aiAvailable: Boolean(process.env.OPENAI_API_KEY),
+  });
+  const setupDone = steps.every((s) => s.done);
   return (
     <>
+      <div className="business-welcome">
+        <span className="welcome-check" aria-hidden="true">
+          ✓
+        </span>
+        <div>
+          <p className="eyebrow">
+            {setupDone ? "TU LOCAL ESTÁ ANDANDO" : "ALTA COMPLETADA"}
+          </p>
+          <h1 className="panel-title">{business.name}</h1>
+          <p>
+            Tu negocio ya tiene su lugar.{" "}
+            {business.role === "owner"
+              ? "Sos su propietario y podés acceder con tu cuenta."
+              : "Tenés acceso como parte de su equipo."}
+          </p>
+        </div>
+      </div>
+      {editor && !setupDone ? (
+        <SetupGuide
+          businessId={id}
+          steps={steps}
+          shareUrl={settings.isPublished ? storeUrl(business.slug) : null}
+          initiallyHidden={Boolean(jar.get(guideCookie(id))?.value)}
+        />
+      ) : null}
       <StoreLinkBar
         slug={business.slug}
         base={base}
         isPublished={settings.isPublished}
       />
-      {["owner", "manager"].includes(business.role) ? (
+      {editor ? (
         <section className="business-data" style={{ marginBottom: 24 }}>
           <h2>Los números de tu negocio</h2>
           <p>
@@ -44,21 +84,6 @@ export default async function BusinessPage({
           </Link>
         </section>
       ) : null}
-      <div className="business-welcome">
-        <span className="welcome-check" aria-hidden="true">
-          ✓
-        </span>
-        <div>
-          <p className="eyebrow">ALTA COMPLETADA</p>
-          <h1 className="panel-title">{business.name}</h1>
-          <p>
-            Tu negocio ya tiene su lugar.{" "}
-            {business.role === "owner"
-              ? "Sos su propietario y podés acceder con tu cuenta."
-              : "Tenés acceso como parte de su equipo."}
-          </p>
-        </div>
-      </div>
       <div className="business-detail-grid">
         <section
           className="business-data"
@@ -94,57 +119,6 @@ export default async function BusinessPage({
               <dd className="slug-value">{business.slug}</dd>
             </div>
           </dl>
-        </section>
-        <section className="setup-checklist" aria-labelledby="checklist-title">
-          <p className="eyebrow">EL CAMINO A TU PRIMER PEDIDO</p>
-          <h2 id="checklist-title">Un buen comienzo.</h2>
-          <ol>
-            <li className="done">
-              <span aria-hidden="true">✓</span>
-              <div>
-                Cuenta creada<small>Tu acceso personal y protegido.</small>
-              </div>
-            </li>
-            <li className="done">
-              <span aria-hidden="true">✓</span>
-              <div>
-                Negocio registrado
-                <small>Datos guardados y propietario asignado.</small>
-              </div>
-            </li>
-            <li className={products.length ? "done" : ""}>
-              <span aria-hidden="true">{products.length ? "✓" : "03"}</span>
-              <div>
-                <Link href={`${base}/carta`}>
-                  {products.length ? "Administrar tu carta" : "Cargar tu carta"}{" "}
-                  →
-                </Link>
-                <small>
-                  {products.length
-                    ? `${products.length} productos cargados. Podés editarlos o importar más.`
-                    : "Carga manual, desde una foto, PDF o texto con IA."}
-                </small>
-              </div>
-            </li>
-            <li className={settings.isPublished ? "done" : ""}>
-              <span aria-hidden="true">
-                {settings.isPublished ? "✓" : "04"}
-              </span>
-              <div>
-                <Link href={`${base}/tienda`}>
-                  {settings.isPublished
-                    ? "Administrar tu tienda"
-                    : "Activar tu tienda"}{" "}
-                  →
-                </Link>
-                <small>
-                  {settings.isPublished
-                    ? "Tu enlace está activo para recibir pedidos."
-                    : "Configurá horarios, retiro y delivery para publicar tu enlace."}
-                </small>
-              </div>
-            </li>
-          </ol>
         </section>
       </div>
     </>
