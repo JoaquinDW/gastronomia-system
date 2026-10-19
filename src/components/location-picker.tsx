@@ -12,11 +12,13 @@ type Props = {
   onChange: (location: Coordinates) => void;
   /** Called instead of onChange when the person picks a typed suggestion. */
   onSuggestion?: (pick: { street: string; full: string; location: Coordinates }) => void;
+  /** Open the map after a suggestion is picked. Off keeps the checkout short. */
+  expandOnPick?: boolean;
 };
 type Suggestion = { id: string; main: string; secondary: string; prediction: google.maps.places.PlacePrediction };
 const noRadii: number[] = [];
 
-export function LocationPicker({ value, address, origin, radii = noRadii, onChange, onSuggestion }: Props) {
+export function LocationPicker({ value, address, origin, radii = noRadii, onChange, onSuggestion, expandOnPick = true }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -135,7 +137,7 @@ export function LocationPicker({ value, address, origin, radii = noRadii, onChan
         pickedAt.current = Date.now();
         onPick.current({ street: suggestion.main, full: place.formattedAddress ?? `${suggestion.main}, ${suggestion.secondary}`, location });
       } else onSelect.current(location);
-      setExpanded(true);
+      if (expandOnPick) setExpanded(true);
     } catch {
       setError("No pudimos ubicar esa dirección. Probá con Buscar dirección o marcá el punto en el mapa.");
       setExpanded(true);
@@ -186,9 +188,12 @@ export function LocationPicker({ value, address, origin, radii = noRadii, onChan
         {suggestion.main}{suggestion.secondary ? <span className="location-secondary">{suggestion.secondary}</span> : null}
       </button>
     </li>)}</ul> : null}
-    {!expanded ? <button type="button" className="secondary-button" onClick={() => setExpanded(true)}>
-      {value ? "Revisar ubicación en el mapa" : "Ubicar dirección en el mapa"}
-    </button> : <>
+    {!expanded ? <div className="location-actions">
+      <button type="button" className="secondary-button" onClick={() => setExpanded(true)}>
+        {value ? "Revisar ubicación en el mapa" : "Ubicar dirección en el mapa"}
+      </button>
+      {!expandOnPick && !value ? <button type="button" className="text-button" disabled={busy} onClick={locate}>Usar mi ubicación</button> : null}
+    </div> : <>
       <div className="location-actions">
         <button type="button" className="secondary-button" disabled={busy || address.trim().length < 5} onClick={search}>{busy ? "Buscando…" : "Buscar dirección"}</button>
         <button type="button" className="text-button" disabled={busy} onClick={locate}>Usar mi ubicación</button>
@@ -207,6 +212,7 @@ export function LocationPicker({ value, address, origin, radii = noRadii, onChan
       }}>Usar el centro del mapa</button>
       {error ? <p className="form-error" role="alert">{error} <button type="button" className="text-button" onClick={() => setAttempt(n => n + 1)}>Reintentar mapa</button></p> : null}
     </>}
-    {value ? <p className="field-hint standalone-hint" role="status">Ubicación marcada. Verificá que el pin coincida con la dirección escrita.</p> : null}
+    {!expanded && error ? <p className="form-error" role="alert">{error}</p> : null}
+    {value && (expanded || expandOnPick) ? <p className="field-hint standalone-hint" role="status">Ubicación marcada. Verificá que el pin coincida con la dirección escrita.</p> : null}
   </div>;
 }

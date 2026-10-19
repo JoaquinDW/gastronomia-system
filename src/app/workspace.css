@@ -1607,11 +1607,27 @@
 }
 .checkout-form {
   border-top: 1px dashed var(--line-strong);
-  margin-top: 25px;
-  padding-top: 25px;
+  margin-top: 4px;
+  padding-top: 20px;
 }
 .checkout-form label {
   font-size: 11px;
+  margin-bottom: 14px;
+}
+.checkout-form .location-picker {
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.checkout-form .standalone-hint {
+  margin-bottom: 14px;
+}
+.checkout-summary {
+  border-top: 1px dashed var(--line-strong);
+  margin-top: 6px;
+  padding-top: 4px;
+}
+.checkout-summary .final-total {
+  margin-bottom: 14px;
 }
 .checkout-form input,
 .checkout-form select,
