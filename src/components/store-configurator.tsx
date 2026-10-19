@@ -357,7 +357,7 @@ export function StoreConfigurator({
                     Dirección del local para calcular envíos
                     <input value={originAddress} maxLength={250} required minLength={5} placeholder="Calle, número y ciudad" onChange={e => { setOriginAddress(e.target.value); setOrigin(null); }} />
                   </label>
-                  <LocationPicker value={origin} address={originAddress} origin={origin ?? undefined} radii={zones.map(z => Number(z.radius.replace(",", ".")) * 1000).filter(n => n > 0 && n <= 30_000)} onChange={setOrigin} />
+                  <LocationPicker value={origin} address={originAddress} origin={origin ?? undefined} radii={zones.map(z => Number(z.radius.replace(",", ".")) * 1000).filter(n => n > 0 && n <= 30_000)} onChange={setOrigin} onSuggestion={({ full, location }) => { setOriginAddress(full.slice(0, 250)); setOrigin(location); }} />
                   <p className="section-description">Cada radio se mide en línea recta desde el local. Se aplica la tarifa del radio más chico que cubra la dirección. Fuera del radio mayor, no se aceptan envíos. Revisá barreras como ríos o autopistas al definir tu cobertura.</p>
                 </> : null}
                 <p className="section-description">

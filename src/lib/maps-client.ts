@@ -24,7 +24,7 @@ export function loadMaps(): Promise<typeof google.maps> {
       resolve(google.maps);
     };
     script.src = `https://maps.googleapis.com/maps/api/js?${new URLSearchParams({
-      key, v: "quarterly", loading: "async", libraries: "marker,geocoding", language: "es", region: "AR", callback: "pedipueMapsReady",
+      key, v: "quarterly", loading: "async", libraries: "marker,geocoding,places", language: "es", region: "AR", callback: "pedipueMapsReady",
     })}`;
     script.async = true;
     script.onerror = fail;

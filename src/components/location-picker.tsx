@@ -10,15 +10,25 @@ type Props = {
   origin?: Coordinates;
   radii?: number[];
   onChange: (location: Coordinates) => void;
+  /** Called instead of onChange when the person picks a typed suggestion. */
+  onSuggestion?: (pick: { street: string; full: string; location: Coordinates }) => void;
 };
+type Suggestion = { id: string; main: string; secondary: string; prediction: google.maps.places.PlacePrediction };
 const noRadii: number[] = [];
 
-export function LocationPicker({ value, address, origin, radii = noRadii, onChange }: Props) {
+export function LocationPicker({ value, address, origin, radii = noRadii, onChange, onSuggestion }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [candidates, setCandidates] = useState<google.maps.GeocoderResult[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const session = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+  // Only suggest after the person types: not for a saved address or right after a pick.
+  const untouched = useRef<string | null>(address);
+  const pickedAt = useRef(0);
+  const onPick = useRef(onSuggestion);
+  onPick.current = onSuggestion;
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<google.maps.Map | null>(null);
   const marker = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
@@ -87,6 +97,51 @@ export function LocationPicker({ value, address, origin, radii = noRadii, onChan
   // Changing the typed address invalidates previous search results.
   useEffect(() => { setCandidates([]); }, [address]);
 
+  // Suggestions while typing. If Places is unavailable the search button still works.
+  useEffect(() => {
+    setSuggestions([]);
+    if (address === untouched.current) return;
+    untouched.current = null;
+    if (Date.now() - pickedAt.current < 1_000) return;
+    if (!mapsEnabled || address.trim().length < 5) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const api = await loadMaps();
+        session.current ??= new api.places.AutocompleteSessionToken();
+        const { suggestions: found } = await api.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+          input: address, sessionToken: session.current, language: "es", region: "ar", includedRegionCodes: ["ar"],
+          ...(latestOrigin.current ? { locationBias: { center: latestOrigin.current, radius: 30_000 } } : {}),
+        });
+        if (cancelled) return;
+        setSuggestions(found.flatMap(({ placePrediction: p }) => p ? [{
+          id: p.placeId, main: p.mainText?.text ?? p.text.text, secondary: p.secondaryText?.text ?? "", prediction: p,
+        }] : []).slice(0, 5));
+      } catch { /* Keep manual search and the map. */ }
+    }, 350);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [address]);
+
+  async function pick(suggestion: Suggestion) {
+    setSuggestions([]);
+    setError("");
+    try {
+      const place = suggestion.prediction.toPlace();
+      await place.fetchFields({ fields: ["location", "formattedAddress"] });
+      session.current = null;
+      if (!place.location) throw new Error();
+      const location = place.location.toJSON();
+      if (onPick.current) {
+        pickedAt.current = Date.now();
+        onPick.current({ street: suggestion.main, full: place.formattedAddress ?? `${suggestion.main}, ${suggestion.secondary}`, location });
+      } else onSelect.current(location);
+      setExpanded(true);
+    } catch {
+      setError("No pudimos ubicar esa dirección. Probá con Buscar dirección o marcá el punto en el mapa.");
+      setExpanded(true);
+    }
+  }
+
   async function search() {
     setBusy(true);
     setError("");
@@ -126,6 +181,11 @@ export function LocationPicker({ value, address, origin, radii = noRadii, onChan
   if (!mapsEnabled) return <p className="field-hint standalone-hint" role="status">El mapa todavía no está disponible. Consultá al local para coordinar el envío.</p>;
 
   return <div className="location-picker">
+    {suggestions.length ? <ul className="location-results" aria-label="Direcciones sugeridas">{suggestions.map(suggestion => <li key={suggestion.id}>
+      <button type="button" className="text-button" onClick={() => pick(suggestion)}>
+        {suggestion.main}{suggestion.secondary ? <span className="location-secondary">{suggestion.secondary}</span> : null}
+      </button>
+    </li>)}</ul> : null}
     {!expanded ? <button type="button" className="secondary-button" onClick={() => setExpanded(true)}>
       {value ? "Revisar ubicación en el mapa" : "Ubicar dirección en el mapa"}
     </button> : <>

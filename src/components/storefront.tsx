@@ -764,7 +764,7 @@ export function Storefront({
                         />
                       </label>
                       {automaticDelivery && settings.deliveryConfig.mode === "radius" ? <>
-                        <LocationPicker value={deliveryLocation} address={`${deliveryAddress}, ${business.city}`} origin={settings.deliveryConfig.origin} onChange={location => { setDeliveryLocation(location); requestKey.current = null; }} />
+                        <LocationPicker value={deliveryLocation} address={`${deliveryAddress}, ${business.city}`} origin={settings.deliveryConfig.origin} onChange={location => { setDeliveryLocation(location); requestKey.current = null; }} onSuggestion={({ street, location }) => { setDeliveryAddress(street); setDeliveryLocation(location); requestKey.current = null; }} />
                         <p className={deliveryLocation && !quote ? "form-error" : "field-hint standalone-hint"} role="status">
                           {quote ? `Envío: ${formatMoney(quote.feeCents)} · ${quote.zone.name}` : deliveryLocation ? "Esta dirección está fuera de la cobertura de delivery. Podés elegir retiro si está disponible." : "Marcá tu dirección en el mapa para conocer el costo de envío."}
                         </p>
