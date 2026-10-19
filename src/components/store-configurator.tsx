@@ -133,7 +133,7 @@ export function StoreConfigurator({
     <div className="store-config-layout">
       <form className="app-form config-form" onSubmit={submit}>
         <fieldset disabled={busy}>
-          <section className="config-section">
+          <section className="config-section" id="presentacion">
             <div className="section-label">
               <h2>
                 <span>01</span> Presentación
@@ -178,7 +178,7 @@ export function StoreConfigurator({
               pedido.
             </p>
           </section>
-          <section className="config-section">
+          <section className="config-section" id="horarios">
             <h2>
               <span>02</span> Horarios de atención
             </h2>
@@ -298,7 +298,7 @@ export function StoreConfigurator({
               })}
             </div>
           </section>
-          <section className="config-section">
+          <section className="config-section" id="entregas">
             <h2>
               <span>03</span> Retiro y delivery
             </h2>
@@ -448,7 +448,7 @@ export function StoreConfigurator({
               </div>
             ) : null}
           </section>
-          <section className="config-section">
+          <section className="config-section" id="pagos">
             <h2>
               <span>04</span> Medios de pago
             </h2>
@@ -502,7 +502,7 @@ export function StoreConfigurator({
           {busy ? "Guardando…" : "Guardar configuración"}
         </button>
       </form>
-      <aside className="publish-panel">
+      <aside className="publish-panel" id="publicar">
         <div className={`store-status ${s.isPublished ? "active" : ""}`}>
           <span aria-hidden="true" />
           {s.isPublished ? "Tienda activa" : "Tienda sin publicar"}

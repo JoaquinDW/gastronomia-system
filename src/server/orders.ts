@@ -254,6 +254,13 @@ export async function checkout(
     client.release();
   }
 }
+export async function hasOrders(businessId: string): Promise<boolean> {
+  const { rowCount } = await getPool().query(
+    "SELECT 1 FROM orders WHERE business_id=$1 LIMIT 1",
+    [businessId],
+  );
+  return Boolean(rowCount);
+}
 export async function listOrders(businessId: string): Promise<Order[]> {
   const { rows } = await getPool().query<Order>(
     `SELECT ${fields},(SELECT s.id FROM management_sales s WHERE s.business_id=orders.business_id AND s.order_id=orders.id) AS "saleId" FROM orders WHERE business_id=$1 ORDER BY created_at DESC LIMIT 100`,

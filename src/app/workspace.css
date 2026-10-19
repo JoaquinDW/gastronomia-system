@@ -259,6 +259,150 @@
     grid-column: 1 / -1;
   }
 }
+/* Primeros pasos del resumen del local (setup-guide.tsx). */
+.setup-guide {
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-hard);
+  padding: 24px;
+  margin-bottom: 32px;
+}
+.setup-guide-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+.setup-guide-head .eyebrow {
+  margin-bottom: 10px;
+  color: var(--accent-ink);
+}
+.setup-guide-head h2 {
+  font: 800 29px/1 var(--display);
+  letter-spacing: -1px;
+  margin: 0 0 10px;
+}
+.setup-guide-head p:not(.eyebrow) {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 520px;
+}
+.setup-guide-head .quiet-button {
+  flex-shrink: 0;
+  padding: 0;
+  min-height: 44px;
+  color: var(--muted);
+}
+.setup-progress {
+  height: 10px;
+  margin: 20px 0 8px;
+  background: var(--soft);
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.setup-progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-right: 1.5px solid var(--ink);
+  transition: width 0.4s ease;
+}
+.setup-guide ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.setup-guide li {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+.setup-guide li:first-child {
+  border-top: 0;
+}
+.setup-mark {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-content: center;
+  border-radius: 999px;
+  border: 1.5px solid var(--line-strong);
+  font: 700 11px var(--mono);
+  color: var(--muted);
+}
+.setup-body strong {
+  display: block;
+  font-size: 15px;
+}
+.setup-body p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 560px;
+}
+.setup-body small {
+  display: block;
+  margin-top: 3px;
+  font: 12px var(--mono);
+  color: var(--muted);
+}
+.setup-guide li.done .setup-mark {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--open);
+}
+.setup-guide li.done strong {
+  color: var(--muted);
+  font-weight: 600;
+}
+.setup-guide li.next {
+  margin: 4px -12px;
+  padding: 16px 12px;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+.setup-guide li.next + li {
+  border-top: 0;
+}
+.setup-guide li.next .setup-mark {
+  background: var(--accent);
+  border: 2px solid var(--ink);
+  color: var(--ink);
+}
+.setup-link {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  text-underline-offset: 4px;
+  white-space: nowrap;
+}
+.setup-guide li.done .setup-link {
+  color: var(--muted);
+  font-weight: 600;
+}
+.setup-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.setup-guide-reopen {
+  margin: -12px 0 20px;
+}
+.setup-guide-reopen .quiet-button {
+  min-height: 44px;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
 .store-link-bar {
   display: flex;
   justify-content: space-between;
@@ -830,6 +974,7 @@
 .config-section {
   border-top: 1px solid var(--line);
   padding: 26px 0 10px;
+  scroll-margin-top: 24px;
 }
 .config-section h2 {
   font: 800 29px var(--serif);
@@ -974,10 +1119,6 @@
 }
 .publish-panel .form-error {
   margin-top: 18px;
-}
-.setup-checklist li a {
-  font-weight: 550;
-  text-underline-offset: 4px;
 }
 .shop-shell {
   max-width: 1250px;
@@ -2090,6 +2231,36 @@
   }
 }
 @media (max-width: 600px) {
+  .setup-guide {
+    padding: 18px 16px;
+  }
+  .setup-guide-head h2 {
+    font-size: 24px;
+  }
+  .setup-guide li {
+    grid-template-columns: 30px 1fr auto;
+    gap: 12px;
+  }
+  .setup-guide li:not(.done) {
+    grid-template-columns: 30px 1fr;
+    align-items: start;
+  }
+  .setup-mark {
+    width: 30px;
+    height: 30px;
+  }
+  .setup-guide li:not(.done) > a,
+  .setup-guide li > .setup-actions {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .setup-guide li.next {
+    margin: 4px -8px;
+    padding: 14px 8px;
+  }
+  .setup-actions {
+    flex-wrap: wrap;
+  }
   .workspace-heading {
     margin-bottom: 25px;
   }
