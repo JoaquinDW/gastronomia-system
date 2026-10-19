@@ -661,28 +661,20 @@ export function Storefront({
                     </li>
                   ))}
                 </ul>
-                <div className="cart-total">
-                  <span>Productos</span>
-                  <strong>{formatMoney(subtotal)}</strong>
-                </div>
-                {fulfillment === "delivery" ? (
-                  <div className="cart-total">
-                    <span>Envío</span>
-                    <strong>{needsLocation ? "A calcular" : formatMoney(fee)}</strong>
-                  </div>
-                ) : null}
-                <div className="cart-total final-total">
-                  <span>{needsLocation ? "Total sin envío" : "Total"}</span>
-                  <strong>{formatMoney(total)}</strong>
-                </div>
                 {!showCheckout ? (
-                  <button
-                    className="primary-button"
-                    disabled={!open || preview || busy}
-                    onClick={() => setShowCheckout(true)}
-                  >
-                    Continuar con mi pedido →
-                  </button>
+                  <>
+                    <div className="cart-total final-total">
+                      <span>Subtotal</span>
+                      <strong>{formatMoney(subtotal)}</strong>
+                    </div>
+                    <button
+                      className="primary-button"
+                      disabled={!open || preview || busy}
+                      onClick={() => setShowCheckout(true)}
+                    >
+                      Continuar con mi pedido →
+                    </button>
+                  </>
                 ) : null}
               </>
             ) : !result ? (
@@ -764,9 +756,9 @@ export function Storefront({
                         />
                       </label>
                       {automaticDelivery && settings.deliveryConfig.mode === "radius" ? <>
-                        <LocationPicker value={deliveryLocation} address={`${deliveryAddress}, ${business.city}`} origin={settings.deliveryConfig.origin} onChange={location => { setDeliveryLocation(location); requestKey.current = null; }} onSuggestion={({ street, location }) => { setDeliveryAddress(street); setDeliveryLocation(location); requestKey.current = null; }} />
+                        <LocationPicker value={deliveryLocation} address={`${deliveryAddress}, ${business.city}`} origin={settings.deliveryConfig.origin} onChange={location => { setDeliveryLocation(location); requestKey.current = null; }} onSuggestion={({ street, location }) => { setDeliveryAddress(street); setDeliveryLocation(location); requestKey.current = null; }} expandOnPick={false} />
                         <p className={deliveryLocation && !quote ? "form-error" : "field-hint standalone-hint"} role="status">
-                          {quote ? `Envío: ${formatMoney(quote.feeCents)} · ${quote.zone.name}` : deliveryLocation ? "Esta dirección está fuera de la cobertura de delivery. Podés elegir retiro si está disponible." : "Marcá tu dirección en el mapa para conocer el costo de envío."}
+                          {quote ? `Envío: ${formatMoney(quote.feeCents)} · ${quote.zone.name}` : deliveryLocation ? "Esta dirección está fuera de la cobertura de delivery. Podés elegir retiro si está disponible." : "Elegí una sugerencia o ubicá la dirección en el mapa para calcular el envío."}
                         </p>
                       </> : null}
                       {zone?.minimumCents ? (
@@ -809,6 +801,22 @@ export function Storefront({
                     />
                   </label>
                 </fieldset>
+                <div className="checkout-summary" aria-live="polite">
+                  <div className="cart-total">
+                    <span>Productos</span>
+                    <strong>{formatMoney(subtotal)}</strong>
+                  </div>
+                  {fulfillment === "delivery" ? (
+                    <div className="cart-total">
+                      <span>Envío</span>
+                      <strong>{needsLocation ? "A calcular" : formatMoney(fee)}</strong>
+                    </div>
+                  ) : null}
+                  <div className="cart-total final-total">
+                    <span>{needsLocation ? "Total sin envío" : "Total"}</span>
+                    <strong>{formatMoney(total)}</strong>
+                  </div>
+                </div>
                 <p className="form-footnote">
                   Guardamos tu pedido y después podés enviar el resumen por
                   WhatsApp. El local debe confirmarlo antes de prepararlo.
@@ -830,7 +838,7 @@ export function Storefront({
           </aside>
         </div>
       </main>
-      {cart.length ? (
+      {cart.length && !showCheckout ? (
         <a href="#pedido" className="mobile-cart-link">
           Ver mi pedido · {formatMoney(total)} ↓
         </a>
