@@ -10,7 +10,16 @@ import {
   stagesFor,
   type Order,
 } from "@/lib/checkout";
+import {
+  autoPrintDocs,
+  autoPrintOptions,
+  type AutoPrint,
+  type ProductCategory,
+  type TicketConfig,
+} from "@/lib/ticket";
 import { usePanelBase } from "./panel-base";
+import { CustomerTicket } from "./order-ticket";
+import { PrintSettings } from "./print-settings";
 
 // ICU versions differ on short-date punctuation and year width. Keep the
 // initial server render identical to the browser while using local time.
@@ -26,6 +35,7 @@ function orderDate(value: string) {
 
 const POLL_MS = 8000;
 const SOUND_KEY = "pedipue:order-sound";
+const AUTO_PRINT_KEY = "pedipue:auto-print";
 const dateTime = { format: (value: Date) => orderDate(value.toISOString()) };
 const clock = new Intl.DateTimeFormat("es-AR", {
   timeZone: "America/Argentina/Cordoba",
@@ -34,6 +44,7 @@ const clock = new Intl.DateTimeFormat("es-AR", {
 const orderNumber = (o: Order) => `#${o.number.toString().padStart(3, "0")}`;
 
 type Filter = "active" | "done" | "all";
+type PrintJob = { order: Order; docs: ("comanda" | "ticket")[] };
 const isDone = (o: Order) =>
   o.status !== "pending_confirmation" &&
   !(o.status === "accepted" && o.stage !== "delivered");
@@ -68,11 +79,15 @@ export function OrderInbox({
   businessName,
   storeBase,
   initialOrders,
+  initialTicket,
+  initialCategories,
 }: {
   businessId: string;
   businessName: string;
   storeBase: string;
   initialOrders: Order[];
+  initialTicket: TicketConfig;
+  initialCategories: ProductCategory[];
 }) {
   const panel = usePanelBase();
   const [orders, setOrders] = useState(initialOrders);
@@ -85,7 +100,11 @@ export function OrderInbox({
   const [syncedAt, setSyncedAt] = useState<Date | null>(null);
   const [offline, setOffline] = useState(false);
   const [sound, setSound] = useState<"off" | "on" | "blocked">("off");
-  const [printing, setPrinting] = useState<Order | null>(null);
+  const [printing, setPrinting] = useState<PrintJob | null>(null);
+  const [ticket, setTicket] = useState(initialTicket);
+  const [categories, setCategories] = useState(initialCategories);
+  const [printSettings, setPrintSettings] = useState(false);
+  const [autoPrint, setAutoPrint] = useState<AutoPrint>("off");
   const [copied, setCopied] = useState("");
   const seen = useRef(new Set(initialOrders.map((o) => o.id)));
   const audio = useRef<AudioContext | null>(null);
@@ -109,6 +128,13 @@ export function OrderInbox({
       setSound("blocked");
       return false;
     }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(AUTO_PRINT_KEY) as AutoPrint;
+      if (autoPrintOptions.includes(saved)) setAutoPrint(saved);
+    } catch {}
   }, []);
 
   // Browsers only allow audio after a tap, so a saved preference waits for
@@ -148,6 +174,7 @@ export function OrderInbox({
         chime(audio.current);
     }
     setOrders(next);
+    if (d.categories) setCategories(d.categories);
     setSyncedAt(new Date());
     setOffline(false);
   }, [base]);
@@ -213,6 +240,11 @@ export function OrderInbox({
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
+      const docs =
+        change.status === "accepted"
+          ? autoPrintDocs(autoPrint, ticket.enabled)
+          : [];
+      if (docs.length) setPrinting({ order: d.order, docs });
       if (d.order.management)
         setNotice(
           [
@@ -294,6 +326,14 @@ export function OrderInbox({
           <button
             type="button"
             className="secondary-button"
+            aria-expanded={printSettings}
+            onClick={() => setPrintSettings((open) => !open)}
+          >
+            Impresión
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
             aria-pressed={sound === "on"}
             onClick={async () => {
               if (sound === "on") {
@@ -320,6 +360,21 @@ export function OrderInbox({
           </button>
         </div>
       </div>
+      {printSettings ? (
+        <PrintSettings
+          businessId={businessId}
+          ticket={ticket}
+          onSaved={setTicket}
+          autoPrint={autoPrint}
+          onAutoPrint={(choice) => {
+            setAutoPrint(choice);
+            try {
+              localStorage.setItem(AUTO_PRINT_KEY, choice);
+            } catch {}
+          }}
+          onClose={() => setPrintSettings(false)}
+        />
+      ) : null}
       {error ? (
         <p className="form-error" role="alert">
           {error}
@@ -464,9 +519,22 @@ export function OrderInbox({
                     <button
                       type="button"
                       className="text-button"
-                      onClick={() => setPrinting(o)}
+                      onClick={() =>
+                        setPrinting({ order: o, docs: ["comanda"] })
+                      }
                     >
                       Imprimir comanda
+                    </button>
+                  ) : null}
+                  {ticket.enabled && o.status !== "rejected" ? (
+                    <button
+                      type="button"
+                      className="text-button"
+                      onClick={() =>
+                        setPrinting({ order: o, docs: ["ticket"] })
+                      }
+                    >
+                      Imprimir ticket
                     </button>
                   ) : null}
                   {o.trackingToken && o.status === "accepted" ? (
@@ -506,7 +574,25 @@ export function OrderInbox({
       )}
       {printing
         ? createPortal(
-            <Comanda order={printing} businessName={businessName} />,
+            <div className="print-sheet" data-paper={ticket.paper}>
+              {printing.docs.map((doc) =>
+                doc === "comanda" ? (
+                  <Comanda
+                    key={doc}
+                    order={printing.order}
+                    businessName={businessName}
+                  />
+                ) : (
+                  <CustomerTicket
+                    key={doc}
+                    order={printing.order}
+                    businessName={businessName}
+                    categories={categories}
+                    footer={ticket.footer}
+                  />
+                ),
+              )}
+            </div>,
             document.body,
           )
         : null}
@@ -514,7 +600,7 @@ export function OrderInbox({
   );
 }
 
-// Kitchen ticket, sized for 80 mm thermal printers but readable on A4.
+// Kitchen ticket, sized for 58 or 80 mm thermal printers but readable on A4.
 function Comanda({
   order: o,
   businessName,

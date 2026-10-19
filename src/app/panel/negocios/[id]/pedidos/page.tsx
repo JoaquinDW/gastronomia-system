@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { authorizeBusiness } from "@/server/http";
 import { listOrders } from "@/server/orders";
+import { getTicketConfig, productCategories } from "@/server/ticket";
 import { storeUrl } from "@/lib/hosts";
 import { OrderInbox } from "@/components/order-inbox";
 export const metadata = { title: "Pedidos de tu tienda — Pedipue" };
@@ -12,7 +13,11 @@ export default async function OrdersPage({
   const { id } = await params;
   const access = await authorizeBusiness(id, true).catch(() => null);
   if (!access) notFound();
-  const orders = await listOrders(id);
+  const [orders, ticket, categories] = await Promise.all([
+    listOrders(id),
+    getTicketConfig(id),
+    productCategories(id),
+  ]);
   return (
     <>
       <div className="workspace-heading">
@@ -31,6 +36,8 @@ export default async function OrdersPage({
         businessName={access.business.name}
         storeBase={storeUrl(access.business.slug)}
         initialOrders={JSON.parse(JSON.stringify(orders))}
+        initialTicket={ticket}
+        initialCategories={categories}
       />
     </>
   );
