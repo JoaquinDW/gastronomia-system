@@ -1,0 +1,266 @@
+/* Superadmin: resumen de toda la plataforma. Tokens en docs/DESIGN-SYSTEM.md. */
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  margin-bottom: 48px;
+}
+.admin-stat {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-card);
+}
+.admin-stat strong {
+  font: 800 32px/1 var(--display);
+  letter-spacing: -1px;
+  overflow-wrap: anywhere;
+}
+.admin-stat-label {
+  font: 700 11px var(--mono);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.admin-stat-detail {
+  font-size: 12px;
+  color: var(--muted);
+}
+.admin-list-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.admin-list-header h2 {
+  font: 800 32px/1 var(--display);
+  letter-spacing: -1px;
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.admin-list-header h2 .admin-mono {
+  font-size: 15px;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+.admin-search {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+  max-width: 440px;
+}
+.admin-search input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font: inherit;
+  font-size: 14px;
+}
+.admin-search input:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+.admin-search .ghost-button {
+  background: transparent;
+  cursor: pointer;
+  color: var(--ink);
+}
+.admin-table-wrap {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-card);
+  overflow-x: auto;
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.admin-table th {
+  text-align: left;
+  font: 700 10px var(--mono);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 14px 16px;
+  border-bottom: 1.5px solid var(--line);
+  white-space: nowrap;
+}
+.admin-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.admin-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.admin-num {
+  text-align: right !important;
+  white-space: nowrap;
+}
+.admin-mono {
+  font-family: var(--mono);
+}
+.admin-business {
+  display: flex;
+  gap: 14px;
+  min-width: 220px;
+}
+.admin-business .business-initial {
+  width: 40px;
+  height: 40px;
+  font-size: 24px;
+  border-radius: 11px;
+}
+.admin-business > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.admin-business strong {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.admin-business span,
+.admin-sub,
+.admin-owner small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.admin-store-link {
+  font-size: 12px;
+  font-weight: 700;
+  text-underline-offset: 4px;
+  width: fit-content;
+}
+.admin-store-link:hover {
+  color: var(--accent-ink);
+}
+.admin-owner {
+  display: grid;
+  gap: 4px;
+  overflow-wrap: break-word;
+  min-width: 140px;
+}
+.admin-nowrap {
+  white-space: nowrap;
+}
+.admin-sub {
+  display: block;
+  margin-top: 6px;
+}
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 700 10px var(--mono);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 4px 9px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+}
+.admin-badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--closed);
+}
+.admin-badge.is-live {
+  border-color: var(--ink);
+}
+.admin-badge.is-live::before {
+  background: var(--open);
+}
+.admin-empty {
+  padding: 40px 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+
+/* En celular cada negocio es una tarjeta con sus datos en filas. */
+@media (max-width: 760px) {
+  .admin-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+  .admin-stat {
+    padding: 14px;
+  }
+  .admin-stat strong {
+    font-size: 24px;
+  }
+  .admin-search {
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .admin-table-wrap {
+    background: none;
+    border: 0;
+    overflow: visible;
+  }
+  .admin-table thead {
+    display: none;
+  }
+  .admin-table,
+  .admin-table tbody,
+  .admin-table tr,
+  .admin-table td {
+    display: block;
+  }
+  .admin-table tr {
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius-card);
+    padding: 6px 16px;
+    margin-bottom: 12px;
+  }
+  .admin-table td {
+    padding: 10px 0;
+  }
+  .admin-table td[data-label] {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    text-align: right;
+  }
+  .admin-table td[data-label]::before {
+    content: attr(data-label);
+    font: 700 10px var(--mono);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    padding-top: 2px;
+    flex-shrink: 0;
+  }
+  .admin-table tbody tr:last-child td,
+  .admin-table td:last-child {
+    border-bottom: 0;
+  }
+  .admin-owner {
+    min-width: 0;
+    justify-items: end;
+    overflow-wrap: anywhere;
+  }
+  .admin-cell {
+    display: grid;
+    justify-items: end;
+  }
+  .admin-table td[data-label] .admin-sub {
+    margin-top: 4px;
+  }
+}

@@ -2,6 +2,7 @@ import { Brand } from "@/components/brand";
 import { appUrl } from "@/lib/hosts";
 import { SignOut } from "@/components/sign-out";
 import { requireUser } from "@/server/auth";
+import { isSuperadminEmail } from "@/server/superadmin";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,11 @@ export default async function PanelLayout({
       <header className="site-header">
         <Brand href={appUrl("/panel")} />
         <div className="panel-account">
+          {isSuperadminEmail(user.email) ? (
+            <a className="panel-admin-link" href={appUrl("/panel/admin")}>
+              Superadmin
+            </a>
+          ) : null}
           <span>{user.name}</span>
           <SignOut />
         </div>
