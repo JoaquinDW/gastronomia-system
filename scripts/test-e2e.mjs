@@ -8,6 +8,7 @@ assert.equal(response.status, 200);
 const html = await response.text();
 assert.match(html, /Tu tienda online\./);
 assert.match(html, /Crear mi tienda/);
+assert.match(html, /brasa-club\.pedipue\.com/);
 assert.doesNotMatch(html, /Neon|Postgres/);
 assert.doesNotMatch(html, /postgres(?:ql)?:\/\//i);
 console.log(
