@@ -37,6 +37,7 @@
 .location-results { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .location-results button { text-align: left; white-space: normal; min-height: 44px; }
 .location-picker .text-button { min-height: 44px; }
+.location-secondary { display: block; color: var(--muted); font-size: 0.875em; font-weight: 400; }
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 24px;

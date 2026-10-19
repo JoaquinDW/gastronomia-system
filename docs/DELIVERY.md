@@ -34,7 +34,7 @@ Pendiente: polígonos/exclusiones, distancia por ruta, tarifa base + km, envío 
 ## Activación
 
 1. Aplicar la migración Drizzle `0009_delivery_coverage.sql` antes de desplegar el código. Agrega `store_settings.delivery_config` con valor manual para los negocios existentes y `orders.delivery_location` opcional. No transforma zonas ni pedidos históricos.
-2. En un proyecto de Google Cloud con facturación habilitada, habilitar Maps JavaScript API y Geocoding API. Crear una clave de navegador con restricciones de API y HTTP referrer para los dominios del panel y las tiendas. Contemplar subdominios si se usa `NEXT_PUBLIC_ROOT_DOMAIN`.
+2. En un proyecto de Google Cloud con facturación habilitada, habilitar Maps JavaScript API, Geocoding API y Places API (New), que da las sugerencias mientras se escribe la dirección. Crear una clave de navegador con restricciones de API y HTTP referrer para los dominios del panel y las tiendas. Contemplar subdominios si se usa `NEXT_PUBLIC_ROOT_DOMAIN`.
 3. Configurar `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` y un `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` de producción. En desarrollo se permite `DEMO_MAP_ID`. Las variables públicas se fijan al compilar: volver a construir/desplegar después de cambiarlas. La clave del navegador es pública por diseño; las restricciones se aplican en Google Cloud.
 4. Tienda → Retiro y delivery → Automático por distancia. Escribir la dirección del local, marcar su ubicación y cargar los radios/tarifas/mínimos. Guardar y probar un domicilio cercano, uno lejano y uno fuera de cobertura.
 
