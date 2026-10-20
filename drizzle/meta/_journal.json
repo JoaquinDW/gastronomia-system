@@ -99,6 +99,13 @@
       "when": 1792453264360,
       "tag": "0013_kitchen_config",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792471318811,
+      "tag": "0014_cash_register",
+      "breakpoints": true
     }
   ]
 }

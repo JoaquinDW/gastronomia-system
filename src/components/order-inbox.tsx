@@ -40,6 +40,7 @@ import { CustomerTicket } from "./order-ticket";
 import { PrintSettings } from "./print-settings";
 import { ManualOrder, type CreatedOrder } from "./manual-order";
 import { KitchenMode } from "./kitchen-mode";
+import { ChargeDialog } from "./charge-dialog";
 import { KitchenSettings } from "./kitchen-settings";
 import {
   minutesSince,
@@ -70,6 +71,11 @@ const clock = new Intl.DateTimeFormat("es-AR", {
   timeZone: "America/Argentina/Cordoba",
   timeStyle: "short",
 });
+// Older orders were never charged in the register; only offer charging the
+// recent ones, the same window Caja lists.
+const CHARGE_WINDOW_MS = 24 * 60 * 60 * 1000;
+const promisedPayment = (o: Order) =>
+  o.paymentMethod === "cash" ? "Efectivo" : "Transferencia";
 const orderNumber = (o: Order) => `#${o.number.toString().padStart(3, "0")}`;
 /** "Teléfono · Delivery"; store orders, and names that already say the
  * channel, only say how they're delivered. */
@@ -131,6 +137,7 @@ export function OrderInbox({
   initialTicket,
   initialCategories,
   initialKitchen,
+  initialCashOpen,
 }: {
   businessId: string;
   businessName: string;
@@ -139,6 +146,7 @@ export function OrderInbox({
   initialTicket: TicketConfig;
   initialCategories: ProductCategory[];
   initialKitchen: KitchenConfig;
+  initialCashOpen: boolean;
 }) {
   const panel = usePanelBase();
   const [orders, setOrders] = useState(initialOrders);
@@ -163,6 +171,8 @@ export function OrderInbox({
   const [kitchen, setKitchen] = useState(initialKitchen);
   const [kitchenMode, setKitchenMode] = useState(false);
   const [timeSettings, setTimeSettings] = useState(false);
+  const [cashOpen, setCashOpen] = useState(initialCashOpen);
+  const [charging, setCharging] = useState<Order | null>(null);
   // Timers follow the server clock (from each poll's Date header), so a
   // tablet with the wrong time still colors orders right.
   const skew = useRef(0);
@@ -284,6 +294,7 @@ export function OrderInbox({
     setOrders(next);
     if (d.categories) setCategories(d.categories);
     if (d.kitchen) setKitchen(d.kitchen);
+    if (typeof d.cashOpen === "boolean") setCashOpen(d.cashOpen);
     setSyncedAt(new Date());
     setOffline(false);
   }, [base]);
@@ -686,10 +697,15 @@ export function OrderInbox({
                   <span>Total</span>
                   <strong>{formatMoney(o.totalCents)}</strong>
                 </div>
-                <p className="field-hint standalone-hint">
-                  {o.paymentMethod === "cash" ? "Efectivo" : "Transferencia"} ·
-                  cobro a verificar
-                </p>
+                <ChargeStatus
+                  order={o}
+                  canCharge={
+                    now !== null &&
+                    !!o.acceptedAt &&
+                    now - Date.parse(o.acceptedAt) < CHARGE_WINDOW_MS
+                  }
+                  onCharge={() => setCharging(o)}
+                />
                 {o.rating ? <p className="field-hint standalone-hint">Calificación del cliente: {o.rating}/5 ★</p> : null}
                 {o.status === "pending_confirmation" ? <label className="ticket-preparation">Tiempo estimado de preparación
                   <select disabled={busy === o.id} value={preparation[o.id] ?? ""} onChange={e => setPreparation(current => ({ ...current, [o.id]: e.target.value }))}>
@@ -786,6 +802,20 @@ export function OrderInbox({
           })}
         </div>
       )}
+      {charging ? (
+        <ChargeDialog
+          businessId={businessId}
+          order={{ ...charging, paidCents: charging.paidCents ?? 0 }}
+          cashOpen={cashOpen}
+          onClose={() => setCharging(null)}
+          onCharged={(message) => {
+            setCharging(null);
+            setError("");
+            setNotice(message);
+            void refresh().catch(() => setOffline(true));
+          }}
+        />
+      ) : null}
       {kitchenMode && now !== null ? (
         <KitchenMode
           orders={orders}
@@ -826,6 +856,55 @@ export function OrderInbox({
           )
         : null}
     </>
+  );
+}
+
+// What the register says about the order: charged, partly charged or not yet.
+function ChargeStatus({
+  order: o,
+  canCharge,
+  onCharge,
+}: {
+  order: Order;
+  canCharge: boolean;
+  onCharge: () => void;
+}) {
+  const paid = o.paidCents ?? 0;
+  const left = o.totalCents - paid;
+  if (o.status === "pending_confirmation" || o.status === "rejected")
+    return (
+      <p className="field-hint standalone-hint">
+        Dice que paga con {promisedPayment(o).toLowerCase()}
+      </p>
+    );
+  if (o.status !== "accepted")
+    return paid ? (
+      <p className="charge-status" data-state="warn">
+        Tenía cobrado {formatMoney(paid)}. Si lo devolviste, anulá el cobro en Caja.
+      </p>
+    ) : null;
+  if (left <= 0)
+    return (
+      <p className="charge-status" data-state="paid">
+        <strong>Cobrado</strong>
+      </p>
+    );
+  return (
+    <div className="charge-row">
+      <p className="charge-status" data-state={paid ? "partial" : "unpaid"}>
+        <strong>{paid ? `Falta ${formatMoney(left)}` : "Sin cobrar"}</strong>
+        <span>
+          {paid
+            ? `Cobrado ${formatMoney(paid)}`
+            : `Dice que paga con ${promisedPayment(o).toLowerCase()}`}
+        </span>
+      </p>
+      {canCharge ? (
+        <button type="button" className="secondary-button compact-button" onClick={onCharge}>
+          Cobrar
+        </button>
+      ) : null}
+    </div>
   );
 }
 

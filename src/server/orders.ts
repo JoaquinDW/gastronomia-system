@@ -345,7 +345,7 @@ export async function hasOrders(businessId: string): Promise<boolean> {
 }
 export async function listOrders(businessId: string): Promise<Order[]> {
   const { rows } = await getPool().query<Order>(
-    `SELECT ${fields},(SELECT s.id FROM management_sales s WHERE s.business_id=orders.business_id AND s.order_id=orders.id) AS "saleId" FROM orders WHERE business_id=$1 ORDER BY created_at DESC LIMIT 100`,
+    `SELECT ${fields},(SELECT s.id FROM management_sales s WHERE s.business_id=orders.business_id AND s.order_id=orders.id) AS "saleId",(SELECT COALESCE(sum(m.amount_cents),0)::int FROM cash_movements m WHERE m.business_id=orders.business_id AND m.order_id=orders.id AND m.kind='payment' AND m.voided_at IS NULL) AS "paidCents" FROM orders WHERE business_id=$1 ORDER BY created_at DESC LIMIT 100`,
     [businessId],
   );
   return rows;

@@ -125,6 +125,8 @@ export type Order = {
   estimatedReadyAt?: string | null;
   rating?: number | null;
   channel?: OrderChannel;
+  /** Charged in the register so far, without voided payments. */
+  paidCents?: number;
 };
 
 // Accepted orders move forward one step at a time. Pickup skips "en camino".

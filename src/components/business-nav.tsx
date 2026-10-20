@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 type Key =
   | "home"
   | "orders"
+  | "cash"
   | "menu"
   | "store"
   | "resultados"
@@ -28,6 +29,7 @@ const groups: { title: string; items: Item[] }[] = [
     title: "Operación",
     items: [
       { key: "orders", label: "Pedidos", path: "/pedidos" },
+      { key: "cash", label: "Caja", path: "/caja" },
       { key: "menu", label: "Carta", path: "/carta" },
       { key: "store", label: "Tienda", path: "/tienda" },
     ],
@@ -66,12 +68,13 @@ const groups: { title: string; items: Item[] }[] = [
 ];
 
 const home: Item = { key: "home", label: "Resumen", path: "" };
-const shortcuts: Key[] = ["home", "orders", "menu", "inventario"];
+const shortcuts: Key[] = ["home", "orders", "cash", "menu"];
 
 // Trazo lineal de 2.5 px, sin emoji (ver docs/DESIGN-SYSTEM.md).
 const icons: Record<Key | "more" | "out", string> = {
   home: "M4 11 12 4l8 7M6 9.5V20h12V9.5",
   orders: "M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6",
+  cash: "M3 10h18v10H3zM6 10V6h12v4M12 13.5v3M9 15h.01M15 15h.01",
   menu: "M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM9 9h6M9 13h4",
   store:
     "M4 9 5.5 4h13L20 9M4 9h16v2a3 3 0 0 1-6 0 3 3 0 0 1-4 0 3 3 0 0 1-6 0zM5 13v7h14v-7",
@@ -115,6 +118,7 @@ function activeKey(pathname: string, base: string, id: string): Key {
     .split("/")
     .filter(Boolean);
   if (first === "pedidos") return "orders";
+  if (first === "caja") return "cash";
   if (first === "carta") return "menu";
   if (first === "tienda") return "store";
   if (first === "gestion") {
