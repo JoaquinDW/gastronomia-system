@@ -10,6 +10,7 @@ import {
 import { orderStages } from "@/lib/checkout";
 import { advanceOrder, decideOrder, listOrders } from "@/server/orders";
 import { getKitchenConfig, productCategories } from "@/server/ticket";
+import { cashOpen } from "@/server/cash";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
@@ -17,12 +18,13 @@ export async function GET(_r: Request, { params }: Context) {
   try {
     const { id } = await params;
     await authorizeBusiness(id, true);
-    const [orders, categories, kitchen] = await Promise.all([
+    const [orders, categories, kitchen, cash] = await Promise.all([
       listOrders(id),
       productCategories(id),
       getKitchenConfig(id),
+      cashOpen(id),
     ]);
-    return json({ orders, categories, kitchen });
+    return json({ orders, categories, kitchen, cashOpen: cash });
   } catch (e) {
     return apiError(e);
   }

@@ -17,6 +17,7 @@ import {
   foreignKey,
   customType,
   smallint,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import type {
   Variant,
@@ -570,5 +571,85 @@ export const expenses = pgTable(
       ],
     }),
     check("management_expense_positive", sql`${t.amountCents} > 0`),
+  ],
+);
+
+// Cash register shifts. One open shift per business at a time; the expected
+// cash and the difference are frozen when it closes.
+export const cashSessions = pgTable(
+  "cash_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    businessId: uuid("business_id")
+      .notNull()
+      .references(() => businesses.id),
+    number: integer("number").notNull(),
+    openRequestKey: uuid("open_request_key").notNull(),
+    openingCents: integer("opening_cents").notNull(),
+    openedBy: text("opened_by").notNull(),
+    openedAt: timestamp("opened_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    closeRequestKey: uuid("close_request_key"),
+    declaredCents: integer("declared_cents"),
+    expectedCents: integer("expected_cents"),
+    note: varchar("note", { length: 300 }).notNull().default(""),
+    closedBy: text("closed_by"),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+  },
+  (t) => [
+    unique("cash_session_tenant").on(t.businessId, t.id),
+    unique("cash_session_number").on(t.businessId, t.number),
+    unique("cash_session_open_request").on(t.businessId, t.openRequestKey),
+    uniqueIndex("cash_session_one_open")
+      .on(t.businessId)
+      .where(sql`${t.closedAt} IS NULL`),
+    check(
+      "cash_session_valid",
+      sql`${t.openingCents} >= 0 AND (${t.closedAt} IS NULL) = (${t.declaredCents} IS NULL) AND (${t.closedAt} IS NULL) = (${t.expectedCents} IS NULL) AND (${t.closedAt} IS NULL) = (${t.closeRequestKey} IS NULL) AND (${t.declaredCents} IS NULL OR ${t.declaredCents} >= 0)`,
+    ),
+  ],
+);
+
+// Every peso that moves through a shift: charges against orders and cash put
+// in or taken out. Rows are never deleted; voiding keeps the original.
+export const cashMovements = pgTable(
+  "cash_movements",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    businessId: uuid("business_id").notNull(),
+    sessionId: uuid("session_id").notNull(),
+    requestKey: uuid("request_key").notNull(),
+    payloadHash: varchar("payload_hash", { length: 64 }).notNull(),
+    kind: varchar("kind", { length: 20 }).notNull(),
+    method: varchar("method", { length: 20 }).notNull(),
+    orderId: uuid("order_id"),
+    amountCents: integer("amount_cents").notNull(),
+    tenderedCents: integer("tendered_cents"),
+    note: varchar("note", { length: 200 }).notNull().default(""),
+    createdBy: text("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
+    voidedBy: text("voided_by"),
+    voidReason: varchar("void_reason", { length: 200 }),
+  },
+  (t) => [
+    unique("cash_movement_request").on(t.businessId, t.requestKey),
+    index("cash_movement_session").on(t.businessId, t.sessionId),
+    index("cash_movement_order").on(t.businessId, t.orderId),
+    foreignKey({
+      columns: [t.businessId, t.sessionId],
+      foreignColumns: [cashSessions.businessId, cashSessions.id],
+    }),
+    foreignKey({
+      columns: [t.businessId, t.orderId],
+      foreignColumns: [orders.businessId, orders.id],
+    }),
+    check(
+      "cash_movement_valid",
+      sql`${t.kind} IN ('payment','deposit','withdrawal') AND ${t.method} IN ('cash','transfer','qr','card') AND ${t.amountCents} > 0 AND (${t.kind} = 'payment') = (${t.orderId} IS NOT NULL) AND (${t.kind} = 'payment' OR ${t.method} = 'cash') AND (${t.tenderedCents} IS NULL OR (${t.method} = 'cash' AND ${t.tenderedCents} >= ${t.amountCents})) AND (${t.voidedAt} IS NULL) = (${t.voidReason} IS NULL)`,
+    ),
   ],
 );

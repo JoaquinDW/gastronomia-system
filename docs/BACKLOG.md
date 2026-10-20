@@ -26,10 +26,10 @@ La base, el alta, la carta manual/con IA, la configuración y publicación de ti
 | KDS-02  | P0        | 3       | Coordinar armado                | Pedido listo únicamente cuando todas sus tareas necesarias están terminadas                             |
 | KDS-03  | P0        | 3       | Recuperar conexión              | Indicador de conexión, cola restaurada y reintento sin duplicar tareas ni estados                       |
 | KDS-04  | P1        | 3       | Advertir demoras                | Temporizador con fecha de servidor, umbrales configurables y sonido tras habilitación del usuario       |
-| PAY-01  | P0        | 4       | Registrar pagos                 | Efectivo/transferencia/tarjeta manual, parciales y divididos; no acreditar por captura o selector       |
+| PAY-01  | P0        | 4       | Registrar pagos                 | Efectivo/transferencia/tarjeta manual, parciales y divididos; no acreditar por captura o selector. **Hecho** en Caja (ver `CAJA.md`) |
 | PAY-02  | P0        | 4       | Reintegrar cobros               | Máximo neto disponible, permiso, método, motivo y sin borrar el cobro original                          |
-| CASH-01 | P0        | 4       | Abrir y cerrar turno            | Apertura única por caja; movimientos, esperado, declarado y diferencia verificables                     |
-| CASH-02 | P0        | 4       | Vincular cobro y caja           | Una operación produce un movimiento; repetirla o reintentar no duplica saldo                            |
+| CASH-01 | P0        | 4       | Abrir y cerrar turno            | Apertura única por caja; movimientos, esperado, declarado y diferencia verificables. **Hecho**, con arqueo ciego |
+| CASH-02 | P0        | 4       | Vincular cobro y caja           | Una operación produce un movimiento; repetirla o reintentar no duplica saldo. **Hecho**                 |
 | RPT-01  | P0        | 4       | Entender ventas y cobros        | Ejemplo conciliable con 3 pedidos, pago parcial, dividido, cancelación y reintegro                      |
 | RPT-02  | P1        | 4       | Exportar e imprimir             | CSV por negocio/período; ticket no fiscal, reimpresión identificada                                     |
 | INV-01  | P0        | 5       | Registrar insumos               | Unidad base, conversión, entradas y merma con autor y motivo                                            |

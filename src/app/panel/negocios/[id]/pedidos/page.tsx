@@ -8,6 +8,7 @@ import {
 } from "@/server/ticket";
 import { storeUrl } from "@/lib/hosts";
 import { OrderInbox } from "@/components/order-inbox";
+import { cashOpen } from "@/server/cash";
 export const metadata = { title: "Pedidos de tu tienda — Pedipue" };
 export default async function OrdersPage({
   params,
@@ -17,11 +18,12 @@ export default async function OrdersPage({
   const { id } = await params;
   const access = await authorizeBusiness(id, true).catch(() => null);
   if (!access) notFound();
-  const [orders, ticket, categories, kitchen] = await Promise.all([
+  const [orders, ticket, categories, kitchen, cash] = await Promise.all([
     listOrders(id),
     getTicketConfig(id),
     productCategories(id),
     getKitchenConfig(id),
+    cashOpen(id),
   ]);
   return (
     <>
@@ -32,7 +34,8 @@ export default async function OrdersPage({
           <p>
             Los pedidos nuevos entran solos. Aceptar registra la venta y
             descuenta los insumos con receta; después marcá cada paso para que
-            el cliente lo vea en su link de seguimiento.
+            el cliente lo vea en su link de seguimiento y cobralo con la caja
+            abierta.
           </p>
         </div>
       </div>
@@ -44,6 +47,7 @@ export default async function OrdersPage({
         initialTicket={ticket}
         initialCategories={categories}
         initialKitchen={kitchen}
+        initialCashOpen={cash}
       />
     </>
   );

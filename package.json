@@ -35,7 +35,9 @@
     "test:manual": "node --import tsx --test tests/manual-order.test.ts",
     "test:ticket": "node --import tsx --test tests/ticket.test.ts",
     "test:escpos": "node --import tsx --test tests/escpos.test.ts",
-    "test:kitchen": "node --import tsx --test tests/kitchen.test.ts"
+    "test:kitchen": "node --import tsx --test tests/kitchen.test.ts",
+    "test:cash": "node --import tsx --test tests/cash.test.ts",
+    "test:cash:db": "node --conditions=react-server --import tsx scripts/test-cash.ts"
   },
   "overrides": {
     "@esbuild-kit/core-utils": {
