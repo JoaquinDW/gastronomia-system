@@ -3,10 +3,36 @@ import { reservedSlugs } from "@/lib/hosts";
 
 export const businessKinds = [
   { value: "hamburgueseria", label: "Hamburguesería" },
+  { value: "pizzeria", label: "Pizzería" },
+  { value: "empanadas", label: "Empanadas" },
+  { value: "lomiteria", label: "Lomitería y sándwiches" },
+  { value: "lomito_arabe", label: "Lomitos árabes" },
+  { value: "shawarma", label: "Shawarma y comida de Medio Oriente" },
   { value: "rotiseria", label: "Rotisería" },
   { value: "pastas", label: "Casa de pastas" },
+  { value: "parrilla", label: "Parrilla" },
+  { value: "milanesas", label: "Milanesas" },
+  { value: "pancheria", label: "Panchería" },
+  { value: "picadas", label: "Picadas y tablas" },
+  { value: "sushi", label: "Sushi y comida japonesa" },
+  { value: "asiatica", label: "Comida china y asiática" },
+  { value: "mexicana", label: "Comida mexicana" },
+  { value: "peruana", label: "Comida peruana" },
+  { value: "vegana", label: "Vegana y vegetariana" },
+  { value: "saludable", label: "Comida saludable y ensaladas" },
+  { value: "viandas", label: "Viandas" },
+  { value: "bar", label: "Bar y cervecería" },
+  { value: "cafeteria", label: "Cafetería" },
+  { value: "panaderia", label: "Panadería y confitería" },
+  { value: "pasteleria", label: "Pastelería y tortas" },
+  { value: "heladeria", label: "Heladería" },
   { value: "otro", label: "Otro emprendimiento gastronómico" },
 ] as const;
+
+const businessKindValues = businessKinds.map((kind) => kind.value) as [
+  (typeof businessKinds)[number]["value"],
+  ...(typeof businessKinds)[number]["value"][],
+];
 
 export function slugify(value: string): string {
   return value
@@ -39,7 +65,7 @@ export const businessInput = z
         (slug) => !reservedSlugs.has(slug),
         "Esa dirección está reservada. Probá con otra.",
       ),
-    kind: z.enum(["hamburgueseria", "rotiseria", "pastas", "otro"], {
+    kind: z.enum(businessKindValues, {
       error: "Elegí el rubro del negocio.",
     }),
     whatsapp: z

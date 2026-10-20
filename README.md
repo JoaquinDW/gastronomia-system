@@ -1,6 +1,6 @@
 # Gastronomía — planificación y base técnica
 
-Plataforma para hamburgueserías, rotiserías y casas de pastas independientes. Incluye cuentas y alta de negocios con Neon Auth, **carta manual o importada con OpenAI, horarios, retiro/delivery, activación de tienda, carrito y pedidos pendientes con checkout por WhatsApp**. El módulo **Gestión** conecta ventas, stock, recetas, elaboración, compras, proveedores y gastos con resultados estimados. Cocina y caja completa siguen en el plan de V1.
+Plataforma para locales gastronómicos independientes: hamburgueserías, pizzerías, rotiserías, lomiterías, casas de pastas y más. Incluye cuentas y alta de negocios con Neon Auth, **carta manual o importada con OpenAI, horarios, retiro/delivery, activación de tienda, carrito y pedidos pendientes con checkout por WhatsApp**. El módulo **Gestión** conecta ventas, stock, recetas, elaboración, compras, proveedores y gastos con resultados estimados. Cocina y caja completa siguen en el plan de V1.
 
 ## Documentos
 
