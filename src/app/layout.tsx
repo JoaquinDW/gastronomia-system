@@ -6,7 +6,7 @@ import "./workspace.css";
 
 const title = "Pedipue — tu tienda online, los pedidos directo";
 const description =
-  "Tu tienda online con link propio y pedidos directo por WhatsApp, sin comisiones de apps de delivery. Para hamburgueserías, rotiserías y casas de pastas.";
+  "Tu tienda online con link propio y pedidos directo por WhatsApp, sin comisiones de apps de delivery. Para hamburgueserías, pizzerías, rotiserías, lomiterías y cualquier local gastronómico.";
 const root = rootDomain();
 
 export const metadata: Metadata = {

@@ -178,7 +178,7 @@ export default function Home() {
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
             <p className="eyebrow">
-              PARA HAMBURGUESERÍAS, ROTISERÍAS Y CASAS DE PASTAS
+              PARA HAMBURGUESERÍAS, PIZZERÍAS, ROTISERÍAS Y MÁS
             </p>
             <h1 id="hero-title">
               Tu tienda online.

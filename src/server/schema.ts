@@ -32,8 +32,29 @@ import type { KitchenConfig } from "../lib/kitchen";
 
 export const businessKind = pgEnum("business_kind", [
   "hamburgueseria",
+  "pizzeria",
+  "empanadas",
+  "lomiteria",
+  "lomito_arabe",
+  "shawarma",
   "rotiseria",
   "pastas",
+  "parrilla",
+  "milanesas",
+  "pancheria",
+  "picadas",
+  "sushi",
+  "asiatica",
+  "mexicana",
+  "peruana",
+  "vegana",
+  "saludable",
+  "viandas",
+  "bar",
+  "cafeteria",
+  "panaderia",
+  "pasteleria",
+  "heladeria",
   "otro",
 ]);
 export const membershipRole = pgEnum("membership_role", [
@@ -193,7 +214,10 @@ export const storeSettings = pgTable("store_settings", {
   pickupEnabled: boolean("pickup_enabled").notNull().default(true),
   pickupInstructions: text("pickup_instructions").notNull().default(""),
   deliveryEnabled: boolean("delivery_enabled").notNull().default(false),
-  deliveryConfig: jsonb("delivery_config").$type<DeliveryConfig>().notNull().default({ mode: "manual" }),
+  deliveryConfig: jsonb("delivery_config")
+    .$type<DeliveryConfig>()
+    .notNull()
+    .default({ mode: "manual" }),
   deliveryZones: jsonb("delivery_zones")
     .$type<DeliveryZone[]>()
     .notNull()

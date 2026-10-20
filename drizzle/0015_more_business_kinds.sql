@@ -1,0 +1,21 @@
+ALTER TYPE "public"."business_kind" ADD VALUE 'pizzeria' BEFORE 'rotiseria';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'empanadas' BEFORE 'rotiseria';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'lomiteria' BEFORE 'rotiseria';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'lomito_arabe' BEFORE 'rotiseria';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'shawarma' BEFORE 'rotiseria';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'parrilla' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'milanesas' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'pancheria' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'picadas' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'sushi' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'asiatica' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'mexicana' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'peruana' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'vegana' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'saludable' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'viandas' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'bar' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'cafeteria' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'panaderia' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'pasteleria' BEFORE 'otro';--> statement-breakpoint
+ALTER TYPE "public"."business_kind" ADD VALUE 'heladeria' BEFORE 'otro';
