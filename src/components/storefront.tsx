@@ -13,6 +13,15 @@ import {
 } from "@/lib/menu";
 import { ChoiceGroup, choiceIdsOf } from "./choice-group";
 import { cartLine, type CartLine } from "@/lib/cart";
+import {
+  customerAddressKey,
+  customerStorageKey,
+  parseSavedAddress,
+  parseSavedCustomer,
+  serializeAddress,
+  serializeCustomer,
+  type SavedCustomer,
+} from "@/lib/customer-memory";
 type Business = {
   name: string;
   slug: string;
@@ -237,6 +246,8 @@ export function Storefront({
     trackingUrl: string;
   } | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [savedCustomer, setSavedCustomer] = useState<SavedCustomer | null>(null);
+  const [remember, setRemember] = useState(true);
   const requestKey = useRef<string | null>(null);
   const cover = settings.coverImageUrl
     ? productImage(settings.coverImageUrl)
@@ -275,13 +286,21 @@ export function Storefront({
         setCart(valid);
       }
     } catch {}
+    try {
+      setSavedCustomer(parseSavedCustomer(localStorage.getItem(customerStorageKey)));
+      const saved = parseSavedAddress(localStorage.getItem(customerAddressKey(business.slug)));
+      if (saved) {
+        setDeliveryAddress(saved.address);
+        setDeliveryLocation(saved.location);
+      }
+    } catch {}
     setReady(true);
     const tick = () =>
       setOpen(isStoreOpen(settings.hours, new Date(), business.timezone));
     tick();
     const interval = setInterval(tick, 30000);
     return () => clearInterval(interval);
-  }, [cartStorage, products, settings.hours, business.timezone]);
+  }, [cartStorage, products, settings.hours, business.timezone, business.slug]);
   useEffect(() => {
     if (ready) {
       try {
@@ -320,6 +339,28 @@ export function Storefront({
   const filtered = products.filter((p) =>
     `${p.name} ${p.description}`.toLowerCase().includes(query.toLowerCase()),
   );
+  function rememberCustomer(form: FormData) {
+    try {
+      const addressKey = customerAddressKey(business.slug);
+      if (!remember) {
+        localStorage.removeItem(customerStorageKey);
+        localStorage.removeItem(addressKey);
+        return;
+      }
+      const customer = serializeCustomer({
+        name: String(form.get("customerName") ?? ""),
+        phone: String(form.get("customerPhone") ?? ""),
+      });
+      if (customer) localStorage.setItem(customerStorageKey, customer);
+      if (fulfillment === "delivery") {
+        const address = serializeAddress({
+          address: deliveryAddress,
+          location: deliveryLocation,
+        });
+        if (address) localStorage.setItem(addressKey, address);
+      }
+    } catch {}
+  }
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
@@ -365,6 +406,7 @@ export function Storefront({
         if (r.status < 500) requestKey.current = null;
         throw new Error(d.error);
       }
+      rememberCustomer(form);
       setResult(d);
       setCart([]);
       setShowCheckout(false);
@@ -654,6 +696,7 @@ export function Storefront({
                     <input
                       name="customerName"
                       autoComplete="name"
+                      defaultValue={savedCustomer?.name}
                       required
                       minLength={2}
                       maxLength={100}
@@ -665,6 +708,7 @@ export function Storefront({
                       name="customerPhone"
                       type="tel"
                       autoComplete="tel"
+                      defaultValue={savedCustomer?.phone}
                       required
                       maxLength={30}
                       placeholder="+54 9 351 123 4567"
@@ -761,6 +805,17 @@ export function Storefront({
                       maxLength={500}
                       placeholder="Detalles que el local deba tener en cuenta."
                     />
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={remember}
+                      onChange={(e) => setRemember(e.target.checked)}
+                    />
+                    <span>
+                      Recordar mis datos en este dispositivo para el próximo
+                      pedido
+                    </span>
                   </label>
                 </fieldset>
                 <div className="checkout-summary" aria-live="polite">
