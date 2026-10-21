@@ -1,3 +1,5 @@
+import { BillingControls } from "@/components/billing-controls";
+import { billingState } from "@/lib/billing";
 import { businessKinds } from "@/lib/business-input";
 import { storeUrl } from "@/lib/hosts";
 import { formatMoney } from "@/lib/menu";
@@ -91,6 +93,14 @@ function BusinessRow({
           </small>
         </div>
       </td>
+      <td data-label="Plan">
+        <BillingControls
+          businessId={business.id}
+          name={business.name}
+          fields={business}
+          now={now}
+        />
+      </td>
       <td data-label="Alta" className="admin-mono admin-nowrap">
         {dateFormat.format(new Date(business.createdAt))}
       </td>
@@ -122,6 +132,11 @@ export function SuperadminOverview({
   now: number;
 }) {
   const { totals } = overview;
+  const plans = overview.businesses.map(
+    (business) => billingState(business, now).kind,
+  );
+  const planCount = (kind: string) =>
+    plans.filter((plan) => plan === kind).length;
   const needle = query.trim().toLowerCase();
   const businesses = needle
     ? overview.businesses.filter((business) =>
@@ -158,6 +173,11 @@ export function SuperadminOverview({
           label="Tiendas publicadas"
           value={count(totals.published)}
           detail={`de ${count(totals.businesses)} negocios`}
+        />
+        <Stat
+          label="Pagando"
+          value={count(planCount("paid"))}
+          detail={`${count(planCount("trial"))} en prueba · ${count(planCount("expired"))} vencidos`}
         />
         <Stat
           label="Pedidos 7 días"
@@ -205,6 +225,7 @@ export function SuperadminOverview({
                 <th scope="col">Negocio</th>
                 <th scope="col">Dueño</th>
                 <th scope="col">Estado</th>
+                <th scope="col">Plan</th>
                 <th scope="col">Alta</th>
                 <th scope="col">Último pedido</th>
                 <th scope="col" className="admin-num">

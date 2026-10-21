@@ -18,9 +18,13 @@ export type Business = {
   city: string;
   address: string | null;
   role: string;
+  billingExempt: boolean;
+  trialEndsAt: Date | null;
+  paidUntil: Date | null;
 };
 
 const businessFields = `b.id, b.name, b.slug, b.kind, b.whatsapp, m.role,
+  b.billing_exempt AS "billingExempt", b.trial_ends_at AS "trialEndsAt", b.paid_until AS "paidUntil",
   (SELECT city FROM locations WHERE business_id = b.id ORDER BY created_at, id LIMIT 1) AS city,
   (SELECT address FROM locations WHERE business_id = b.id ORDER BY created_at, id LIMIT 1) AS address`;
 
