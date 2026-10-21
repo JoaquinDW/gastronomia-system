@@ -1660,6 +1660,12 @@
   border-radius: 20px;
   position: sticky;
   top: 25px;
+  /* Fits the viewport and scrolls on its own, so the form stays reachable at any point of the menu. */
+  max-height: calc(100vh - 50px);
+  max-height: calc(100dvh - 50px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   min-width: 0;
   scroll-margin-top: 20px;
 }
@@ -2776,6 +2782,8 @@ body.kitchen-open {
   }
   .shop-cart {
     position: static;
+    max-height: none;
+    overflow: visible;
   }
   .shop-hero {
     align-items: flex-start;
