@@ -171,23 +171,47 @@ export default function Home() {
           <a
             className="quiet-link header-demo"
             href={demoUrl}
+            data-track="landing_cta_clicked"
+            data-track-cta="ver_ejemplo"
+            data-track-place="header"
             target="_blank"
             rel="noopener"
           >
             Ver ejemplo
           </a>
-          <Link className="quiet-link header-demo" href="/demo">
+          <Link
+            className="quiet-link header-demo"
+            href="/demo"
+            data-track="landing_cta_clicked"
+            data-track-cta="probar_panel"
+            data-track-place="header"
+          >
             Probar el panel
           </Link>
-          <a className="quiet-link header-demo" href="#precio">
+          <a
+            className="quiet-link header-demo"
+            href="#precio"
+            data-track="landing_cta_clicked"
+            data-track-cta="ver_precio"
+            data-track-place="header"
+          >
             Precio
           </a>
-          <Link className="quiet-link" href={appUrl("/ingresar")}>
+          <Link
+            className="quiet-link"
+            href={appUrl("/ingresar")}
+            data-track="landing_cta_clicked"
+            data-track-cta="ingresar"
+            data-track-place="header"
+          >
             Ingresar
           </Link>
           <Link
             className="primary-button compact-button"
             href={appUrl("/registro")}
+            data-track="landing_cta_clicked"
+            data-track-cta="crear_tienda"
+            data-track-place="header"
           >
             Crear mi tienda <span aria-hidden="true">↗</span>
           </Link>
@@ -214,12 +238,18 @@ export default function Home() {
               <Link
                 className="primary-button compact-button"
                 href={appUrl("/registro")}
+                data-track="landing_cta_clicked"
+                data-track-cta="crear_tienda"
+                data-track-place="hero"
               >
                 Crear mi tienda <span aria-hidden="true">→</span>
               </Link>
               <a
                 className="ghost-button"
                 href={demoUrl}
+                data-track="landing_cta_clicked"
+                data-track-cta="ver_ejemplo"
+                data-track-place="hero"
                 target="_blank"
                 rel="noopener"
               >
@@ -230,13 +260,25 @@ export default function Home() {
               <strong>{trialDays} días gratis.</strong> Después,{" "}
               <span className="hero-price-amount">{launchPrice}</span> por mes
               los primeros {launchMonths} meses.{" "}
-              <a className="text-link" href="#precio">
+              <a
+                className="text-link"
+                href="#precio"
+                data-track="landing_cta_clicked"
+                data-track-cta="ver_precio"
+                data-track-place="hero"
+              >
                 Ver precio
               </a>
             </p>
             <p className="hero-panel-link">
               ¿Querés ver el panel por dentro?{" "}
-              <Link className="text-link" href="/demo">
+              <Link
+                className="text-link"
+                href="/demo"
+                data-track="landing_cta_clicked"
+                data-track-cta="probar_panel"
+                data-track-place="hero"
+              >
                 Probalo sin registrarte →
               </Link>
             </p>
@@ -251,6 +293,9 @@ export default function Home() {
             <a
               className="demo-phone"
               href={demoUrl}
+              data-track="landing_cta_clicked"
+              data-track-cta="ver_ejemplo"
+              data-track-place="hero_telefono"
               target="_blank"
               rel="noopener"
               aria-label="Abrir Brasa Club, la tienda de ejemplo, en otra pestaña"
@@ -301,7 +346,14 @@ export default function Home() {
             </a>
             <figcaption>
               <span className="demo-sticker">TIENDA DE EJEMPLO</span>
-              <a href={demoUrl} target="_blank" rel="noopener">
+              <a
+                href={demoUrl}
+                target="_blank"
+                rel="noopener"
+                data-track="landing_cta_clicked"
+                data-track-cta="ver_ejemplo"
+                data-track-place="hero_caption"
+              >
                 brasa-club.pedipue.com <span aria-hidden="true">↗</span>
               </a>
             </figcaption>
@@ -340,7 +392,13 @@ export default function Home() {
             <p>
               Todo esto ya funciona hoy, en el mismo panel. Lo marcado como
               nuevo se sumó esta semana.{" "}
-              <Link className="text-link" href="/demo">
+              <Link
+                className="text-link"
+                href="/demo"
+                data-track="landing_cta_clicked"
+                data-track-cta="probar_panel"
+                data-track-place="modulos"
+              >
                 Probalo sin registrarte
               </Link>
               .
@@ -379,6 +437,9 @@ export default function Home() {
           <a
             className="primary-button"
             href={demoUrl}
+            data-track="landing_cta_clicked"
+            data-track-cta="ver_ejemplo"
+            data-track-place="banda_ejemplo"
             target="_blank"
             rel="noopener"
           >
@@ -399,7 +460,13 @@ export default function Home() {
               todo lo que quieras: es una demo y no se guarda nada.
             </p>
           </div>
-          <Link className="secondary-button" href="/demo">
+          <Link
+            className="secondary-button"
+            href="/demo"
+            data-track="landing_cta_clicked"
+            data-track-cta="probar_panel"
+            data-track-place="banda_panel"
+          >
             Probar el panel <span aria-hidden="true">→</span>
           </Link>
         </section>
@@ -434,7 +501,13 @@ export default function Home() {
               <li>Pedidos ilimitados, sin comisión</li>
               <li>Pagás por transferencia o link de pago</li>
             </ul>
-            <Link className="primary-button" href={appUrl("/registro")}>
+            <Link
+              className="primary-button"
+              href={appUrl("/registro")}
+              data-track="landing_cta_clicked"
+              data-track-cta="crear_tienda"
+              data-track-place="precio"
+            >
               Empezar gratis <span aria-hidden="true">→</span>
             </Link>
           </div>
@@ -462,6 +535,7 @@ export default function Home() {
             <a
               className="primary-button"
               href={foundersHref}
+              data-track="founders_whatsapp_clicked"
               target="_blank"
               rel="noopener"
             >
@@ -496,10 +570,22 @@ export default function Home() {
               Armá tu tienda hoy y empezá a recibir pedidos directo, con tu
               nombre y tu carta.
             </p>
-            <Link className="primary-button" href={appUrl("/registro")}>
+            <Link
+              className="primary-button"
+              href={appUrl("/registro")}
+              data-track="landing_cta_clicked"
+              data-track-cta="crear_tienda"
+              data-track-place="cierre"
+            >
               Crear mi tienda <span aria-hidden="true">→</span>
             </Link>
-            <Link className="text-link" href={appUrl("/ingresar")}>
+            <Link
+              className="text-link"
+              href={appUrl("/ingresar")}
+              data-track="landing_cta_clicked"
+              data-track-cta="ingresar"
+              data-track-place="cierre"
+            >
               Ya tengo cuenta, ingresar
             </Link>
           </aside>

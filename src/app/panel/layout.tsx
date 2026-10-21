@@ -1,5 +1,6 @@
 import { Brand } from "@/components/brand";
 import { appUrl } from "@/lib/hosts";
+import { IdentifyUser } from "@/components/identify-user";
 import { SignOut } from "@/components/sign-out";
 import { requireUser } from "@/server/auth";
 import { isSuperadminEmail } from "@/server/superadmin";
@@ -14,6 +15,7 @@ export default async function PanelLayout({
   const user = await requireUser();
   return (
     <div className="site-shell panel-shell">
+      <IdentifyUser id={user.id} email={user.email} name={user.name} />
       <a className="skip-link" href="#contenido">
         Ir al contenido
       </a>

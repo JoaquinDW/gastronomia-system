@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { track } from "@/lib/analytics";
 import { businessInput, businessKinds, slugify } from "@/lib/business-input";
 import { appUrl, storeUrl } from "@/lib/hosts";
 
@@ -67,6 +68,12 @@ export function BusinessForm({ email }: { email: string }) {
         return;
       }
       if (typeof data.id !== "string") throw new Error("Missing business ID");
+      // Crear el negocio arranca la prueba gratis.
+      track(
+        "trial_started",
+        { business_id: data.id, kind: parsed.data.kind, city: parsed.data.city },
+        { beforeNavigation: true },
+      );
       // Recarga completa: con dominios, el proxy lleva al subdominio del local.
       window.location.assign(
         appUrl(`/panel/negocios/${encodeURIComponent(data.id)}`),

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { track } from "@/lib/analytics";
 import { authClient } from "@/lib/auth-client";
 
 export function AuthForm({
@@ -57,6 +58,9 @@ export function AuthForm({
         setBusy(false);
         return;
       }
+      track(registering ? "signed_up" : "logged_in", undefined, {
+        beforeNavigation: true,
+      });
       // Volver a la gestión del local que pidió el ingreso (otro subdominio).
       if (next) return window.location.assign(next);
       router.replace(registering ? "/alta" : "/panel");

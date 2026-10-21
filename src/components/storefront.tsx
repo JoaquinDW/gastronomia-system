@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { track } from "@/lib/analytics";
 import { deliveryQuote, type Coordinates } from "@/lib/delivery";
 import { LocationPicker } from "./location-picker";
 import {
@@ -407,6 +408,17 @@ export function Storefront({
         throw new Error(d.error);
       }
       rememberCustomer(form);
+      track(
+        "order_placed",
+        {
+          store: business.slug,
+          fulfillment,
+          payment_method: String(form.get("paymentMethod") ?? ""),
+          items: cart.reduce((n, l) => n + l.quantity, 0),
+          total_cents: d.totalCents,
+        },
+        { beforeNavigation: true },
+      );
       setResult(d);
       setCart([]);
       setShowCheckout(false);
@@ -595,6 +607,9 @@ export function Storefront({
                 <a
                   className="whatsapp-button"
                   href={result.whatsappUrl}
+                  data-track="order_whatsapp_clicked"
+                  data-track-store={business.slug}
+                  data-track-place="cart"
                   target="_blank"
                   rel="noreferrer"
                 >
