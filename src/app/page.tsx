@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { launchMonths, trialDays } from "@/lib/billing";
-import { launchPrice, regularPrice } from "@/lib/billing-copy";
+import { launchPrice, pedipueWhatsapp, regularPrice } from "@/lib/billing-copy";
 import { appUrl } from "@/lib/hosts";
 
 // Tienda real de ejemplo en producción. Las fotos se piden a esa misma tienda
@@ -150,6 +150,9 @@ const highlights = [
 ];
 
 export default function Home() {
+  const foundersHref = pedipueWhatsapp(
+    "Hola, quiero postular mi local al programa Socios Fundadores de Pedipue.",
+  );
   return (
     <div className="site-shell">
       <a className="skip-link" href="#contenido">
@@ -436,6 +439,36 @@ export default function Home() {
             </Link>
           </div>
         </section>
+
+        {foundersHref ? (
+          <section
+            id="socios-fundadores"
+            className="demo-band founders-band"
+            aria-labelledby="founders-title"
+          >
+            <div>
+              <p className="eyebrow">
+                POSTULACIONES ABIERTAS · SELECCIÓN PERSONALIZADA
+              </p>
+              <h2 id="founders-title">Programa Socios Fundadores.</h2>
+              <p>
+                Estamos eligiendo los primeros locales gastronómicos que quieran
+                crecer junto a Pedipue. Los seleccionados acceden a beneficios
+                exclusivos, acompañamiento personalizado y condiciones
+                especiales de lanzamiento. ¿Querés que tu local sea uno de
+                ellos?
+              </p>
+            </div>
+            <a
+              className="primary-button"
+              href={foundersHref}
+              target="_blank"
+              rel="noopener"
+            >
+              Postulate por WhatsApp <span aria-hidden="true">↗</span>
+            </a>
+          </section>
+        ) : null}
 
         <section
           id="como-funciona"

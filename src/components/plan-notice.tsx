@@ -5,22 +5,13 @@ import {
   trialDays,
   type BillingFields,
 } from "@/lib/billing";
-import { launchPrice } from "@/lib/billing-copy";
+import { launchPrice, pedipueWhatsapp } from "@/lib/billing-copy";
 
 const dateFormat = new Intl.DateTimeFormat("es-AR", {
   day: "numeric",
   month: "long",
   timeZone: "America/Argentina/Cordoba",
 });
-
-// El número donde se coordina el pago (transferencia o link). Sin la variable,
-// el aviso sale igual pero sin el botón de WhatsApp.
-function payHref(businessName: string) {
-  const phone = process.env.BILLING_WHATSAPP?.replace(/\D/g, "");
-  if (!phone) return null;
-  const text = `Hola, quiero pagar Pedipue para ${businessName}.`;
-  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
-}
 
 // Aviso del plan arriba del panel. Nunca bloquea: la tienda y los pedidos
 // siguen andando aunque la prueba haya vencido; el cobro se arregla a mano.
@@ -36,7 +27,9 @@ export function PlanNotice({
   const state = billingState(fields, now);
   if (state.kind === "exempt") return null;
   if (state.kind === "paid" && state.daysLeft > 3) return null;
-  const href = payHref(businessName);
+  const href = pedipueWhatsapp(
+    `Hola, quiero pagar Pedipue para ${businessName}.`,
+  );
   const urgent =
     state.kind === "expired" ||
     (state.kind === "trial" && state.daysLeft <= 3) ||

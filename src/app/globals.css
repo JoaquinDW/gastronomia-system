@@ -1705,3 +1705,8 @@ footer {
   font: 700 12px var(--mono);
   letter-spacing: 1px;
 }
+
+/* Landing: Socios Fundadores, por postulación (WhatsApp). */
+.founders-band {
+  margin-top: 48px;
+}
