@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { priceSentence } from "@/lib/billing-copy";
 import { Brand } from "./brand";
 
 export function AccountShell({
@@ -42,23 +43,30 @@ export function AccountShell({
             los datos de tu emprendimiento.
           </p>
           {!login ? (
-            <ol className="setup-steps" aria-label="Pasos del alta">
-              <li
-                aria-current={step === 1 ? "step" : undefined}
-                className={step === 2 ? "completed" : ""}
-              >
-                <span>{step === 2 ? "✓" : "01"}</span>
-                <div>
-                  Tu cuenta<small>Para entrar de forma segura.</small>
-                </div>
-              </li>
-              <li aria-current={step === 2 ? "step" : undefined}>
-                <span>02</span>
-                <div>
-                  Tu negocio<small>Sus datos y tu lugar como dueño.</small>
-                </div>
-              </li>
-            </ol>
+            <>
+              <ol className="setup-steps" aria-label="Pasos del alta">
+                <li
+                  aria-current={step === 1 ? "step" : undefined}
+                  className={step === 2 ? "completed" : ""}
+                >
+                  <span>{step === 2 ? "✓" : "01"}</span>
+                  <div>
+                    Tu cuenta<small>Para entrar de forma segura.</small>
+                  </div>
+                </li>
+                <li aria-current={step === 2 ? "step" : undefined}>
+                  <span>02</span>
+                  <div>
+                    Tu negocio<small>Sus datos y tu lugar como dueño.</small>
+                  </div>
+                </li>
+              </ol>
+              <p className="account-price">
+                <strong>PRECIO</strong>
+                {priceSentence} Sin tarjeta para empezar y sin comisión por
+                pedido.
+              </p>
+            </>
           ) : (
             <p className="story-note">
               Cada negocio tiene su propio espacio. Entrá con la cuenta con la

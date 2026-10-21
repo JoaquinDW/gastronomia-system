@@ -3884,3 +3884,66 @@ body.kitchen-open {
     display: none;
   }
 }
+
+/* Aviso del plan (cobro manual): suave durante la prueba, Tinta cuando vence. */
+.plan-notice {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 28px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+}
+.plan-notice p {
+  margin: 0;
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.plan-notice-tag {
+  flex-shrink: 0;
+  padding: 5px 9px;
+  background: var(--accent);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  font: 700 11px var(--mono);
+  transform: rotate(-4deg);
+}
+.plan-notice .ghost-button,
+.plan-notice .primary-button {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+.plan-notice.is-urgent {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.plan-notice.is-urgent .plan-notice-tag {
+  border-color: var(--paper);
+}
+.plan-notice.is-urgent .primary-button {
+  box-shadow: 2px 2px 0 var(--paper);
+}
+@media (max-width: 760px) {
+  .plan-notice {
+    flex-wrap: wrap;
+    gap: 10px;
+    border-radius: 14px;
+  }
+  .plan-notice p {
+    flex-basis: 100%;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .plan-notice .ghost-button,
+  .plan-notice .primary-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

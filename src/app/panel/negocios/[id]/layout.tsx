@@ -8,6 +8,7 @@ import {
 } from "@/lib/hosts";
 import { BusinessNav } from "@/components/business-nav";
 import { PanelBaseProvider } from "@/components/panel-base";
+import { PlanNotice } from "@/components/plan-notice";
 import { requireUser } from "@/server/auth";
 import { businessSlugForId } from "@/server/business-hosts";
 import { findBusiness } from "@/server/businesses";
@@ -47,7 +48,16 @@ export default async function BusinessLayout({
           }
           businessesHref={appUrl("/panel")}
         />
-        <div className="biz-content">{children}</div>
+        <div className="biz-content">
+          {["owner", "manager"].includes(business.role) ? (
+            <PlanNotice
+              businessName={business.name}
+              fields={business}
+              now={Date.now()}
+            />
+          ) : null}
+          {children}
+        </div>
       </div>
     </PanelBaseProvider>
   );

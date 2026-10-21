@@ -1597,3 +1597,116 @@ footer {
     font-size: 31px;
   }
 }
+
+/* Landing: precio publicado (prueba gratis y plan de lanzamiento). */
+.hero-price {
+  margin: 18px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.hero-price-amount {
+  font: 700 15px var(--mono);
+}
+.pricing {
+  display: grid;
+  grid-template-columns: 1fr minmax(300px, 400px);
+  gap: 48px;
+  align-items: center;
+  padding: 60px 0 8px;
+}
+.pricing .section-intro p:not(.eyebrow) {
+  max-width: 520px;
+}
+.pricing-card {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+  padding: 32px 28px 28px;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: 6px 6px 0 var(--ink);
+}
+.pricing-sticker {
+  position: absolute;
+  top: -14px;
+  right: 18px;
+  padding: 5px 10px;
+  background: var(--accent);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  font: 700 12px var(--mono);
+  transform: rotate(-4deg);
+}
+.pricing-trial {
+  margin: 0;
+  font: 700 12px var(--mono);
+  letter-spacing: 1px;
+  color: var(--accent-ink);
+}
+.pricing-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+}
+.pricing-amount strong {
+  font: 800 56px/0.95 var(--display);
+  letter-spacing: -2px;
+}
+.pricing-amount span {
+  font: 700 15px var(--mono);
+  color: var(--muted);
+}
+.pricing-detail {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.pricing-list {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 8px;
+  padding: 0;
+  font-size: 14px;
+}
+.pricing-list li::before {
+  content: "✓";
+  color: var(--accent-ink);
+  font-weight: 700;
+  margin-right: 8px;
+}
+@media (max-width: 860px) {
+  .pricing {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding-top: 44px;
+  }
+  .pricing-amount strong {
+    font-size: 48px;
+  }
+}
+
+/* Registro: el precio se ve desde el primer paso. */
+.account-price {
+  margin: 22px 0 0;
+  padding: 14px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.account-price strong {
+  display: block;
+  margin-bottom: 4px;
+  font: 700 12px var(--mono);
+  letter-spacing: 1px;
+}
+
+/* Landing: Socios Fundadores, por postulación (WhatsApp). */
+.founders-band {
+  margin-top: 48px;
+}

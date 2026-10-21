@@ -77,6 +77,13 @@ export const businesses = pgTable(
     createdByUserId: text("created_by_user_id").notNull(),
     onboardingKey: uuid("onboarding_key").notNull(),
     onboardingHash: varchar("onboarding_hash", { length: 64 }).notNull(),
+    // Cobro manual: los negocios que ya existían al sumar la prueba quedan
+    // exentos (la migración los marca así); los nuevos arrancan con 14 días.
+    billingExempt: boolean("billing_exempt").notNull().default(false),
+    trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }).default(
+      sql`now() + interval '14 days'`,
+    ),
+    paidUntil: timestamp("paid_until", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

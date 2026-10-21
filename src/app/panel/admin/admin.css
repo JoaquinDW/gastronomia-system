@@ -264,3 +264,33 @@
     margin-top: 4px;
   }
 }
+
+/* Cobro manual: estado del plan y acciones del superadmin. */
+.admin-badge.is-trial {
+  border-color: var(--ink);
+}
+.admin-badge.is-trial::before {
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.admin-badge.is-due {
+  border-color: var(--ink);
+  background: var(--promo);
+}
+.admin-badge.is-due::before {
+  background: var(--ink);
+}
+.admin-billing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+}
+.admin-billing-actions .text-button {
+  font-size: 12px;
+  padding: 0;
+  min-height: 28px;
+}
+.admin-error {
+  color: var(--ink);
+  font-weight: 700;
+}

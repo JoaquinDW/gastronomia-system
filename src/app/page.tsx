@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { launchMonths, trialDays } from "@/lib/billing";
+import { launchPrice, pedipueWhatsapp, regularPrice } from "@/lib/billing-copy";
 import { appUrl } from "@/lib/hosts";
 
 // Tienda real de ejemplo en producción. Las fotos se piden a esa misma tienda
@@ -115,6 +117,14 @@ const steps = [
 
 const questions = [
   {
+    q: "¿Cuánto cuesta?",
+    a: `Los primeros ${trialDays} días son gratis. Después, ${launchPrice} por mes los primeros ${launchMonths} meses y ${regularPrice} por mes desde el cuarto. Sin comisión por pedido.`,
+  },
+  {
+    q: "¿Qué pasa cuando termina la prueba?",
+    a: "Te avisamos en el panel unos días antes. Si seguís, pagás por transferencia o link de pago; no te pedimos tarjeta para empezar. Tu tienda no se corta de golpe.",
+  },
+  {
     q: "¿Tengo que instalar algo?",
     a: "No. Tus clientes piden desde el navegador del celular y vos manejás todo desde el panel, en la compu o en el teléfono.",
   },
@@ -133,12 +143,16 @@ const questions = [
 ];
 
 const highlights = [
+  `${trialDays} días gratis, sin tarjeta`,
   "Carta desde una foto",
   "Delivery con costo por distancia",
   "Sin instalar nada",
 ];
 
 export default function Home() {
+  const foundersHref = pedipueWhatsapp(
+    "Hola, quiero postular mi local al programa Socios Fundadores de Pedipue.",
+  );
   return (
     <div className="site-shell">
       <a className="skip-link" href="#contenido">
@@ -165,6 +179,9 @@ export default function Home() {
           <Link className="quiet-link header-demo" href="/demo">
             Probar el panel
           </Link>
+          <a className="quiet-link header-demo" href="#precio">
+            Precio
+          </a>
           <Link className="quiet-link" href={appUrl("/ingresar")}>
             Ingresar
           </Link>
@@ -209,6 +226,14 @@ export default function Home() {
                 Ver una tienda de ejemplo <span aria-hidden="true">↗</span>
               </a>
             </div>
+            <p className="hero-price">
+              <strong>{trialDays} días gratis.</strong> Después,{" "}
+              <span className="hero-price-amount">{launchPrice}</span> por mes
+              los primeros {launchMonths} meses.{" "}
+              <a className="text-link" href="#precio">
+                Ver precio
+              </a>
+            </p>
             <p className="hero-panel-link">
               ¿Querés ver el panel por dentro?{" "}
               <Link className="text-link" href="/demo">
@@ -378,6 +403,72 @@ export default function Home() {
             Probar el panel <span aria-hidden="true">→</span>
           </Link>
         </section>
+
+        <section
+          id="precio"
+          className="pricing"
+          aria-labelledby="pricing-title"
+        >
+          <div className="section-intro">
+            <p className="eyebrow">PRECIO</p>
+            <h2 id="pricing-title">Un solo plan. Sin comisión por pedido.</h2>
+            <p>
+              Probalo {trialDays} días gratis con todo incluido: tienda, carta,
+              pedidos en vivo, cocina, caja y números. No te pedimos tarjeta. Si
+              te sirve, seguís; si no, no pagás nada.
+            </p>
+          </div>
+          <div className="pricing-card">
+            <span className="pricing-sticker">LANZAMIENTO</span>
+            <p className="pricing-trial">{trialDays} DÍAS GRATIS</p>
+            <p className="pricing-amount">
+              <strong>{launchPrice}</strong>
+              <span>/ mes</span>
+            </p>
+            <p className="pricing-detail">
+              Los primeros {launchMonths} meses. Después, {regularPrice} por
+              mes.
+            </p>
+            <ul className="pricing-list">
+              <li>Todo el panel, sin módulos aparte</li>
+              <li>Pedidos ilimitados, sin comisión</li>
+              <li>Pagás por transferencia o link de pago</li>
+            </ul>
+            <Link className="primary-button" href={appUrl("/registro")}>
+              Empezar gratis <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        </section>
+
+        {foundersHref ? (
+          <section
+            id="socios-fundadores"
+            className="demo-band founders-band"
+            aria-labelledby="founders-title"
+          >
+            <div>
+              <p className="eyebrow">
+                POSTULACIONES ABIERTAS · SELECCIÓN PERSONALIZADA
+              </p>
+              <h2 id="founders-title">Programa Socios Fundadores.</h2>
+              <p>
+                Estamos eligiendo los primeros locales gastronómicos que quieran
+                crecer junto a Pedipue. Los seleccionados acceden a beneficios
+                exclusivos, acompañamiento personalizado y condiciones
+                especiales de lanzamiento. ¿Querés que tu local sea uno de
+                ellos?
+              </p>
+            </div>
+            <a
+              className="primary-button"
+              href={foundersHref}
+              target="_blank"
+              rel="noopener"
+            >
+              Postulate por WhatsApp <span aria-hidden="true">↗</span>
+            </a>
+          </section>
+        ) : null}
 
         <section
           id="como-funciona"

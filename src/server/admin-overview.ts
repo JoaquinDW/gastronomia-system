@@ -19,6 +19,9 @@ export type AdminBusiness = {
   sales7: number;
   sales30: number;
   pending: number;
+  billingExempt: boolean;
+  trialEndsAt: Date | null;
+  paidUntil: Date | null;
 };
 
 export type AdminOverview = {
@@ -57,6 +60,7 @@ const businessQuery = (withUsers: boolean) => `
     FROM menu_products WHERE archived_at IS NULL GROUP BY business_id
   )
   SELECT b.id, b.name, b.slug, b.kind, b.created_at AS "createdAt",
+    b.billing_exempt AS "billingExempt", b.trial_ends_at AS "trialEndsAt", b.paid_until AS "paidUntil",
     (SELECT city FROM locations WHERE business_id = b.id ORDER BY created_at, id LIMIT 1) AS city,
     coalesce(o.user_id, b.created_by_user_id) AS "ownerId",
     ${withUsers ? 'u.name AS "ownerName", u.email AS "ownerEmail"' : 'NULL AS "ownerName", NULL AS "ownerEmail"'},
