@@ -138,6 +138,7 @@ export function BusinessNav({
   storeHref,
   isPublished,
   businessesHref,
+  businessesLabel = "Mis negocios",
 }: {
   id: string;
   base: string;
@@ -146,6 +147,7 @@ export function BusinessNav({
   storeHref: string;
   isPublished: boolean;
   businessesHref: string;
+  businessesLabel?: string;
 }) {
   const pathname = usePathname() ?? "";
   const [moreOpen, setMoreOpen] = useState(false);
@@ -218,7 +220,7 @@ export function BusinessNav({
           </span>
           <div>
             <strong>{name}</strong>
-            <Link href={businessesHref}>← Mis negocios</Link>
+            <Link href={businessesHref}>← {businessesLabel}</Link>
           </div>
         </div>
         <nav className="biz-nav" aria-label="Gestión del negocio">
@@ -267,7 +269,7 @@ export function BusinessNav({
             </nav>
             {store}
             <Link className="biz-more-back" href={businessesHref}>
-              ← Mis negocios
+              ← {businessesLabel}
             </Link>
           </div>
         </div>
