@@ -53,7 +53,7 @@ const events = `WITH sale_events AS (
   UNION ALL SELECT o.operational_date,0,0,0,0,COALESCE(m.cost_cents,0),0,0,0,0,CASE WHEN m.cost_cents IS NULL THEN 1 ELSE 0 END,0,CASE WHEN m.cost_cents IS NULL THEN 1 ELSE 0 END,0 FROM inventory_movements m JOIN management_operations o ON o.business_id=m.business_id AND o.id=m.operation_id WHERE m.business_id=$1 AND m.kind='waste'
   UNION ALL SELECT operational_date,0,0,0,0,0,0,0,0,0,1,0,1,0 FROM management_operations WHERE business_id=$1 AND type='cancel_sale' AND result->>'incompleteWaste'='true'
 )`;
-type Day = {
+export type Day = {
   date: string;
   revenue: string;
   delivery: string;
@@ -69,7 +69,7 @@ type Day = {
   legacy: string;
   estimated: string;
 };
-function totals(days: Day[]): Totals {
+export function totals(days: Day[]): Totals {
   const sum = (key: keyof Day) => days.reduce((n, d) => n + BigInt(d[key]), 0n);
   const revenue = sum("revenue"),
     cost = sum("cost"),
@@ -170,6 +170,49 @@ export async function getManagementReport(
     ),
     historicalOrders: historicalOrders.rows,
   };
+}
+
+/** El reporte de Resultados, como lo baja "Exportar resultados CSV". */
+export function resultsCsv(report: Report): string {
+  return csv([
+    ["Desde", report.from, "Hasta", report.to],
+    ["Indicador", "Centavos / cantidad"],
+    ["Total vendido", report.totals.revenue],
+    ["Ingresos por envío", report.totals.delivery],
+    ["Costo vendido conocido", report.totals.cost],
+    ["Ventas menos su costo", report.totals.grossMargin],
+    ["Gastos registrados", report.totals.expenses],
+    ["Pérdidas registradas", report.totals.waste],
+    ["Lo que te queda (estimado)", report.totals.result],
+    ["Ventas registradas", report.totals.saleCount],
+    ["Anulaciones", report.totals.cancelledCount],
+    ["Ventas con costo completo", report.totals.completeCount],
+    ["Pedidos anteriores con costo estimado", report.legacyEstimatedCount],
+    ["Pedidos anteriores pendientes de costo", report.legacyPendingCount],
+    ["Ticket promedio neto", report.totals.ticket],
+    [
+      "Costos de ventas incompletos",
+      report.totals.costsIncomplete ? "Sí" : "No",
+    ],
+    ["Pérdidas sin costo cargado", report.totals.wasteIncomplete ? "Sí" : "No"],
+    [],
+    [
+      "Día",
+      "Ventas (centavos)",
+      "Costo conocido (centavos)",
+      "Gastos (centavos)",
+      "Pérdidas (centavos)",
+      "Costos completos",
+    ],
+    ...report.days.map((d) => [
+      d.date,
+      d.revenue,
+      d.cost,
+      d.expenses,
+      d.waste,
+      d.complete ? "Sí" : "No",
+    ]),
+  ]);
 }
 
 /** CSV cells starting with spreadsheet formula characters are neutralized. */

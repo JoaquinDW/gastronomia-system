@@ -162,6 +162,9 @@ export default function Home() {
           >
             Ver ejemplo
           </a>
+          <Link className="quiet-link header-demo" href="/demo">
+            Probar el panel
+          </Link>
           <Link className="quiet-link" href={appUrl("/ingresar")}>
             Ingresar
           </Link>
@@ -206,6 +209,12 @@ export default function Home() {
                 Ver una tienda de ejemplo <span aria-hidden="true">↗</span>
               </a>
             </div>
+            <p className="hero-panel-link">
+              ¿Querés ver el panel por dentro?{" "}
+              <Link className="text-link" href="/demo">
+                Probalo sin registrarte →
+              </Link>
+            </p>
             <ul className="hero-points" aria-label="Lo que incluye">
               {highlights.map((item) => (
                 <li key={item}>{item}</li>
@@ -304,8 +313,12 @@ export default function Home() {
               <br /> Más pedidos en orden.
             </h2>
             <p>
-              Todo esto ya funciona hoy, en el mismo panel. Lo marcado como nuevo
-              se sumó esta semana.
+              Todo esto ya funciona hoy, en el mismo panel. Lo marcado como
+              nuevo se sumó esta semana.{" "}
+              <Link className="text-link" href="/demo">
+                Probalo sin registrarte
+              </Link>
+              .
             </p>
           </div>
           <div className="module-list">
@@ -346,6 +359,24 @@ export default function Home() {
           >
             Abrir Brasa Club <span aria-hidden="true">↗</span>
           </a>
+        </section>
+
+        <section
+          className="demo-band panel-band"
+          aria-labelledby="panel-demo-title"
+        >
+          <div>
+            <p className="eyebrow">DEL LADO DEL LOCAL</p>
+            <h2 id="panel-demo-title">Probá el panel, sin registrarte.</h2>
+            <p>
+              Pedidos que entran en vivo, la pantalla de cocina, la caja con
+              arqueo y los números del mes, con los datos de Brasa Club. Tocá
+              todo lo que quieras: es una demo y no se guarda nada.
+            </p>
+          </div>
+          <Link className="secondary-button" href="/demo">
+            Probar el panel <span aria-hidden="true">→</span>
+          </Link>
         </section>
 
         <section

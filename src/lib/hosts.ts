@@ -14,6 +14,7 @@ export const reservedSlugs = new Set([
   "ayuda",
   "blog",
   "cdn",
+  "demo",
   "dev",
   "docs",
   "help",

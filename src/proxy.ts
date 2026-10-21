@@ -50,6 +50,8 @@ export default async function proxy(request: NextRequest) {
   }
   if (route.kind === "app") {
     if (pathname === "/") return moveTo(`app.${root}`, "/panel");
+    // La demo del panel no necesita sesión: vive en la raíz, junto a la landing.
+    if (under(pathname, ["/demo"])) return moveTo(root);
     // La vista previa queda en app. porque necesita la sesión del panel.
     if (shop && searchParams.get("preview") !== "1")
       return toShop(shop[1], shop[2]);

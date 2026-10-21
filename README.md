@@ -13,6 +13,7 @@ Plataforma para locales gastronómicos independientes: hamburgueserías, pizzer�
 - [Design system Pedipue](docs/DESIGN-SYSTEM.md): marca, colores, tipografía, componentes, tono y plan para aplicarlo en todas las pantallas.
 - [Gestión y resultados](docs/GESTION.md): flujos, cálculos, permisos, migración y pruebas del módulo.
 - [Delivery](docs/DELIVERY.md): plan por etapas, cobertura automática por radios, tarifas, configuración de mapas y pruebas.
+- [Demo del panel](docs/DEMO.md): la demo pública en /demo, de dónde salen sus datos y cómo regenerarlos.
 
 Flujo acordado: **guardar pedido pendiente → abrir WhatsApp → el negocio confirma en el panel → cocina**. Abrir WhatsApp no acredita pago ni aceptación.
 

@@ -15,9 +15,9 @@ import {
   saleConsumptions,
 } from "@/server/management";
 import {
-  csv,
   exportMovements,
   getManagementReport,
+  resultsCsv,
 } from "@/server/management-reports";
 
 export const runtime = "nodejs";
@@ -49,54 +49,7 @@ export async function GET(r: NextRequest, { params }: Context) {
         );
       const report = await getManagementReport(id, from, to);
       if (view === "report") return json(report);
-      return attachment(
-        csv([
-          ["Desde", report.from, "Hasta", report.to],
-          ["Indicador", "Centavos / cantidad"],
-          ["Total vendido", report.totals.revenue],
-          ["Ingresos por envío", report.totals.delivery],
-          ["Costo vendido conocido", report.totals.cost],
-          ["Ventas menos su costo", report.totals.grossMargin],
-          ["Gastos registrados", report.totals.expenses],
-          ["Pérdidas registradas", report.totals.waste],
-          ["Lo que te queda (estimado)", report.totals.result],
-          ["Ventas registradas", report.totals.saleCount],
-          ["Anulaciones", report.totals.cancelledCount],
-          ["Ventas con costo completo", report.totals.completeCount],
-          [
-            "Pedidos anteriores con costo estimado",
-            report.legacyEstimatedCount,
-          ],
-          ["Pedidos anteriores pendientes de costo", report.legacyPendingCount],
-          ["Ticket promedio neto", report.totals.ticket],
-          [
-            "Costos de ventas incompletos",
-            report.totals.costsIncomplete ? "Sí" : "No",
-          ],
-          [
-            "Pérdidas sin costo cargado",
-            report.totals.wasteIncomplete ? "Sí" : "No",
-          ],
-          [],
-          [
-            "Día",
-            "Ventas (centavos)",
-            "Costo conocido (centavos)",
-            "Gastos (centavos)",
-            "Pérdidas (centavos)",
-            "Costos completos",
-          ],
-          ...report.days.map((d) => [
-            d.date,
-            d.revenue,
-            d.cost,
-            d.expenses,
-            d.waste,
-            d.complete ? "Sí" : "No",
-          ]),
-        ]),
-        "resultados",
-      );
+      return attachment(resultsCsv(report), "resultados");
     }
     if (view === "export-movements")
       return attachment(await exportMovements(id, from, to), "movimientos");

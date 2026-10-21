@@ -689,6 +689,26 @@ footer {
 .demo-band .primary-button {
   box-shadow: 3px 3px 0 var(--accent-strong);
 }
+.hero-panel-link {
+  margin: 14px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.panel-band {
+  margin-top: 16px;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  color: var(--ink);
+}
+.panel-band .eyebrow {
+  color: var(--accent-ink);
+}
+.panel-band p:not(.eyebrow) {
+  color: var(--muted);
+}
+.panel-band .secondary-button {
+  box-shadow: 3px 3px 0 var(--accent);
+}
 .faq {
   display: grid;
   grid-template-columns: 1fr 1.7fr;
