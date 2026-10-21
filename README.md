@@ -14,6 +14,7 @@ Plataforma para locales gastronómicos independientes: hamburgueserías, pizzer�
 - [Gestión y resultados](docs/GESTION.md): flujos, cálculos, permisos, migración y pruebas del módulo.
 - [Delivery](docs/DELIVERY.md): plan por etapas, cobertura automática por radios, tarifas, configuración de mapas y pruebas.
 - [Demo del panel](docs/DEMO.md): la demo pública en /demo, de dónde salen sus datos y cómo regenerarlos.
+- [Analítica](docs/ANALITICA.md): PostHog, eventos medidos y cuidados de privacidad.
 
 Flujo acordado: **guardar pedido pendiente → abrir WhatsApp → el negocio confirma en el panel → cocina**. Abrir WhatsApp no acredita pago ni aceptación.
 

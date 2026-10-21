@@ -93,5 +93,5 @@ async function businessPanel(request: NextRequest, slug: string, rest: string) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/|favicon\\.ico$|.*\\.[a-z0-9]+$).*)"],
+  matcher: ["/((?!_next/|ingest/|favicon\\.ico$|.*\\.[a-z0-9]+$).*)"],
 };

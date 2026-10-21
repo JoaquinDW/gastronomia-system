@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { resetAnalytics } from "@/lib/analytics";
 import { authClient } from "@/lib/auth-client";
 import { appUrl } from "@/lib/hosts";
 
@@ -18,6 +19,7 @@ export function SignOut() {
           try {
             const result = await authClient.signOut();
             if (result.error) throw new Error("Sign out failed");
+            resetAnalytics();
             window.location.assign(appUrl("/ingresar"));
           } catch {
             setError(true);

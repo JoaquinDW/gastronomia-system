@@ -105,7 +105,7 @@ export function OrderTracking({ initial, confirm }: { initial: OrderTrackingData
           <p>{pending ? "Enviá tu pedido por WhatsApp para que el local lo confirme." : cancelled ? "Contactá al local si necesitás ayuda con el pedido o el pago." : order.status === "completed" ? "Gracias por elegirnos. ¡Que lo disfrutes!" : order.status === "out_for_delivery" ? "Tu pedido está en camino a la dirección que indicaste." : order.status === "ready" ? (order.fulfillment === "delivery" ? "Tu pedido está listo para salir." : "Ya podés pasar a buscar tu pedido.") : order.estimatedReadyAt ? <>Listo aproximadamente a las <strong>{dateLabel(order.estimatedReadyAt, business.timezone, true)}</strong>.</> : "El local ya está preparando tu pedido."}</p>
         </div>
         {!terminal ? <p className={`tracking-live ${offline ? "is-offline" : ""}`} role="status"><i />{offline ? "Sin conexión. Reintentando…" : "Seguimiento automático · cada 10 s"}</p> : null}
-        <a className={pending ? "tracking-button" : "tracking-contact"} href={pending ? data.whatsappUrl : data.contactUrl} target="_blank" rel="noopener noreferrer"><Icon kind="chat" />{pending ? "Confirmar por WhatsApp" : "Contactar por WhatsApp"}</a>
+        <a className={pending ? "tracking-button" : "tracking-contact"} href={pending ? data.whatsappUrl : data.contactUrl} data-track={pending ? "order_whatsapp_clicked" : "order_contact_clicked"} data-track-store={business.slug} data-track-place="page" target="_blank" rel="noopener noreferrer"><Icon kind="chat" />{pending ? "Confirmar por WhatsApp" : "Contactar por WhatsApp"}</a>
       </section>
       <section className="tracking-card">
         <div className="tracking-card-heading"><h2><Icon kind="receipt" />Tu pedido</h2><span>{order.items.reduce((n, i) => n + i.quantity, 0)} productos</span></div>
@@ -127,7 +127,7 @@ export function OrderTracking({ initial, confirm }: { initial: OrderTrackingData
       <footer className="tracking-footer"><a href={storeUrl(business.slug)}>Volver a la carta ↗</a><span>Hecho con <b>pedipue.</b></span></footer>
     </div>
     <dialog ref={dialog} className="tracking-dialog" aria-labelledby="confirm-title" onCancel={dismiss}>
-      <span className="tracking-dialog-icon"><Icon kind="chat" /></span><p className="tracking-eyebrow">UN PASO MÁS</p><h2 id="confirm-title">Tu pedido ya está guardado.</h2><p>Enviás el mensaje y el local puede empezar a prepararlo.</p><ol><li>Se abrirá WhatsApp con tu pedido.</li><li>Enviá el mensaje para pedir la confirmación.</li></ol><a className="tracking-button" href={data.whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={dismiss}>Confirmar por WhatsApp ↗</a><button className="tracking-later" onClick={dismiss}>Ver mi pedido primero</button>
+      <span className="tracking-dialog-icon"><Icon kind="chat" /></span><p className="tracking-eyebrow">UN PASO MÁS</p><h2 id="confirm-title">Tu pedido ya está guardado.</h2><p>Enviás el mensaje y el local puede empezar a prepararlo.</p><ol><li>Se abrirá WhatsApp con tu pedido.</li><li>Enviá el mensaje para pedir la confirmación.</li></ol><a className="tracking-button" href={data.whatsappUrl} data-track="order_whatsapp_clicked" data-track-store={business.slug} data-track-place="dialog" target="_blank" rel="noopener noreferrer" onClick={dismiss}>Confirmar por WhatsApp ↗</a><button className="tracking-later" onClick={dismiss}>Ver mi pedido primero</button>
     </dialog>
   </main>;
 }
