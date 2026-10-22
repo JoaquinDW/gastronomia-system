@@ -264,10 +264,17 @@ export function siteOgImage() {
   );
 }
 
-type StoreCard = { name: string; kind: string; city: string | null; host: string };
+type StoreCard = {
+  name: string;
+  kind: string;
+  city: string | null;
+  host: string;
+  /** Logo del local como data URL PNG; sin logo va la inicial. */
+  logo?: string | null;
+};
 
-// Imagen de cada tienda: portada Asfalto, logo con la inicial y acento
-// Mostaza hasta que existan la foto de portada, el logo y el acento propios.
+// Imagen de cada tienda: portada Asfalto, el logo del local (o su inicial)
+// como sticker y acento Mostaza hasta que exista el acento propio.
 export function storeOgImage(store: StoreCard) {
   const nameSize = store.name.length > 22 ? 76 : store.name.length > 14 ? 96 : 120;
   const detail = [store.kind, store.city].filter(Boolean).join(" · ").toUpperCase();
@@ -293,9 +300,10 @@ export function storeOgImage(store: StoreCard) {
             justifyContent: "center",
             width: 132,
             height: 132,
-            paddingBottom: 10,
+            paddingBottom: store.logo ? 0 : 10,
             borderRadius: 30,
-            background: accent,
+            background: store.logo ? "#FFFFFF" : accent,
+            overflow: "hidden",
             border: `3px solid ${ink}`,
             boxShadow: `6px 6px 0 ${ink}`,
             transform: "rotate(-5deg)",
@@ -305,7 +313,17 @@ export function storeOgImage(store: StoreCard) {
             fontSize: 92,
           }}
         >
-          {store.name.trim().slice(0, 1).toUpperCase()}
+          {store.logo ? (
+            <img
+              src={store.logo}
+              alt=""
+              width={108}
+              height={108}
+              style={{ objectFit: "contain" }}
+            />
+          ) : (
+            store.name.trim().slice(0, 1).toUpperCase()
+          )}
         </div>
         <div
           style={{

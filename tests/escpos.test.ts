@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { columns, comandaReceipt, encodeText, ticketReceipt, wrap } from "../src/lib/escpos";
+import { columns, comandaReceipt, encodeText, rasterize, ticketReceipt, wrap } from "../src/lib/escpos";
 import type { Order } from "../src/lib/checkout";
 
 export const sample: Order = {
@@ -50,4 +50,19 @@ test("ticket and comanda fit the paper and end with a cut", () => {
     for (const line of comanda.split("\n")) assert.ok(line.length <= width, line);
     assert.match(comanda, /#007 +DELIVERY/);
   }
+});
+
+test("packs a logo into a raster and prints it before the ticket", () => {
+  // 10×2 pixels: a black dot at (0,0), a light one at (1,0), a transparent black one at (9,1).
+  const rgba = new Uint8ClampedArray(10 * 2 * 4).fill(255);
+  rgba.set([0, 0, 0, 255], 0);
+  rgba.set([200, 200, 200, 255], 4);
+  rgba.set([0, 0, 0, 0], (1 * 10 + 9) * 4);
+  const logo = rasterize(rgba, 10, 2);
+  assert.equal(logo.width, 16);
+  assert.deepEqual([...logo.bits], [0x80, 0, 0, 0]);
+  const bytes = ticketReceipt(sample, "Pecado", [], "", 48, logo);
+  const at = Buffer.from(bytes).indexOf(Buffer.from([0x1d, 0x76, 0x30, 0, 2, 0, 2, 0]));
+  assert.ok(at > 0 && at < Buffer.from(bytes).indexOf(Buffer.from("Delivery")));
+  assert.deepEqual([...bytes.slice(at + 8, at + 12)], [0x80, 0, 0, 0]);
 });

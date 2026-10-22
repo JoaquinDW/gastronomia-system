@@ -2,6 +2,7 @@ import { businessKinds } from "@/lib/business-input";
 import { rootDomain } from "@/lib/hosts";
 import { publishedStoreCard } from "@/server/menu";
 import { storeOgImage } from "@/server/og-image";
+import { logoDataUrl } from "@/server/store-logo";
 
 export async function GET(
   _request: Request,
@@ -16,5 +17,6 @@ export async function GET(
     kind: kind && kind.value !== "otro" ? kind.label : "",
     city: store.city,
     host: `${slug}.${rootDomain() || "pedipue.com"}`,
+    logo: store.logoImageUrl ? await logoDataUrl(store.logoImageUrl) : null,
   });
 }

@@ -9,11 +9,19 @@ import sharp, { type Metadata } from "sharp";
 import { getPool } from "./postgres";
 import { HttpError } from "./errors";
 
-const MIN_SIDE = 600;
 const MAX_IMAGES_PER_BUSINESS = 2000;
 
-/** Normalizes a product photo: fixes orientation, strips metadata and makes two WebP sizes. */
-export async function processMenuImage(input: Buffer) {
+// Photos are flattened on white and need room to be cropped. Logos are shown
+// small and whole, so they keep their transparency and can be smaller.
+export type ImageKind = "photo" | "logo";
+const formats = {
+  photo: { minSide: 600, large: 1600, small: 800, flatten: true },
+  logo: { minSide: 120, large: 800, small: 400, flatten: false },
+};
+
+/** Normalizes an uploaded image: fixes orientation, strips metadata and makes two WebP sizes. */
+export async function processMenuImage(input: Buffer, kind: ImageKind = "photo") {
+  const format = formats[kind];
   let metadata: Metadata;
   try {
     metadata = await sharp(input, { limitInputPixels: 50_000_000 }).metadata();
@@ -29,22 +37,24 @@ export async function processMenuImage(input: Buffer) {
   const rotated = (metadata.orientation ?? 1) >= 5;
   const width = (rotated ? metadata.height : metadata.width) ?? 0;
   const height = (rotated ? metadata.width : metadata.height) ?? 0;
-  if (Math.min(width, height) < MIN_SIDE)
+  if (Math.min(width, height) < format.minSide)
     throw new HttpError(
       422,
-      `La foto es muy chica (${width}×${height} px) y se vería borrosa. Subí una de al menos ${MIN_SIDE} px por lado.`,
+      kind === "logo"
+        ? `El logo es muy chico (${width}×${height} px) y se vería borroso. Subí uno de al menos ${format.minSide} px por lado.`
+        : `La foto es muy chica (${width}×${height} px) y se vería borrosa. Subí una de al menos ${format.minSide} px por lado.`,
     );
-  const base = () =>
-    sharp(input, { limitInputPixels: 50_000_000 })
-      .rotate()
-      .flatten({ background: "#ffffff" });
+  const base = () => {
+    const image = sharp(input, { limitInputPixels: 50_000_000 }).rotate();
+    return format.flatten ? image.flatten({ background: "#ffffff" }) : image;
+  };
   const [large, small] = await Promise.all([
     base()
-      .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+      .resize(format.large, format.large, { fit: "inside", withoutEnlargement: true })
       .webp({ quality: 82 })
       .toBuffer({ resolveWithObject: true }),
     base()
-      .resize(800, 800, { fit: "inside", withoutEnlargement: true })
+      .resize(format.small, format.small, { fit: "inside", withoutEnlargement: true })
       .webp({ quality: 78 })
       .toBuffer(),
   ]);
@@ -135,8 +145,9 @@ export async function saveMenuImage(
   businessId: string,
   userId: string,
   input: Buffer,
+  kind: ImageKind = "photo",
 ) {
-  const image = await processMenuImage(input);
+  const image = await processMenuImage(input, kind);
   const pool = getPool();
   const id = randomUUID();
   let key: string | null = null;

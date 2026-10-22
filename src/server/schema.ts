@@ -233,6 +233,7 @@ export const storeSettings = pgTable("store_settings", {
   coverImageUrl: text("cover_image_url").notNull().default(""),
   coverFocusX: smallint("cover_focus_x").notNull().default(50),
   coverFocusY: smallint("cover_focus_y").notNull().default(50),
+  logoImageUrl: text("logo_image_url").notNull().default(""),
   hours: jsonb("hours").$type<Hours>().notNull().default([]),
   pickupEnabled: boolean("pickup_enabled").notNull().default(true),
   pickupInstructions: text("pickup_instructions").notNull().default(""),

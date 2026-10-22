@@ -39,6 +39,7 @@ export default async function StorePage({
       </div>
       <StoreConfigurator
         businessId={id}
+        businessName={access.business.name}
         slug={access.business.slug}
         initialSettings={settings}
         productCount={products.filter((p) => p.isAvailable).length}

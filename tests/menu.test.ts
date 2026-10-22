@@ -160,6 +160,25 @@ test("store cover accepts uploaded or HTTPS photos and a focus point", () => {
   );
 });
 
+test("store logo only accepts uploads, so the server can print it", () => {
+  const { isPublished, version, logoImageUrl, ...settings } = emptySettings;
+  void isPublished;
+  void version;
+  void logoImageUrl;
+  assert.equal(settingsInput.parse(settings).logoImageUrl, "");
+  for (const [url, ok] of [
+    [`/api/media/${randomUUID()}`, true],
+    ["", true],
+    ["https://example.com/logo.png", false],
+    ["/api/media/../../etc", false],
+  ] as const)
+    assert.equal(
+      settingsInput.safeParse({ ...settings, logoImageUrl: url }).success,
+      ok,
+      url,
+    );
+});
+
 test("option groups validate their rules before saving the product", () => {
   const option = (name: string, priceCents = 0) => ({
     id: randomUUID(),

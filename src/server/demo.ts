@@ -107,6 +107,7 @@ export const demoData = cache(async () => {
       coverImageUrl: found.cover.coverImageUrl,
       coverFocusX: found.cover.coverFocusX,
       coverFocusY: found.cover.coverFocusY,
+      logoImageUrl: found.cover.logoImageUrl,
     };
   }
   const state: DemoState = {

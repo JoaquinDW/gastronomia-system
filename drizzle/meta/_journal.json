@@ -127,6 +127,13 @@
       "when": 1792636556408,
       "tag": "0017_business_slug_aliases",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792637418612,
+      "tag": "0018_store_logo",
+      "breakpoints": true
     }
   ]
 }

@@ -91,11 +91,13 @@ export function OrderTracking({ initial, confirm }: { initial: OrderTrackingData
     { status: "completed", label: "Entregado", icon: "check" },
   ];
   const currentStep = steps.findIndex(s => s.status === order.status);
+  // The logo when there is one; otherwise the cover photo, or the initial.
+  const logo = business.logoImageUrl ? productImage(business.logoImageUrl) : null;
   const cover = business.coverImageUrl ? productImage(business.coverImageUrl) : null;
   return <main className="tracking-page">
     <div className="tracking-wrap">
       <header className="tracking-brand">
-        <a href={storeUrl(business.slug)} aria-label={`Volver a la carta de ${business.name}`} className="tracking-avatar">{cover ? <img src={cover.src} alt="" /> : business.name.slice(0, 1)}</a>
+        <a href={storeUrl(business.slug)} aria-label={`Volver a la carta de ${business.name}`} className={`tracking-avatar ${logo ? "has-logo" : ""}`}>{logo ? <img src={logo.src} alt="" /> : cover ? <img src={cover.src} alt="" /> : business.name.slice(0, 1)}</a>
         <h1>{business.name}</h1>
         <div className="tracking-meta"><span>{order.fulfillment === "delivery" ? "Delivery" : "Retiro"} · #{order.number}</span><time dateTime={order.createdAt}>{dateLabel(order.createdAt, business.timezone)}</time></div>
       </header>

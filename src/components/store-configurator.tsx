@@ -12,17 +12,20 @@ import {
   type StoreSettings,
 } from "@/lib/menu";
 import { ProductPhotoField } from "./product-photo-field";
+import { StoreLogoField } from "./store-logo-field";
 import { LocationPicker } from "./location-picker";
 import { mapsEnabled } from "@/lib/maps-client";
 import type { Coordinates } from "@/lib/delivery";
 export function StoreConfigurator({
   businessId,
+  businessName,
   slug,
   initialSettings,
   productCount,
   suggestedHours,
 }: {
   businessId: string;
+  businessName: string;
   slug: string;
   initialSettings: StoreSettings;
   productCount: number;
@@ -154,6 +157,17 @@ export function StoreConfigurator({
               onFocusChange={({ x, y }) =>
                 setS((prev) => ({ ...prev, coverFocusX: x, coverFocusY: y }))
               }
+              onBusyChange={setUploading}
+              disabled={busy}
+            />
+            <StoreLogoField
+              businessId={businessId}
+              businessName={businessName}
+              value={s.logoImageUrl}
+              onChange={(logoImageUrl) =>
+                setS((prev) => ({ ...prev, logoImageUrl }))
+              }
+              cover={{ url: s.coverImageUrl, x: s.coverFocusX, y: s.coverFocusY }}
               onBusyChange={setUploading}
               disabled={busy}
             />

@@ -9,6 +9,7 @@ import {
 import { storeUrl } from "@/lib/hosts";
 import { OrderInbox } from "@/components/order-inbox";
 import { cashOpen } from "@/server/cash";
+import { getSettings } from "@/server/menu";
 export const metadata = { title: "Pedidos de tu tienda — Pedipue" };
 export default async function OrdersPage({
   params,
@@ -18,12 +19,13 @@ export default async function OrdersPage({
   const { id } = await params;
   const access = await authorizeBusiness(id, true).catch(() => null);
   if (!access) notFound();
-  const [orders, ticket, categories, kitchen, cash] = await Promise.all([
+  const [orders, ticket, categories, kitchen, cash, settings] = await Promise.all([
     listOrders(id),
     getTicketConfig(id),
     productCategories(id),
     getKitchenConfig(id),
     cashOpen(id),
+    getSettings(id),
   ]);
   return (
     <>
@@ -42,6 +44,7 @@ export default async function OrdersPage({
       <OrderInbox
         businessId={id}
         businessName={access.business.name}
+        logoImageUrl={settings.logoImageUrl}
         storeBase={storeUrl(access.business.slug)}
         initialOrders={JSON.parse(JSON.stringify(orders))}
         initialTicket={ticket}

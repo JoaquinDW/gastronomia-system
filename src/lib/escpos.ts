@@ -69,6 +69,27 @@ export function columns(left: string, right: string, width: number) {
   );
 }
 
+// A 1-bit image for the printer: rows of `width / 8` bytes, top bit first, 1 = black.
+export type Raster = { width: number; height: number; bits: Uint8Array };
+
+/** Packs RGBA pixels (from a canvas) into a raster. Dark, opaque pixels print. */
+export function rasterize(
+  rgba: Uint8ClampedArray,
+  width: number,
+  height: number,
+): Raster {
+  const rowBytes = Math.ceil(width / 8);
+  const bits = new Uint8Array(rowBytes * height);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      const light = rgba[i] * 0.299 + rgba[i + 1] * 0.587 + rgba[i + 2] * 0.114;
+      if (rgba[i + 3] > 127 && light < 128)
+        bits[y * rowBytes + (x >> 3)] |= 0x80 >> (x & 7);
+    }
+  return { width: rowBytes * 8, height, bits };
+}
+
 type Style = { bold?: boolean; big?: boolean; center?: boolean };
 export class Receipt {
   private bytes: number[] = [0x1b, 0x40, 0x1b, 0x74, 0x02];
@@ -87,6 +108,15 @@ export class Receipt {
     if (style.big) this.bytes.push(0x1d, 0x21, 0);
     if (style.bold) this.bytes.push(0x1b, 0x45, 0);
     if (style.center) this.bytes.push(0x1b, 0x61, 0);
+    return this;
+  }
+  /** A centered picture, as raster bit image (GS v 0). */
+  image({ width, height, bits }: Raster) {
+    const rowBytes = width / 8;
+    this.bytes.push(0x1b, 0x61, 1);
+    this.bytes.push(0x1d, 0x76, 0x30, 0, rowBytes & 0xff, rowBytes >> 8, height & 0xff, height >> 8);
+    for (const b of bits) this.bytes.push(b);
+    this.bytes.push(0x0a, 0x1b, 0x61, 0);
     return this;
   }
   amount(left: string, right: string, style: Style = {}) {
@@ -158,10 +188,12 @@ export function ticketReceipt(
   categories: ProductCategory[],
   footer: string,
   width: number,
+  logo?: Raster | null,
 ) {
   const created = new Date(o.createdAt);
   const feePending = isDeliveryFeePending(o);
   const r = new Receipt(width);
+  if (logo) r.image(logo).line();
   r.line(`${o.fulfillment === "delivery" ? "Delivery" : "Retiro"} Nº${o.number}`, { big: true });
   r.line(businessName, { bold: true });
   r.line(day.format(created).replace(",", ""));

@@ -22,6 +22,8 @@ import {
 import {
   columnsFor,
   comandaReceipt,
+  rasterize,
+  type Raster,
   testPage,
   ticketReceipt,
 } from "@/lib/escpos";
@@ -132,6 +134,7 @@ function chime(ctx: AudioContext) {
 export function OrderInbox({
   businessId,
   businessName,
+  logoImageUrl,
   storeBase,
   initialOrders,
   initialTicket,
@@ -141,6 +144,7 @@ export function OrderInbox({
 }: {
   businessId: string;
   businessName: string;
+  logoImageUrl: string;
   storeBase: string;
   initialOrders: Order[];
   initialTicket: TicketConfig;
@@ -226,6 +230,38 @@ export function OrderInbox({
     };
   }, []);
 
+  // The logo heads the customer ticket. It comes from the server already in
+  // black and white at printer size; loading it here keeps it ready both for
+  // the USB printer and for the print dialog, which doesn't wait for images.
+  const [logo, setLogo] = useState<(Raster & { src: string }) | null>(null);
+  const logoSrc =
+    ticket.enabled && logoImageUrl
+      ? `/api/businesses/${businessId}/ticket/logo?paper=${ticket.paper}&v=${logoImageUrl.split("/").pop()}`
+      : "";
+  useEffect(() => {
+    setLogo(null);
+    if (!logoSrc) return;
+    let alive = true;
+    const img = new Image();
+    img.src = logoSrc;
+    img
+      .decode()
+      .then(() => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx || !alive) return;
+        ctx.drawImage(img, 0, 0);
+        const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        setLogo({ ...rasterize(data, width, height), src: logoSrc });
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [logoSrc]);
+
   // Straight to the USB printer when there is one; otherwise, or if it
   // fails, the browser's print dialog.
   async function print(order: Order, docs: PrintJob["docs"]) {
@@ -238,7 +274,7 @@ export function OrderInbox({
           docs.map((doc) =>
             doc === "comanda"
               ? comandaReceipt(order, businessName, width)
-              : ticketReceipt(order, businessName, categories, ticket.footer, width),
+              : ticketReceipt(order, businessName, categories, ticket.footer, width, logo),
           ),
         ),
       );
@@ -848,6 +884,15 @@ export function OrderInbox({
                     businessName={businessName}
                     categories={categories}
                     footer={ticket.footer}
+                    logo={
+                      logo
+                        ? {
+                            src: logo.src,
+                            // Same share of the paper as on the USB printer.
+                            width: `${(logo.width / (ticket.paper === "58" ? 384 : 576)) * 100}%`,
+                          }
+                        : null
+                    }
                   />
                 ),
               )}
