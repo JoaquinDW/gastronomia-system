@@ -6,7 +6,6 @@
 .tracking-avatar { width: 76px; height: 76px; margin: 0 auto 16px; border-radius: 50%; border: 2px solid #b2aea0; overflow: hidden; display: grid; place-items: center; background: #ffc72c; color: #141410; font: 800 36px var(--display); text-decoration: none; }
 .tracking-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .tracking-avatar.has-logo { background: #fff; }
-.tracking-avatar.has-logo img { padding: 12%; object-fit: contain; }
 .tracking-brand h1 { font: 800 25px var(--display); letter-spacing: -.5px; }
 .tracking-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 16px; color: #d1cfc7; font-size: 12px; }
 .tracking-meta > * { background: #ffffff0c; border: 1px solid #ffffff0a; padding: 7px 12px; border-radius: 30px; }

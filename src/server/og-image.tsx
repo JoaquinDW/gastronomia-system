@@ -317,9 +317,9 @@ export function storeOgImage(store: StoreCard) {
             <img
               src={store.logo}
               alt=""
-              width={108}
-              height={108}
-              style={{ objectFit: "contain" }}
+              width={126}
+              height={126}
+              style={{ objectFit: "cover" }}
             />
           ) : (
             store.name.trim().slice(0, 1).toUpperCase()
