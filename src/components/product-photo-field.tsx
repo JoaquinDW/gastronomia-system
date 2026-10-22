@@ -7,10 +7,14 @@ import { productImage } from "@/lib/menu";
 
 // Phone photos can weigh 5–10 MB. We shrink them in the browser so uploads stay
 // fast on mobile data and under hosting body limits; the server makes the final WebP.
-async function shrink(file: File): Promise<Blob> {
+// Logos go as PNG so a transparent background stays transparent.
+export async function shrink(
+  file: File,
+  { max = 2400, type = "image/jpeg" } = {},
+): Promise<Blob> {
   const bitmap = await createImageBitmap(file).catch(() => null);
   if (!bitmap) return file;
-  const scale = Math.min(1, 2400 / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
   if (scale === 1 && file.size < 4_000_000) {
     bitmap.close();
     return file;
@@ -21,7 +25,7 @@ async function shrink(file: File): Promise<Blob> {
   canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
   return new Promise((resolve) =>
-    canvas.toBlob((blob) => resolve(blob ?? file), "image/jpeg", 0.9),
+    canvas.toBlob((blob) => resolve(blob ?? file), type, 0.9),
   );
 }
 

@@ -23,16 +23,21 @@ export function CustomerTicket({
   businessName,
   categories,
   footer,
+  logo,
 }: {
   order: Order;
   businessName: string;
   categories: ProductCategory[];
   footer: string;
+  logo?: { src: string; width: string } | null;
 }) {
   const created = new Date(o.createdAt);
   const feePending = isDeliveryFeePending(o);
   return (
     <section className="ticket-print" aria-hidden="true">
+      {logo ? (
+        <img className="ticket-print-logo" src={logo.src} alt="" style={{ width: logo.width }} />
+      ) : null}
       <h1>
         {o.fulfillment === "delivery" ? "Delivery" : "Retiro"} Nº{o.number}
       </h1>

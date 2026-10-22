@@ -40,7 +40,7 @@ export function orderWhatsappUrl(order: Order, whatsapp: string, url: string) {
 export type TrackedOrder = Pick<Order, "number" | "status" | "fulfillment" | "address" | "zoneName" | "paymentMethod" | "note" | "items" | "subtotalCents" | "deliveryCents" | "totalCents" | "createdAt" | "estimatedReadyAt" | "rating"> & { token: string };
 export type OrderTrackingData = {
   order: TrackedOrder;
-  business: { name: string; slug: string; timezone: string; coverImageUrl: string | null; transferAlias: string; pickupInstructions: string };
+  business: { name: string; slug: string; timezone: string; coverImageUrl: string | null; logoImageUrl: string | null; transferAlias: string; pickupInstructions: string };
   whatsappUrl: string;
   contactUrl: string;
 };

@@ -254,6 +254,9 @@ export function Storefront({
   const cover = settings.coverImageUrl
     ? productImage(settings.coverImageUrl)
     : null;
+  const logo = settings.logoImageUrl
+    ? productImage(settings.logoImageUrl)
+    : null;
   const cartStorage = `gastronomia-cart-v1:${business.slug}`;
   useEffect(() => {
     try {
@@ -483,8 +486,15 @@ export function Storefront({
             <p className="eyebrow">HECHO ACÁ, PEDIDO DIRECTO</p>
             <h1>{business.name}</h1>
           </div>
-          <span className="shop-cover-logo" aria-hidden="true">
-            {business.name.trim().slice(0, 1)}
+          <span
+            className={`shop-cover-logo ${logo ? "has-image" : ""}`}
+            aria-hidden="true"
+          >
+            {logo ? (
+              <img src={logo.src} alt="" referrerPolicy="no-referrer" />
+            ) : (
+              business.name.trim().slice(0, 1)
+            )}
           </span>
         </section>
         <section className="shop-hero">

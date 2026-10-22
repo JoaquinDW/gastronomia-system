@@ -457,7 +457,7 @@ export async function getOrderTracking(slug: string, token: string, origin?: str
   if (!trackingTokenPattern.test(token)) return null;
   const result = await getPool().query<Order & { business: OrderTrackingData["business"]; whatsapp: string }>(
     `SELECT ${fields.split(",").map(f => "o." + f).join(",")},
-      json_build_object('name',b.name,'slug',b.slug,'timezone',b.timezone,'coverImageUrl',s.cover_image_url,'transferAlias',s.transfer_alias,'pickupInstructions',s.pickup_instructions) AS business,
+      json_build_object('name',b.name,'slug',b.slug,'timezone',b.timezone,'coverImageUrl',s.cover_image_url,'logoImageUrl',s.logo_image_url,'transferAlias',s.transfer_alias,'pickupInstructions',s.pickup_instructions) AS business,
       b.whatsapp FROM orders o JOIN businesses b ON b.id=o.business_id JOIN store_settings s ON s.business_id=b.id WHERE b.slug=$1 AND o.tracking_token=$2`, [slug, token],
   );
   const row = result.rows[0];

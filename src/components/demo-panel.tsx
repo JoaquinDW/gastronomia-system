@@ -130,6 +130,7 @@ export function DemoOrders() {
     <OrderInbox
       businessId={DEMO_ID}
       businessName={state.business.name}
+      logoImageUrl=""
       storeBase={storeUrl(state.business.slug)}
       initialOrders={initial.orders}
       initialTicket={state.ticket}
@@ -173,6 +174,7 @@ export function DemoStore() {
   return (
     <StoreConfigurator
       businessId={DEMO_ID}
+      businessName={sandbox.state.business.name}
       slug={sandbox.state.business.slug}
       initialSettings={initial.settings}
       productCount={initial.count}

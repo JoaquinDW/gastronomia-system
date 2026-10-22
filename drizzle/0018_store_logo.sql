@@ -1,0 +1,1 @@
+ALTER TABLE "store_settings" ADD COLUMN "logo_image_url" text DEFAULT '' NOT NULL;

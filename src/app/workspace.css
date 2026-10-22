@@ -1242,6 +1242,19 @@
 .shop-cover:hover .shop-cover-logo {
   rotate: 4deg;
 }
+/* An uploaded logo sits whole on white, framed like a printed sticker. */
+.shop-cover-logo.has-image,
+.logo-sticker.has-image {
+  background: var(--surface);
+  overflow: hidden;
+}
+.shop-cover-logo > img,
+.logo-sticker > img {
+  width: 100%;
+  height: 100%;
+  padding: 9%;
+  object-fit: contain;
+}
 @keyframes cover-zoom {
   from {
     scale: 1.15;
@@ -2381,6 +2394,12 @@ body.kitchen-open {
 .ticket-print {
   font-family: var(--sans);
 }
+.ticket-print-logo {
+  display: block;
+  height: auto;
+  margin: 0 auto 10px;
+  image-rendering: pixelated;
+}
 .ticket-print h1 {
   font: 800 22px/1.1 var(--display);
   margin: 0 0 6px;
@@ -3278,6 +3297,89 @@ body.kitchen-open {
   align-items: center;
   gap: 16px;
   margin-top: 12px;
+}
+/* Store logo in Tienda: the sticker over a strip of the cover, as in the store. */
+.logo-field {
+  margin: 4px 0 22px;
+}
+.logo-field-body {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.logo-preview {
+  position: relative;
+  flex: 0 0 auto;
+  width: 220px;
+  height: 128px;
+}
+.logo-preview-cover {
+  position: absolute;
+  inset: 0 0 34px;
+  overflow: hidden;
+  border: 1.5px solid var(--ink);
+  border-radius: 16px;
+  background:
+    radial-gradient(
+      circle at 85% 15%,
+      color-mix(in srgb, var(--accent) 22%, transparent),
+      transparent 45%
+    ),
+    var(--asphalt);
+}
+.logo-preview-cover > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.logo-preview.is-dragging .logo-preview-cover {
+  outline: 3px dashed var(--accent);
+  outline-offset: 3px;
+}
+.logo-sticker {
+  position: absolute;
+  left: 18px;
+  bottom: 0;
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-content: center;
+  padding: 0;
+  background: var(--accent);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 22px;
+  box-shadow: 4px 4px 0 var(--ink);
+  font: 800 44px/1 var(--display);
+  rotate: -6deg;
+  cursor: pointer;
+  transition: rotate 0.25s ease;
+}
+.logo-sticker:hover:not(:disabled) {
+  rotate: 4deg;
+}
+.logo-sticker:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+.logo-preview > .photo-uploading {
+  border-radius: 16px;
+}
+.logo-field-copy {
+  min-width: 0;
+}
+.logo-field-copy > .field-hint {
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .logo-field-body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .logo-preview {
+    width: 100%;
+  }
 }
 .photo-link {
   margin-top: 10px;

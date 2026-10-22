@@ -227,6 +227,13 @@ export const settingsInput = z
     coverImageUrl: imageUrlSchema.default(""),
     coverFocusX: focusSchema,
     coverFocusY: focusSchema,
+    // Only uploads: the server reads the file again for tickets and the share image.
+    logoImageUrl: z
+      .union([
+        z.literal(""),
+        z.string().regex(uploadedImagePattern, "Subí el logo desde el panel."),
+      ])
+      .default(""),
     hours: z.array(hourSchema).max(21),
     pickupEnabled: z.boolean(),
     pickupInstructions: z.string().trim().max(500),
@@ -288,6 +295,7 @@ export const emptySettings: StoreSettings = {
   coverImageUrl: "",
   coverFocusX: 50,
   coverFocusY: 50,
+  logoImageUrl: "",
   hours: [],
   pickupEnabled: true,
   pickupInstructions: "",

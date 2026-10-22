@@ -27,7 +27,12 @@ export async function POST(r: NextRequest, { params }: Context) {
     if (!(file instanceof File) || file.size === 0)
       throw new HttpError(422, "Elegí una foto para subir.");
     return json(
-      await saveMenuImage(id, user.id, Buffer.from(await file.arrayBuffer())),
+      await saveMenuImage(
+        id,
+        user.id,
+        Buffer.from(await file.arrayBuffer()),
+        form.get("kind") === "logo" ? "logo" : "photo",
+      ),
       201,
     );
   } catch (e) {
