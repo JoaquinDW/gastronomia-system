@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { coordinatesSchema, deliveryQuote, distanceMeters, type DeliveryConfig } from "../src/lib/delivery";
+import { coordinatesSchema, deliveryFeeByLocal, deliveryQuote, distanceMeters, type DeliveryConfig } from "../src/lib/delivery";
 import { emptySettings, settingsInput } from "../src/lib/menu";
 import { checkoutInput } from "../src/lib/checkout";
 
@@ -55,4 +55,15 @@ test("checkout rejects invalid pins and arbitrary delivery prices", () => {
   assert.equal(checkoutInput.safeParse(valid).success, true);
   assert.equal(checkoutInput.safeParse({ ...valid, deliveryLocation: { lat: 100, lng: 0 } }).success, false);
   assert.equal(checkoutInput.safeParse({ ...valid, quotedDeliveryCents: -1 }).success, false);
+});
+test("delivery confirmed by the local needs no zones and never quotes a fee", () => {
+  const { isPublished, version, ...settings } = emptySettings;
+  void isPublished; void version;
+  const confirm = { ...settings, deliveryEnabled: true, deliveryConfig: { mode: "confirm" as const }, deliveryZones: [] };
+  assert.deepEqual(settingsInput.parse(confirm).deliveryConfig, { mode: "confirm" });
+  assert.equal(settingsInput.safeParse({ ...confirm, deliveryConfig: { mode: "confirm", origin: config.origin } }).success, false);
+  assert.equal(deliveryQuote({ mode: "confirm" }, [near], config.origin), null);
+  assert.equal(deliveryFeeByLocal(confirm), true);
+  assert.equal(deliveryFeeByLocal({ ...confirm, deliveryEnabled: false }), false);
+  assert.equal(deliveryFeeByLocal({ ...confirm, deliveryConfig: { mode: "manual" } }), false);
 });

@@ -1,4 +1,5 @@
 import type { Product, StoreSettings } from "@/lib/menu";
+import { deliveryFeeByLocal } from "./delivery";
 
 // Primeros pasos de un local nuevo. Cada paso se marca solo a partir de los
 // datos reales, así la guía nunca le pide al dueño algo que ya hizo.
@@ -35,6 +36,7 @@ export function setupSteps({
   const saved = settings.version > 0;
   const delivers =
     settings.pickupEnabled ||
+    deliveryFeeByLocal(settings) ||
     (settings.deliveryEnabled && settings.deliveryZones.length > 0);
   const shifts = settings.hours.length;
   return [

@@ -24,7 +24,7 @@ import {
 } from "@/lib/checkout";
 import { z } from "zod";
 import { orderWhatsappUrl, trackingStatus, type OrderTrackingData } from "@/lib/order-tracking";
-import { deliveryQuote } from "@/lib/delivery";
+import { deliveryFeeByLocal, deliveryQuote } from "@/lib/delivery";
 import { storeUrl } from "@/lib/hosts";
 import { recordStoreSale } from "./management";
 
@@ -180,7 +180,11 @@ export async function checkout(
       if (input.address.length < 5)
         throw new HttpError(422, "Completá la dirección de entrega.");
       let zone = s.deliveryZones.find((z) => z.id === input.zoneId);
-      if (s.deliveryConfig?.mode === "radius") {
+      if (deliveryFeeByLocal(s)) {
+        // The local quotes the fee by WhatsApp; a null zone marks it pending.
+        if (input.zoneId)
+          throw new HttpError(409, "Cambió la forma de envío del local. Actualizá la tienda y revisá el total antes de confirmar.");
+      } else if (s.deliveryConfig?.mode === "radius") {
         if (!input.deliveryLocation)
           throw new HttpError(422, "Confirmá la ubicación de entrega en el mapa.");
         const quote = deliveryQuote(s.deliveryConfig, s.deliveryZones, input.deliveryLocation);
@@ -190,15 +194,17 @@ export async function checkout(
         if (input.quotedDeliveryCents !== quote.feeCents || input.zoneId !== zone.id)
           throw new HttpError(409, "Cambió la tarifa de envío. Actualizá la tienda y revisá el total antes de confirmar.");
       }
-      if (!zone)
-        throw new HttpError(422, "Seleccioná una zona de delivery disponible.");
-      if (subtotal < zone.minimumCents)
-        throw new HttpError(
-          422,
-          `El mínimo para esa zona es ${formatMoney(zone.minimumCents)}.`,
-        );
-      fee = zone.feeCents;
-      zoneName = zone.name;
+      if (!deliveryFeeByLocal(s)) {
+        if (!zone)
+          throw new HttpError(422, "Seleccioná una zona de delivery disponible.");
+        if (subtotal < zone.minimumCents)
+          throw new HttpError(
+            422,
+            `El mínimo para esa zona es ${formatMoney(zone.minimumCents)}.`,
+          );
+        fee = zone.feeCents;
+        zoneName = zone.name;
+      }
     } else if (!s.pickupEnabled)
       throw new HttpError(422, "El retiro en el local no está disponible.");
     if (subtotal + fee > 1_999_999_999)

@@ -18,6 +18,10 @@ Implementada en código, pendiente de activar Google Maps en el entorno de uso:
 
 **La distancia es en línea recta, no por calles.** No se cobran kilómetros de recorrido ni se promete una demora usando ese cálculo. El comercio debe tener en cuenta barreras, accesos y tiempos al elegir sus radios. Las zonas con formas irregulares quedan para la etapa 3.
 
+### Delivery con confirmación del local
+
+Tercera opción en Retiro y delivery, para cuando el local todavía no definió zonas ni tarifas. El cliente carga su dirección, no elige zona y ve “Envío: A confirmar” y “Total sin envío”; el local le confirma el costo por WhatsApp. Se guarda como `delivery_config = {"mode":"confirm"}` sin zonas, y el pedido queda con `zone_name` vacío y envío en cero, que es como el resto del sistema reconoce un envío a confirmar. Se usa esta opción o las zonas, no las dos a la vez; ambas se combinan con retiro. No requiere migración.
+
 ## Etapa 2: operación del reparto
 
 Pendiente:

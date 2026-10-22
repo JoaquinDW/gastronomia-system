@@ -30,7 +30,10 @@ export function StoreConfigurator({
 }) {
   const router = useRouter();
   const [s, setS] = useState(initialSettings);
-  const [deliveryMode, setDeliveryMode] = useState(s.deliveryConfig?.mode ?? "manual");
+  // Zone delivery and delivery confirmed by the local are alternatives; the
+  // zone mode is kept apart so switching back restores it before saving.
+  const [feeByLocal, setFeeByLocal] = useState(s.deliveryConfig?.mode === "confirm");
+  const [deliveryMode, setDeliveryMode] = useState<"manual" | "radius">(s.deliveryConfig?.mode === "radius" ? "radius" : "manual");
   const [origin, setOrigin] = useState<Coordinates | null>(s.deliveryConfig?.mode === "radius" ? s.deliveryConfig.origin : null);
   const [originAddress, setOriginAddress] = useState(s.deliveryConfig?.mode === "radius" ? s.deliveryConfig.address : "");
   const [zones, setZones] = useState(() =>
@@ -51,9 +54,10 @@ export function StoreConfigurator({
   async function save() {
     const { isPublished, version, ...rest } = s;
     void isPublished;
-    if (deliveryMode === "radius" && !origin)
+    const confirmDelivery = s.deliveryEnabled && feeByLocal;
+    if (!confirmDelivery && deliveryMode === "radius" && !origin)
       throw new Error("Ubicá el local en el mapa antes de guardar la cobertura automática.");
-    const deliveryZones = zones.map((z) => ({
+    const deliveryZones = confirmDelivery ? [] : zones.map((z) => ({
       id: z.id,
       name: z.name,
       feeCents: moneyToCents(z.fee),
@@ -66,7 +70,7 @@ export function StoreConfigurator({
       throw new Error(
         "Revisá los precios de envío y los mínimos. Deben ser importes válidos en pesos.",
       );
-    const deliveryConfig = deliveryMode === "radius" ? { mode: deliveryMode, origin, address: originAddress } : { mode: deliveryMode };
+    const deliveryConfig = confirmDelivery ? { mode: "confirm" } : deliveryMode === "radius" ? { mode: deliveryMode, origin, address: originAddress } : { mode: deliveryMode };
     const parsed = settingsInput.safeParse({ ...rest, deliveryZones, deliveryConfig });
     if (!parsed.success)
       throw new Error(parsed.error.issues.map((i) => i.message).join(" · "));
@@ -335,14 +339,15 @@ export function StoreConfigurator({
             <label className="checkbox-label">
               <input
                 type="checkbox"
-                checked={s.deliveryEnabled}
-                onChange={(e) =>
-                  setS({ ...s, deliveryEnabled: e.target.checked })
-                }
+                checked={s.deliveryEnabled && !feeByLocal}
+                onChange={(e) => {
+                  setS({ ...s, deliveryEnabled: e.target.checked });
+                  setFeeByLocal(false);
+                }}
               />{" "}
               Delivery propio por zonas
             </label>
-            {s.deliveryEnabled ? (
+            {s.deliveryEnabled && !feeByLocal ? (
               <div className="delivery-zones">
                 <label>
                   ¿Cómo calculás el envío?
@@ -446,6 +451,24 @@ export function StoreConfigurator({
                   + Agregar zona de delivery
                 </button>
               </div>
+            ) : null}
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={s.deliveryEnabled && feeByLocal}
+                onChange={(e) => {
+                  setS({ ...s, deliveryEnabled: e.target.checked });
+                  setFeeByLocal(e.target.checked);
+                }}
+              />{" "}
+              Delivery propio con confirmación del local
+            </label>
+            {s.deliveryEnabled && feeByLocal ? (
+              <p className="field-hint standalone-hint">
+                El cliente carga su dirección y le avisamos que el costo de
+                envío se lo confirmás vos por WhatsApp. Usás esta opción o las
+                zonas, no las dos a la vez.
+              </p>
             ) : null}
           </section>
           <section className="config-section" id="pagos">
