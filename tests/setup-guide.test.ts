@@ -76,3 +76,15 @@ test("un local publicado con pedidos tiene todo hecho", () => {
   assert.equal(steps.every((s) => s.done), true);
   assert.equal(steps.find((s) => s.key === "delivery")?.detail, "Retiro y delivery.");
 });
+
+test("delivery con confirmación del local cuenta como entrega sin zonas", () => {
+  const delivery = setupSteps({
+    base,
+    products: [],
+    settings: { ...emptySettings, pickupEnabled: false, deliveryEnabled: true, deliveryConfig: { mode: "confirm" }, version: 1 },
+    hasOrders: false,
+    aiAvailable: false,
+  }).find((s) => s.key === "delivery");
+  assert.equal(delivery?.done, true);
+  assert.equal(delivery?.detail, "Delivery.");
+});

@@ -13,8 +13,15 @@ export const deliveryConfigSchema = z.discriminatedUnion("mode", [
     origin: coordinatesSchema,
     address: z.string().trim().min(5).max(250),
   }).strict(),
+  // No zones: the customer leaves an address and the local tells the fee later.
+  z.object({ mode: z.literal("confirm") }).strict(),
 ]);
 export type DeliveryConfig = z.infer<typeof deliveryConfigSchema>;
+
+/** Delivery without zones, where the local confirms the shipping fee by WhatsApp. */
+export function deliveryFeeByLocal(settings: { deliveryEnabled: boolean; deliveryConfig?: DeliveryConfig | null }) {
+  return settings.deliveryEnabled && settings.deliveryConfig?.mode === "confirm";
+}
 
 /** Great-circle distance. Coverage radii are deliberately not road distances. */
 export function distanceMeters(a: Coordinates, b: Coordinates): number {

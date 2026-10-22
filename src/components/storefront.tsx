@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { track } from "@/lib/analytics";
-import { deliveryQuote, type Coordinates } from "@/lib/delivery";
+import { deliveryFeeByLocal, deliveryQuote, type Coordinates } from "@/lib/delivery";
 import { LocationPicker } from "./location-picker";
 import {
   dayNames,
@@ -243,6 +243,7 @@ export function Storefront({
   const [result, setResult] = useState<{
     number: number;
     totalCents: number;
+    deliveryFeePending?: boolean;
     whatsappUrl: string;
     trackingUrl: string;
   } | null>(null);
@@ -332,8 +333,10 @@ export function Storefront({
   const subtotal = cart.reduce((n, l) => n + l.quotedUnitCents * l.quantity, 0);
   const automaticDelivery = settings.deliveryConfig?.mode === "radius";
   const quote = automaticDelivery ? deliveryQuote(settings.deliveryConfig, settings.deliveryZones, deliveryLocation) : null;
-  const zone = automaticDelivery ? quote?.zone : settings.deliveryZones.find((z) => z.id === zoneId);
+  const feeByLocal = deliveryFeeByLocal(settings);
+  const zone = feeByLocal ? undefined : automaticDelivery ? quote?.zone : settings.deliveryZones.find((z) => z.id === zoneId);
   const needsLocation = fulfillment === "delivery" && automaticDelivery && !quote;
+  const feePending = fulfillment === "delivery" && feeByLocal;
   const fee = fulfillment === "delivery" ? (zone?.feeCents ?? 0) : 0;
   const total = subtotal + fee;
   const categories = [...new Set(products.map((p) => p.category))];
@@ -516,7 +519,9 @@ export function Storefront({
               {settings.pickupInstructions ? (
                 <p>{settings.pickupInstructions}</p>
               ) : null}
-              {settings.deliveryEnabled
+              {feeByLocal ? (
+                <p>Delivery: el local te confirma el costo de envío por WhatsApp.</p>
+              ) : settings.deliveryEnabled
                 ? settings.deliveryZones.map((z) => (
                     <p key={z.id}>
                       {z.name}: {formatMoney(z.feeCents)}
@@ -601,7 +606,8 @@ export function Storefront({
                 <span aria-hidden="true">✓</span>
                 <h3>Pedido #{result.number} guardado</h3>
                 <p>
-                  Total: {formatMoney(result.totalCents)}. Falta que el local lo
+                  {result.deliveryFeePending ? "Total sin envío" : "Total"}:{" "}
+                  {formatMoney(result.totalCents)}. Falta que el local lo
                   confirme.
                 </p>
                 <a
@@ -748,7 +754,7 @@ export function Storefront({
                   </label>
                   {fulfillment === "delivery" ? (
                     <>
-                      {!automaticDelivery ? <label>
+                      {!automaticDelivery && !feeByLocal ? <label>
                         Zona de entrega
                         <select
                           value={zoneId}
@@ -782,6 +788,12 @@ export function Storefront({
                           {quote ? `Envío: ${formatMoney(quote.feeCents)} · ${quote.zone.name}` : deliveryLocation ? "Esta dirección está fuera de la cobertura de delivery. Podés elegir retiro si está disponible." : "Elegí una sugerencia o ubicá la dirección en el mapa para calcular el envío."}
                         </p>
                       </> : null}
+                      {feeByLocal ? (
+                        <p className="field-hint standalone-hint">
+                          El local te confirma el costo de envío por WhatsApp
+                          antes de preparar tu pedido.
+                        </p>
+                      ) : null}
                       {zone?.minimumCents ? (
                         <p className="field-hint standalone-hint">
                           Mínimo para esta zona:{" "}
@@ -841,11 +853,11 @@ export function Storefront({
                   {fulfillment === "delivery" ? (
                     <div className="cart-total">
                       <span>Envío</span>
-                      <strong>{needsLocation ? "A calcular" : formatMoney(fee)}</strong>
+                      <strong>{feePending ? "A confirmar" : needsLocation ? "A calcular" : formatMoney(fee)}</strong>
                     </div>
                   ) : null}
                   <div className="cart-total final-total">
-                    <span>{needsLocation ? "Total sin envío" : "Total"}</span>
+                    <span>{needsLocation || feePending ? "Total sin envío" : "Total"}</span>
                     <strong>{formatMoney(total)}</strong>
                   </div>
                 </div>

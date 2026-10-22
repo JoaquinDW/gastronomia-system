@@ -672,7 +672,7 @@ export function OrderInbox({
                 </p>
                 {o.address ? (
                   <p>
-                    {o.zoneName} · {o.address}
+                    {o.zoneName ?? "Envío a confirmar"} · {o.address}
                   </p>
                 ) : null}
                 {o.deliveryLocation ? <a className="text-button" href={`https://www.google.com/maps/dir/?api=1&destination=${o.deliveryLocation.lat},${o.deliveryLocation.lng}`} target="_blank" rel="noopener noreferrer">Abrir ubicación de entrega en Maps</a> : null}

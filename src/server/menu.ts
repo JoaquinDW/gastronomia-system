@@ -10,6 +10,7 @@ import {
   type StoreSettingsInput,
 } from "@/lib/menu";
 import { HttpError } from "./errors";
+import { deliveryFeeByLocal } from "@/lib/delivery";
 import type { PoolClient } from "pg";
 
 const productFields = `id, name, description, category, kind, variants, add_ons AS "addOns", option_groups AS "optionGroups", COALESCE(image_url,'') AS "imageUrl", image_focus_x AS "imageFocusX", image_focus_y AS "imageFocusY", is_available AS "isAvailable", sort_order AS "sortOrder", version`;
@@ -20,7 +21,7 @@ function requireStoreConfiguration(s: StoreSettingsInput) {
     throw new HttpError(422, "Configurá al menos un horario de atención.");
   if (!s.pickupEnabled && !s.deliveryEnabled)
     throw new HttpError(422, "Habilitá retiro o delivery.");
-  if (s.deliveryEnabled && !s.deliveryZones.length)
+  if (s.deliveryEnabled && !deliveryFeeByLocal(s) && !s.deliveryZones.length)
     throw new HttpError(
       422,
       "Agregá al menos una zona de delivery con su tarifa.",
