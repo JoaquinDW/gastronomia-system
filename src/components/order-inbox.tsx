@@ -487,6 +487,25 @@ export function OrderInbox({
     return `https://wa.me/${o.customerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
   }
 
+  // Aviso puntual cuando el pedido está listo (retiro) o sale (delivery).
+  function whatsappReady(o: Order) {
+    if (!o.customerPhone || o.status !== "accepted") return null;
+    const hi = `Hola ${o.customerName}, `;
+    const n = `${orderNumber(o)} de ${businessName}`;
+    let text: string;
+    if (o.stage === "ready" && o.fulfillment === "delivery") {
+      text = `${hi}tu pedido ${n} ya está listo y en un ratito sale para tu casa.`;
+    } else if (o.stage === "ready") {
+      text = `${hi}tu pedido ${n} ya está listo para retirar. ¡Te esperamos!`;
+    } else if (o.stage === "on_the_way") {
+      text = `${hi}tu pedido ${n} ya salió y va en camino.`;
+    } else {
+      return null;
+    }
+    if (o.trackingToken) text += ` Podés seguirlo acá: ${trackingLink(o)}`;
+    return `https://wa.me/${o.customerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
+  }
+
   const active = orders.filter((o) => !isDone(o));
   const done = orders.filter(isDone);
   const shown =
@@ -800,6 +819,18 @@ export function OrderInbox({
                     >
                       Imprimir ticket
                     </button>
+                  ) : null}
+                  {whatsappReady(o) ? (
+                    <a
+                      className="text-button"
+                      href={whatsappReady(o)!}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {o.stage === "on_the_way"
+                        ? "Avisar por WhatsApp que va en camino ↗"
+                        : "Avisar por WhatsApp que está listo ↗"}
+                    </a>
                   ) : null}
                   {o.trackingToken && o.status === "accepted" ? (
                     <>
