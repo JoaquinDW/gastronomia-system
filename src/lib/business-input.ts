@@ -45,6 +45,22 @@ export function slugify(value: string): string {
     .replace(/-$/g, "");
 }
 
+// Los guiones son opcionales: "daflomitosarabes" y "daf-lomitos-arabes" valen.
+export const slugInput = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, "Usá al menos 3 caracteres.")
+  .max(63, "Usá hasta 63 caracteres.")
+  .regex(
+    /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+    "Usá letras minúsculas y números, sin espacios ni tildes. Los guiones entre palabras son opcionales.",
+  )
+  .refine(
+    (slug) => !reservedSlugs.has(slug),
+    "Esa dirección está reservada. Probá con otra.",
+  );
+
 export const businessInput = z
   .object({
     name: z
@@ -52,19 +68,7 @@ export const businessInput = z
       .trim()
       .min(2, "Ingresá al menos 2 caracteres.")
       .max(100, "Usá hasta 100 caracteres."),
-    slug: z
-      .string()
-      .trim()
-      .min(3, "Usá al menos 3 caracteres.")
-      .max(63, "Usá hasta 63 caracteres.")
-      .regex(
-        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        "Usá letras minúsculas, números y guiones entre palabras.",
-      )
-      .refine(
-        (slug) => !reservedSlugs.has(slug),
-        "Esa dirección está reservada. Probá con otra.",
-      ),
+    slug: slugInput,
     kind: z.enum(businessKindValues, {
       error: "Elegí el rubro del negocio.",
     }),

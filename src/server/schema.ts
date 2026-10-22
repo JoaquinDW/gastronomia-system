@@ -104,6 +104,22 @@ export const businesses = pgTable(
   ],
 );
 
+// Direcciones que un negocio dejó de usar: siguen siendo suyas y redirigen
+// a la actual, así no se rompen QR, links ni pedidos compartidos.
+export const businessSlugAliases = pgTable(
+  "business_slug_aliases",
+  {
+    slug: varchar("slug", { length: 63 }).primaryKey(),
+    businessId: uuid("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("business_slug_aliases_business_idx").on(table.businessId)],
+);
+
 export const locations = pgTable(
   "locations",
   {

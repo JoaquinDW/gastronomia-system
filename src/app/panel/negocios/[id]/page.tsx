@@ -11,6 +11,7 @@ import { getProducts, getSettings } from "@/server/menu";
 import { hasOrders } from "@/server/orders";
 import { SetupGuide } from "@/components/setup-guide";
 import { StoreLinkBar } from "@/components/store-link-bar";
+import { SlugEditor } from "@/components/slug-editor";
 
 export const metadata = { title: "Mi negocio — Pedipue" };
 
@@ -116,7 +117,13 @@ export default async function BusinessPage({
             </div>
             <div>
               <dt>Identificador reservado</dt>
-              <dd className="slug-value">{business.slug}</dd>
+              <dd>
+                <SlugEditor
+                  businessId={id}
+                  slug={business.slug}
+                  editable={business.role === "owner"}
+                />
+              </dd>
             </div>
           </dl>
         </section>

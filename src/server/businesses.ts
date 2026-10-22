@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import type { PoolClient } from "pg";
 import { getPool } from "./postgres";
 import type { BusinessInput } from "@/lib/business-input";
 
@@ -62,6 +63,7 @@ export async function createBusiness(
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
+    await claimSlug(client, input.slug, null);
     const inserted = await client.query<{ id: string }>(
       `INSERT INTO businesses (name, slug, kind, whatsapp, created_by_user_id, onboarding_key, onboarding_hash)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -102,14 +104,68 @@ export async function createBusiness(
     return businessId;
   } catch (error) {
     await client.query("ROLLBACK");
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      error.code === "23505"
-    ) {
-      throw new BusinessConflict("slug_taken");
+    if (isUniqueViolation(error)) throw new BusinessConflict("slug_taken");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+const isUniqueViolation = (error: unknown) =>
+  typeof error === "object" &&
+  error !== null &&
+  "code" in error &&
+  error.code === "23505";
+
+// Serializa a quien quiera tomar la misma dirección y la rechaza si otro
+// negocio la usó antes: las direcciones viejas siguen redirigiendo a su dueño.
+async function claimSlug(
+  client: PoolClient,
+  slug: string,
+  businessId: string | null,
+) {
+  await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+    `slug:${slug}`,
+  ]);
+  const { rows } = await client.query<{ businessId: string }>(
+    `SELECT business_id AS "businessId" FROM business_slug_aliases WHERE slug = $1`,
+    [slug],
+  );
+  if (rows[0] && rows[0].businessId !== businessId)
+    throw new BusinessConflict("slug_taken");
+}
+
+export async function changeBusinessSlug(businessId: string, slug: string) {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const current = await client.query<{ slug: string }>(
+      "SELECT slug FROM businesses WHERE id = $1 FOR UPDATE",
+      [businessId],
+    );
+    const previous = current.rows[0]?.slug;
+    if (!previous || previous === slug) {
+      await client.query("COMMIT");
+      return previous ?? null;
     }
+    await claimSlug(client, slug, businessId);
+    await client.query(
+      "DELETE FROM business_slug_aliases WHERE slug = $1 AND business_id = $2",
+      [slug, businessId],
+    );
+    await client.query("UPDATE businesses SET slug = $2 WHERE id = $1", [
+      businessId,
+      slug,
+    ]);
+    await client.query(
+      "INSERT INTO business_slug_aliases (slug, business_id) VALUES ($1, $2)",
+      [previous, businessId],
+    );
+    await client.query("COMMIT");
+    return previous;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    if (isUniqueViolation(error)) throw new BusinessConflict("slug_taken");
     throw error;
   } finally {
     client.release();
