@@ -481,29 +481,31 @@ export function OrderInbox({
     }
   }
 
-  function whatsappTracking(o: Order) {
-    if (!o.customerPhone) return null;
-    const text = `Hola ${o.customerName}, podés seguir tu pedido ${orderNumber(o)} de ${businessName} acá: ${trackingLink(o)}`;
-    return `https://wa.me/${o.customerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
-  }
-
-  // Aviso puntual cuando el pedido está listo (retiro) o sale (delivery).
-  function whatsappReady(o: Order) {
-    if (!o.customerPhone || o.status !== "accepted") return null;
+  // Un solo aviso por WhatsApp, el que corresponde a la etapa del pedido.
+  function whatsappAction(o: Order) {
+    if (!o.customerPhone || o.status !== "accepted" || o.stage === "delivered")
+      return null;
     const hi = `Hola ${o.customerName}, `;
     const n = `${orderNumber(o)} de ${businessName}`;
+    const track = o.trackingToken ? ` Podés seguirlo acá: ${trackingLink(o)}` : "";
+    let label: string;
     let text: string;
-    if (o.stage === "ready" && o.fulfillment === "delivery") {
-      text = `${hi}tu pedido ${n} ya está listo y en un ratito sale para tu casa.`;
-    } else if (o.stage === "ready") {
+    if (o.stage === "ready" && o.fulfillment !== "delivery") {
+      label = "Avisar por WhatsApp que está listo";
       text = `${hi}tu pedido ${n} ya está listo para retirar. ¡Te esperamos!`;
     } else if (o.stage === "on_the_way") {
-      text = `${hi}tu pedido ${n} ya salió y va en camino.`;
+      label = "Avisar por WhatsApp que va en camino";
+      text = `${hi}tu pedido ${n} ya salió y va en camino.${track}`;
+    } else if (o.trackingToken) {
+      label = "Mandar seguimiento por WhatsApp";
+      text = `${hi}podés seguir tu pedido ${n} acá: ${trackingLink(o)}`;
     } else {
       return null;
     }
-    if (o.trackingToken) text += ` Podés seguirlo acá: ${trackingLink(o)}`;
-    return `https://wa.me/${o.customerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
+    return {
+      label,
+      href: `https://wa.me/${o.customerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`,
+    };
   }
 
   const active = orders.filter((o) => !isDone(o));
@@ -797,73 +799,58 @@ export function OrderInbox({
                     </button>
                   </div>
                 ) : null}
-                <div className="ticket-links">
-                  {o.status !== "rejected" ? (
-                    <button
-                      type="button"
-                      className="text-button"
-                      onClick={() =>
-                        void print(o, ["comanda"])
-                      }
-                    >
-                      Imprimir comanda
-                    </button>
-                  ) : null}
-                  {ticket.enabled && o.status !== "rejected" ? (
-                    <button
-                      type="button"
-                      className="text-button"
-                      onClick={() =>
-                        void print(o, ["ticket"])
-                      }
-                    >
-                      Imprimir ticket
-                    </button>
-                  ) : null}
-                  {whatsappReady(o) ? (
-                    <a
-                      className="text-button"
-                      href={whatsappReady(o)!}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {o.stage === "on_the_way"
-                        ? "Avisar por WhatsApp que va en camino ↗"
-                        : "Avisar por WhatsApp que está listo ↗"}
-                    </a>
-                  ) : null}
-                  {o.trackingToken && o.status === "accepted" ? (
-                    <>
+                {whatsappAction(o) ? (
+                  <a
+                    className="text-button ticket-whatsapp"
+                    href={whatsappAction(o)!.href}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {whatsappAction(o)!.label} ↗
+                  </a>
+                ) : null}
+                {o.status !== "rejected" ? (
+                  <details className="ticket-more">
+                    <summary className="text-button">Más opciones</summary>
+                    <div className="ticket-links">
                       <button
                         type="button"
                         className="text-button"
-                        onClick={() => copyLink(o)}
+                        onClick={() => void print(o, ["comanda"])}
                       >
-                        {copied === o.id
-                          ? "Link copiado ✓"
-                          : "Copiar link de seguimiento"}
+                        Imprimir comanda
                       </button>
-                      {o.customerPhone ? (
-                        <a
+                      {ticket.enabled ? (
+                        <button
+                          type="button"
                           className="text-button"
-                          href={whatsappTracking(o)!}
-                          target="_blank"
-                          rel="noreferrer"
+                          onClick={() => void print(o, ["ticket"])}
                         >
-                          Mandar seguimiento por WhatsApp ↗
-                        </a>
+                          Imprimir ticket
+                        </button>
                       ) : null}
-                    </>
-                  ) : null}
-                  {o.saleId && o.status === "accepted" ? (
-                    <Link
-                      className="text-button"
-                      href={`${panel}/gestion/ventas`}
-                    >
-                      Ver venta o registrar anulación
-                    </Link>
-                  ) : null}
-                </div>
+                      {o.trackingToken && o.status === "accepted" ? (
+                        <button
+                          type="button"
+                          className="text-button"
+                          onClick={() => copyLink(o)}
+                        >
+                          {copied === o.id
+                            ? "Link copiado ✓"
+                            : "Copiar link de seguimiento"}
+                        </button>
+                      ) : null}
+                      {o.saleId && o.status === "accepted" ? (
+                        <Link
+                          className="text-button"
+                          href={`${panel}/gestion/ventas`}
+                        >
+                          Ver venta o registrar anulación
+                        </Link>
+                      ) : null}
+                    </div>
+                  </details>
+                ) : null}
               </article>
             );
           })}
