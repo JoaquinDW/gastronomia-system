@@ -4113,3 +4113,29 @@ body.kitchen-open {
     justify-content: center;
   }
 }
+
+/* Detalle del pedido: un aviso por WhatsApp a la vista, el resto plegado. */
+.ticket-whatsapp {
+  display: inline-block;
+  margin-top: 12px;
+  text-decoration: none;
+}
+.ticket-more {
+  margin-top: 4px;
+}
+.ticket-more > summary {
+  list-style: none;
+  color: var(--muted);
+}
+.ticket-more > summary::-webkit-details-marker {
+  display: none;
+}
+.ticket-more > summary::after {
+  content: " ▾";
+}
+.ticket-more[open] > summary::after {
+  content: " ▴";
+}
+.ticket-more .ticket-links {
+  margin-top: 0;
+}
