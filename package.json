@@ -40,7 +40,8 @@
     "test:cash": "node --import tsx --test tests/cash.test.ts",
     "test:cash:db": "node --conditions=react-server --import tsx scripts/test-cash.ts",
     "test:demo": "node --import tsx --test tests/demo-sandbox.test.ts",
-    "demo:snapshot": "node --conditions=react-server --import tsx scripts/demo-snapshot.ts"
+    "demo:snapshot": "node --conditions=react-server --import tsx scripts/demo-snapshot.ts",
+    "test:slug:db": "node --conditions=react-server --import tsx scripts/test-slug-change.ts"
   },
   "overrides": {
     "@esbuild-kit/core-utils": {

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { businessKinds } from "@/lib/business-input";
-import { storeUrl } from "@/lib/hosts";
+import { storePreviewUrl, storeUrl } from "@/lib/hosts";
+import { renamedSlug } from "@/server/business-hosts";
 import { publishedStoreCard } from "@/server/menu";
 import { currentUser } from "@/server/auth";
 import { publicStore } from "@/server/menu";
@@ -66,7 +67,12 @@ export default async function ShopPage({
   const preview = (await searchParams).preview === "1";
   const user = preview ? await currentUser() : null;
   const store = await publicStore(slug, user?.id);
-  if (!store) notFound();
+  if (!store) {
+    // El negocio cambió de dirección: la vieja lleva a la nueva.
+    const moved = await renamedSlug(slug);
+    if (moved) redirect(preview ? storePreviewUrl(moved) : storeUrl(moved));
+    notFound();
+  }
   return (
     <Storefront
       {...store}

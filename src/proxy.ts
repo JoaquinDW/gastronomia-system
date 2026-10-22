@@ -1,5 +1,9 @@
 import { getAuth } from "@/server/auth";
-import { businessIdForSlug, businessSlugForId } from "@/server/business-hosts";
+import {
+  businessIdForSlug,
+  businessSlugForId,
+  renamedSlug,
+} from "@/server/business-hosts";
 import {
   appUrl,
   hostOrigin,
@@ -83,7 +87,12 @@ async function businessPanel(request: NextRequest, slug: string, rest: string) {
   if (auth.headers.has("location")) return auth;
 
   const id = await businessIdForSlug(slug);
-  if (!id) return NextResponse.next();
+  if (!id) {
+    const moved = await renamedSlug(slug).catch(() => null);
+    return moved
+      ? NextResponse.redirect(appUrl(`/${moved}${rest}${search}`), 307)
+      : NextResponse.next();
+  }
   const url = request.nextUrl.clone();
   url.pathname = `/panel/negocios/${id}${rest}`;
   const response = NextResponse.rewrite(url);

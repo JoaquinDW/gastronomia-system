@@ -138,7 +138,7 @@ export function BusinessForm({ email }: { email: string }) {
             <strong>
               {storeUrl(slug || "tu-negocio").replace(/^https?:\/\//, "")}
             </strong>
-            . Podés personalizarla.
+            . Podés personalizarla; los guiones son opcionales.
           </p>
           <label>
             ¿Qué preparás?

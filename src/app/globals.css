@@ -1422,6 +1422,47 @@ footer {
   font-family: var(--mono);
   font-size: 12px !important;
 }
+.slug-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+}
+.slug-change,
+.slug-suggestion {
+  font: 650 13px var(--sans);
+  color: var(--ink);
+  background: none;
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+  cursor: pointer;
+}
+.slug-change:hover,
+.slug-suggestion:hover {
+  color: var(--accent-ink);
+}
+.slug-suggestion {
+  display: block;
+  margin: -8px 0 20px;
+  text-align: left;
+}
+.slug-suggestion span {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.slug-form label {
+  margin-bottom: 18px;
+}
+.slug-form input {
+  font-family: var(--mono);
+}
+.slug-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
 .error-page {
   padding-top: 90px;
   padding-bottom: 90px;
@@ -1538,6 +1579,10 @@ footer {
   .app-form input,
   .app-form select {
     font-size: 16px;
+  }
+  .business-data dl > div:has(.slug-form) {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
   .account-shell .site-header > .quiet-link {
     font-size: 11px;
