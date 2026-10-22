@@ -64,7 +64,12 @@ function centered(img: HTMLImageElement): Frame {
   const box = drawingBox(img) ?? { x: 0, y: 0, width: w, height: h };
   // Image size inside a 1×1 frame at zoom 1 (contained).
   const fit = 1 / Math.max(w, h);
-  const zoom = clampZoom(0.92 / (Math.max(box.width, box.height) * fit));
+  // A logo that already reaches its edges (a filled square) fills the
+  // sticker; a drawing on a blank background keeps a small margin.
+  const bleeds = box.width >= w * 0.97 && box.height >= h * 0.97;
+  const zoom = clampZoom(
+    (bleeds ? 1 : 0.92) / (Math.max(box.width, box.height) * fit),
+  );
   return {
     zoom,
     x: clampOffset(-(box.x + box.width / 2 - w / 2) * fit * zoom),
