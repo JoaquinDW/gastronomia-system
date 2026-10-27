@@ -12,6 +12,16 @@ const dateFormat = new Intl.DateTimeFormat("es-AR", {
   timeZone: "America/Argentina/Cordoba",
 });
 
+const signInFormat = new Intl.DateTimeFormat("es-AR", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "America/Argentina/Cordoba",
+});
+
 function ago(value: Date | string | null, now: number): string {
   if (!value) return "Sin pedidos";
   const minutes = Math.max(0, (now - new Date(value).getTime()) / 60_000);
@@ -121,6 +131,21 @@ function BusinessRow({
       </td>
       <td data-label="Alta" className="admin-mono admin-nowrap">
         {dateFormat.format(new Date(business.createdAt))}
+      </td>
+      <td data-label="Último ingreso">
+        {business.ownerLastSignInAt ? (
+          <div className="admin-cell admin-nowrap">
+            {ago(business.ownerLastSignInAt, now)}
+            <time
+              className="admin-sub"
+              dateTime={new Date(business.ownerLastSignInAt).toISOString()}
+            >
+              {signInFormat.format(new Date(business.ownerLastSignInAt))}
+            </time>
+          </div>
+        ) : (
+          <span className="admin-sub">Sin registro disponible</span>
+        )}
       </td>
       <td data-label="Último pedido" className="admin-nowrap">
         {ago(business.lastOrderAt, now)}
@@ -236,6 +261,11 @@ export function SuperadminOverview({
           </button>
         </form>
       </div>
+      <p className="admin-session-note">
+        Último ingreso: inicio de la sesión más reciente del dueño que sigue
+        registrada. Las sesiones cerradas o eliminadas pueden no aparecer. No
+        indica su última actividad en el panel. Horarios de Argentina.
+      </p>
       {businesses.length ? (
         <div className="admin-table-wrap">
           <table className="admin-table">
@@ -246,6 +276,7 @@ export function SuperadminOverview({
                 <th scope="col">Estado</th>
                 <th scope="col">Plan</th>
                 <th scope="col">Alta</th>
+                <th scope="col">Último ingreso</th>
                 <th scope="col">Último pedido</th>
                 <th scope="col" className="admin-num">
                   Pedidos 7 / 30 d

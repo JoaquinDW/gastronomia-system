@@ -12,6 +12,7 @@ export type AdminBusiness = {
   ownerId: string | null;
   ownerName: string | null;
   ownerEmail: string | null;
+  ownerLastSignInAt: Date | null;
   published: boolean;
   products: number;
   lastOrderAt: Date | null;
@@ -40,7 +41,7 @@ export type AdminOverview = {
 };
 
 // Ventas: pedidos aceptados. Pedidos: todo lo que entró, salvo rechazados.
-const businessQuery = (withUsers: boolean) => `
+const businessQuery = (withUsers: boolean, withSessions: boolean) => `
   WITH owners AS (
     SELECT DISTINCT ON (business_id) business_id, user_id
     FROM memberships WHERE role = 'owner'
@@ -65,6 +66,8 @@ const businessQuery = (withUsers: boolean) => `
     (SELECT city FROM locations WHERE business_id = b.id ORDER BY created_at, id LIMIT 1) AS city,
     coalesce(o.user_id, b.created_by_user_id) AS "ownerId",
     ${withUsers ? 'u.name AS "ownerName", u.email AS "ownerEmail"' : 'NULL AS "ownerName", NULL AS "ownerEmail"'},
+    ${withUsers && withSessions ? `(SELECT max(session."createdAt") FROM neon_auth.session session
+      WHERE session."userId" = u.id AND session."impersonatedBy" IS NULL)` : "NULL"} AS "ownerLastSignInAt",
     coalesce(s.is_published, false) AS published,
     coalesce(p.products, 0) AS products,
     os.last_order_at AS "lastOrderAt",
@@ -85,16 +88,31 @@ const businessQuery = (withUsers: boolean) => `
 export async function adminOverview(): Promise<AdminOverview> {
   const pool = getPool();
   // Neon Auth guarda las cuentas en neon_auth."user"; si no está, sin email.
-  const { rows: auth } = await pool.query<{ ok: boolean }>(
-    `SELECT to_regclass('neon_auth."user"') IS NOT NULL AS ok`,
+  const { rows: auth } = await pool.query<{ ok: boolean; sessions: boolean }>(
+    `SELECT to_regclass('neon_auth."user"') IS NOT NULL AS ok,
+      to_regclass('neon_auth.session') IS NOT NULL AS sessions`,
   );
-  let rows: AdminBusiness[];
-  try {
-    rows = (await pool.query<AdminBusiness>(businessQuery(auth[0]?.ok))).rows;
-  } catch (error) {
-    if (!auth[0]?.ok) throw error;
-    rows = (await pool.query<AdminBusiness>(businessQuery(false))).rows;
+  // Auth es opcional para el resumen. Si no podemos leer sesiones,
+  // conservamos los datos del dueño; si tampoco podemos leer usuarios,
+  // los números y contactos de los negocios siguen disponibles.
+  async function loadBusinesses(
+    withUsers: boolean,
+    withSessions: boolean,
+  ): Promise<AdminBusiness[]> {
+    try {
+      return (
+        await pool.query<AdminBusiness>(businessQuery(withUsers, withSessions))
+      ).rows;
+    } catch (error) {
+      if (withSessions) return loadBusinesses(withUsers, false);
+      if (withUsers) return loadBusinesses(false, false);
+      throw error;
+    }
   }
+  const rows = await loadBusinesses(
+    Boolean(auth[0]?.ok),
+    Boolean(auth[0]?.ok && auth[0]?.sessions),
+  );
   const businesses = rows.map((row) => ({
     ...row,
     sales7: Number(row.sales7),
