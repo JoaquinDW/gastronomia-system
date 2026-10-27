@@ -11,7 +11,7 @@ export const launchPrice = formatMoney(launchPriceCents);
 export const regularPrice = formatMoney(regularPriceCents);
 export const priceSentence = `${trialDays} días gratis. Después, ${launchPrice} por mes los primeros ${launchMonths} meses y ${regularPrice} por mes desde el cuarto.`;
 
-// WhatsApp de Pedipue para pagos y postulaciones. BILLING_WHATSAPP lo
+// WhatsApp de Pedipue para soporte, pagos y postulaciones. BILLING_WHATSAPP lo
 // reemplaza; sin la variable, el número de Balthasar.
 const defaultWhatsapp = "5493794721825";
 

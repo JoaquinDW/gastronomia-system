@@ -12,6 +12,7 @@ import { hasOrders } from "@/server/orders";
 import { SetupGuide } from "@/components/setup-guide";
 import { StoreLinkBar } from "@/components/store-link-bar";
 import { SlugEditor } from "@/components/slug-editor";
+import { BusinessSupport } from "@/components/business-support";
 
 export const metadata = { title: "Mi negocio — Pedipue" };
 
@@ -127,6 +128,7 @@ export default async function BusinessPage({
             </div>
           </dl>
         </section>
+        <BusinessSupport business={business} />
       </div>
     </>
   );

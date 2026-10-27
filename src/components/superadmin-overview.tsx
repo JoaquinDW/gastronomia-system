@@ -50,6 +50,10 @@ function BusinessRow({
   now: number;
 }) {
   const kind = businessKinds.find((item) => item.value === business.kind);
+  const phone = business.whatsapp?.replace(/\D/g, "");
+  const contactHref = phone
+    ? `https://wa.me/${phone}?text=${encodeURIComponent(`Hola, soy Balthasar de Pedipue. ¿Cómo les está yendo con ${business.name}? ¿Necesitan ayuda con algo?`)}`
+    : null;
   return (
     <tr>
       <td>
@@ -74,10 +78,24 @@ function BusinessRow({
           </div>
         </div>
       </td>
-      <td data-label="Dueño">
+      <td data-label="Contacto">
         <span className="admin-owner">
           {business.ownerName || "Sin nombre"}
           <small>{business.ownerEmail ?? business.ownerId ?? "—"}</small>
+          {contactHref ? (
+            <a
+              className="admin-whatsapp"
+              href={contactHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Contactar a ${business.name} por WhatsApp: ${business.whatsapp}`}
+            >
+              <span className="admin-mono">{business.whatsapp}</span>
+              <small>Abrir WhatsApp ↗</small>
+            </a>
+          ) : (
+            <small>Sin WhatsApp registrado</small>
+          )}
         </span>
       </td>
       <td data-label="Estado">
@@ -146,6 +164,7 @@ export function SuperadminOverview({
           business.city,
           business.ownerName,
           business.ownerEmail,
+          business.whatsapp,
         ]
           .filter(Boolean)
           .some((value) => value!.toLowerCase().includes(needle)),
@@ -210,7 +229,7 @@ export function SuperadminOverview({
             name="q"
             type="search"
             defaultValue={query}
-            placeholder="Nombre, ciudad o email"
+            placeholder="Negocio, email o WhatsApp"
           />
           <button className="ghost-button" type="submit">
             Buscar
@@ -223,7 +242,7 @@ export function SuperadminOverview({
             <thead>
               <tr>
                 <th scope="col">Negocio</th>
-                <th scope="col">Dueño</th>
+                <th scope="col">Dueño y contacto</th>
                 <th scope="col">Estado</th>
                 <th scope="col">Plan</th>
                 <th scope="col">Alta</th>

@@ -21,6 +21,17 @@
 .biz-content {
   min-width: 0;
 }
+.business-support p {
+  max-width: 42ch;
+  line-height: 1.6;
+}
+.business-support .ghost-button {
+  margin-top: 8px;
+}
+.business-support .field-hint {
+  color: var(--muted);
+  font-size: 12px;
+}
 .biz-sidebar {
   position: sticky;
   top: 24px;

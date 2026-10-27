@@ -155,6 +155,23 @@
 .admin-nowrap {
   white-space: nowrap;
 }
+.admin-whatsapp {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  min-height: 44px;
+  margin-top: 4px;
+  text-underline-offset: 4px;
+}
+.admin-whatsapp:hover,
+.admin-whatsapp:hover small {
+  color: var(--accent-ink);
+}
+.admin-whatsapp:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
 .admin-sub {
   display: block;
   margin-top: 6px;

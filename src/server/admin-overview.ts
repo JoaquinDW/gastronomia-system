@@ -6,6 +6,7 @@ export type AdminBusiness = {
   name: string;
   slug: string;
   kind: string;
+  whatsapp: string;
   city: string | null;
   createdAt: Date;
   ownerId: string | null;
@@ -59,7 +60,7 @@ const businessQuery = (withUsers: boolean) => `
     SELECT business_id, count(*)::int AS products
     FROM menu_products WHERE archived_at IS NULL GROUP BY business_id
   )
-  SELECT b.id, b.name, b.slug, b.kind, b.created_at AS "createdAt",
+  SELECT b.id, b.name, b.slug, b.kind, b.whatsapp, b.created_at AS "createdAt",
     b.billing_exempt AS "billingExempt", b.trial_ends_at AS "trialEndsAt", b.paid_until AS "paidUntil",
     (SELECT city FROM locations WHERE business_id = b.id ORDER BY created_at, id LIMIT 1) AS city,
     coalesce(o.user_id, b.created_by_user_id) AS "ownerId",

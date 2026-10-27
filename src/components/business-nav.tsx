@@ -71,7 +71,7 @@ const home: Item = { key: "home", label: "Resumen", path: "" };
 const shortcuts: Key[] = ["home", "orders", "cash", "menu"];
 
 // Trazo lineal de 2.5 px, sin emoji (ver docs/DESIGN-SYSTEM.md).
-const icons: Record<Key | "more" | "out", string> = {
+const icons: Record<Key | "more" | "out" | "support", string> = {
   home: "M4 11 12 4l8 7M6 9.5V20h12V9.5",
   orders: "M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6",
   cash: "M3 10h18v10H3zM6 10V6h12v4M12 13.5v3M9 15h.01M15 15h.01",
@@ -88,6 +88,7 @@ const icons: Record<Key | "more" | "out", string> = {
     "M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19.5a1.5 1.5 0 1 0 0-.01M17 19.5a1.5 1.5 0 1 0 0-.01",
   more: "M5 12h.01M12 12h.01M19 12h.01",
   out: "M14 4h6v6M20 4l-9 9M18 14v6H4V6h6",
+  support: "M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-2 2V11.5a9.5 9.5 0 0 1 19 0ZM7 11h.01M12 11h.01M17 11h.01",
 };
 
 function Icon({ name }: { name: keyof typeof icons }) {
@@ -139,6 +140,7 @@ export function BusinessNav({
   isPublished,
   businessesHref,
   businessesLabel = "Mis negocios",
+  supportHref,
 }: {
   id: string;
   base: string;
@@ -148,6 +150,7 @@ export function BusinessNav({
   isPublished: boolean;
   businessesHref: string;
   businessesLabel?: string;
+  supportHref?: string | null;
 }) {
   const pathname = usePathname() ?? "";
   const [moreOpen, setMoreOpen] = useState(false);
@@ -208,6 +211,15 @@ export function BusinessNav({
           {g.items.map(link)}
         </div>
       ))}
+      {supportHref ? (
+        <div className="biz-nav-group">
+          <p className="biz-nav-title">Ayuda</p>
+          <a href={supportHref} target="_blank" rel="noopener noreferrer">
+            <Icon name="support" />
+            <span>Soporte por WhatsApp</span>
+          </a>
+        </div>
+      ) : null}
     </>
   );
 

@@ -9,6 +9,7 @@ import {
 import { BusinessNav } from "@/components/business-nav";
 import { PanelBaseProvider } from "@/components/panel-base";
 import { PlanNotice } from "@/components/plan-notice";
+import { supportWhatsapp } from "@/lib/support";
 import { requireUser } from "@/server/auth";
 import { businessSlugForId } from "@/server/business-hosts";
 import { findBusiness } from "@/server/businesses";
@@ -47,6 +48,7 @@ export default async function BusinessLayout({
               : storePreviewUrl(business.slug)
           }
           businessesHref={appUrl("/panel")}
+          supportHref={supportWhatsapp(business)}
         />
         <div className="biz-content">
           {["owner", "manager"].includes(business.role) ? (
